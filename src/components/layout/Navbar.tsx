@@ -20,12 +20,14 @@ import {
 } from "lucide-react";
 import { DailyCheckinModal } from "@/components/gamification/DailyCheckinModal";
 import { GiftBoxModal } from "@/components/kakao/GiftBoxModal";
+import { BecomeAuthorModal } from "@/components/author/BecomeAuthorModal";
 
 export function Navbar() {
   const pathname = usePathname();
   const { user, logout, switchDemoRole } = useAuth();
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [showGiftModal, setShowGiftModal] = useState(false);
+  const [showBecomeAuthorModal, setShowBecomeAuthorModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showDemoBar, setShowDemoBar] = useState(false);
@@ -176,8 +178,8 @@ export function Navbar() {
               <span className="text-[10px] text-neutral-400 font-medium hidden sm:inline">เหรียญ</span>
             </Link>
 
-            {/* Author Studio Shortcut */}
-            {user && (user.role === "AUTHOR" || user.role === "SUPER_ADMIN") && (
+            {/* Author Studio Shortcut or Become Author Button */}
+            {user && (user.role === "AUTHOR" || user.role === "SUPER_ADMIN") ? (
               <Link
                 href="/author"
                 className="p-2 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white transition hidden sm:flex"
@@ -185,7 +187,16 @@ export function Navbar() {
               >
                 <PenTool className="w-4 h-4" />
               </Link>
-            )}
+            ) : user && user.role === "READER" ? (
+              <button
+                onClick={() => setShowBecomeAuthorModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 hover:from-amber-500/20 hover:to-yellow-500/20 border border-amber-500/30 text-amber-300 hover:text-white text-xs font-semibold transition active:scale-95 hidden sm:flex shadow-sm"
+                title="เปิดโหมดนักเขียนและลงผลงาน"
+              >
+                <PenTool className="w-3.5 h-3.5 text-amber-400" />
+                <span>เขียนผลงาน</span>
+              </button>
+            ) : null}
 
             {/* Admin Shortcut */}
             {user && (user.role === "SUPER_ADMIN" || user.role === "MODERATOR" || user.role === "FINANCE_ADMIN") && (
@@ -257,9 +268,26 @@ export function Navbar() {
                           className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition"
                           onClick={() => setShowProfileMenu(false)}
                         >
-                          <PenTool className="w-3.5 h-3.5" />
+                          <PenTool className="w-3.5 h-3.5 text-amber-400" />
                           สตูดิโอนักเขียน
                         </Link>
+                      )}
+                      {user.role === "READER" && (
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            setShowBecomeAuthorModal(true);
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 text-xs text-amber-300 hover:text-white hover:bg-amber-500/10 rounded-xl transition text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <PenTool className="w-3.5 h-3.5 text-amber-400" />
+                            <span>เปิดโหมดนักเขียน</span>
+                          </div>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                            ฟรี
+                          </span>
+                        </button>
                       )}
                       {(user.role === "SUPER_ADMIN" || user.role === "MODERATOR" || user.role === "FINANCE_ADMIN") && (
                         <Link
@@ -364,6 +392,12 @@ export function Navbar() {
       <GiftBoxModal
         isOpen={showGiftModal}
         onClose={() => setShowGiftModal(false)}
+      />
+
+      {/* Become Author Modal */}
+      <BecomeAuthorModal
+        isOpen={showBecomeAuthorModal}
+        onClose={() => setShowBecomeAuthorModal(false)}
       />
     </>
   );

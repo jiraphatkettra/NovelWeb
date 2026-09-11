@@ -21,7 +21,10 @@ import {
   ExternalLink,
   Tag,
   Sparkles,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
+import confetti from "canvas-confetti";
 
 interface AuthorDashboardData {
   author: {
@@ -72,12 +75,19 @@ const AVAILABLE_TAGS = [
 ];
 
 export default function AuthorStudioPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<AuthorDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
+
+  // Onboarding states for readers
+  const [onboardingPenName, setOnboardingPenName] = useState("");
+  const [onboardingBio, setOnboardingBio] = useState("");
+  const [onboardingAgreement, setOnboardingAgreement] = useState(true);
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const [onboardingError, setOnboardingError] = useState("");
 
   // Form states for creating story
   const [newTitle, setNewTitle] = useState("");
@@ -228,14 +238,176 @@ export default function AuthorStudioPage() {
     }
   };
 
-  if (!user || (user.role !== "AUTHOR" && user.role !== "SUPER_ADMIN")) {
+  const handleBecomeAuthor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onboardingAgreement) {
+      setOnboardingError("กรุณายอมรับข้อตกลงนักเขียนก่อนเริ่มต้น");
+      return;
+    }
+    setOnboardingLoading(true);
+    setOnboardingError("");
+    try {
+      const res = await fetch("/api/v1/author/become", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          penName: onboardingPenName || user?.penName || user?.name,
+          bio: onboardingBio,
+          agreementAccepted: true,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 },
+        });
+        await refreshUser();
+      } else {
+        setOnboardingError(json.error?.message || "เกิดข้อผิดพลาดในการเปิดใช้งาน");
+      }
+    } catch {
+      setOnboardingError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+    } finally {
+      setOnboardingLoading(false);
+    }
+  };
+
+  if (!user) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
         <PenTool className="w-16 h-16 text-zinc-600 mb-4" />
-        <h1 className="text-2xl font-bold text-white font-prompt mb-2">สตูดิโอนักเขียน</h1>
+        <h1 className="text-2xl font-bold text-white font-prompt mb-2">สตูดิโอนักเขียน ReadVerse</h1>
         <p className="text-sm text-zinc-400 max-w-sm mb-6">
-          หน้านี้สำหรับนักเขียนที่ลงทะเบียนแล้วเท่านั้น กรุณาสลับบทบาทเป็นนักเขียนจากแถบด้านบน
+          กรุณาเข้าสู่ระบบเพื่อเข้าใช้งานสตูดิโอนักเขียน หรือเปิดใช้งานบัญชีนักเขียนของคุณ
         </p>
+        <Link
+          href="/auth/login"
+          className="px-6 py-2.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition"
+        >
+          เข้าสู่ระบบ
+        </Link>
+      </div>
+    );
+  }
+
+  if (user.role !== "AUTHOR" && user.role !== "SUPER_ADMIN") {
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-2xl bg-zinc-900/90 border border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden space-y-8">
+          {/* Subtle decorative glow */}
+          <div className="absolute -top-24 -right-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>ยินดีต้อนรับสู่สตูดิโอนักเขียน (Creator Studio)</span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-white font-prompt">
+              ปลดปล่อยจินตนาการของคุณ สู่สายตานับหมื่น
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto">
+              เปิดใช้งานบัญชีนักเขียนได้ทันทีฟรี ไม่มีค่าใช้จ่าย เริ่มเขียนนิยายหรือวาดมังงะ จัดการตอน และสร้างรายได้จากผลงานของคุณ
+            </p>
+          </div>
+
+          {/* Value props */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+            <div className="p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700/60 space-y-1.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 font-bold">
+                <Coins className="w-4 h-4" />
+              </div>
+              <p className="text-xs font-bold text-white">ส่วนแบ่งรายได้ 70%</p>
+              <p className="text-[11px] text-zinc-400">กำหนดราคาเหรียญปลดล็อกตอน และรับส่วนแบ่งเต็มเม็ดเต็มหน่วย</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700/60 space-y-1.5">
+              <div className="w-8 h-8 rounded-xl bg-sky-500/20 flex items-center justify-center text-sky-400 font-bold">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <p className="text-xs font-bold text-white">รองรับทั้งนิยาย & มังงะ</p>
+              <p className="text-[11px] text-zinc-400">ระบบ Rich Text Editor สำหรับนิยาย และอัปโหลดภาพแบบเว็บตูนต่อเนื่อง</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700/60 space-y-1.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <p className="text-xs font-bold text-white">เปิดใช้ทันที ไม่ต้องรอคิว</p>
+              <p className="text-[11px] text-zinc-400">ยืนยันตัวตนการเงิน (KYC) เพิ่มเติมได้ภายหลังเมื่อต้องการถอนเงิน</p>
+            </div>
+          </div>
+
+          {onboardingError && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-center font-medium">
+              {onboardingError}
+            </div>
+          )}
+
+          {/* Quick Activation Form */}
+          <form onSubmit={handleBecomeAuthor} className="space-y-4 pt-2 border-t border-zinc-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block text-zinc-300 font-semibold mb-1.5">
+                  นามปากกา (Pen Name) <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  defaultValue={user.penName || user.name}
+                  onChange={(e) => setOnboardingPenName(e.target.value)}
+                  placeholder="เช่น นามปากกาในดวงใจ"
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-semibold mb-1.5">
+                  แนะนำตัวสั้นๆ หรือแนวงานที่ชอบ
+                </label>
+                <input
+                  type="text"
+                  value={onboardingBio}
+                  onChange={(e) => setOnboardingBio(e.target.value)}
+                  placeholder="เช่น สายดาร์กแฟนตาซี และรักหวานแหวว"
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            <label className="flex items-start gap-2.5 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={onboardingAgreement}
+                onChange={(e) => setOnboardingAgreement(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-zinc-700 text-amber-500 focus:ring-amber-500 bg-zinc-800"
+              />
+              <span className="text-xs text-zinc-400 leading-relaxed">
+                ฉันยืนยันว่าผลงานที่จะเผยแพร่เป็นผลงานของตนเอง และยอมรับ{" "}
+                <Link href="/legal/author-agreement" target="_blank" className="text-amber-400 underline hover:text-amber-300">
+                  สัญญาข้อตกลงนักเขียน (Author Agreement)
+                </Link>
+              </span>
+            </label>
+
+            <button
+              type="submit"
+              disabled={onboardingLoading}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 text-black font-bold text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              {onboardingLoading ? (
+                <span>กำลังเปิดใช้งานบัญชีนักเขียน...</span>
+              ) : (
+                <>
+                  <PenTool className="w-4 h-4" />
+                  <span>เปิดใช้งานสตูดิโอนักเขียน และเริ่มสร้างผลงาน</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
     );
   }

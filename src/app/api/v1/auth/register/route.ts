@@ -7,7 +7,7 @@ import { apiSuccess, apiError } from "@/lib/api-response";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, name, penName, role = "READER", birthdate } = body;
+    const { email, password, name, penName, birthdate } = body;
 
     if (!email || !password || !name) {
       return apiError("VALIDATION_ERROR", "กรุณากรอกอีเมล รหัสผ่าน และชื่อให้ครบถ้วน");
@@ -32,14 +32,14 @@ export async function POST(req: NextRequest) {
       if (ageYears >= 18) isAgeVerified = true;
     }
 
-    // Create user and wallet atomically
+    // Always create as standard READER
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase().trim(),
         passwordHash,
         name,
         penName: penName || name,
-        role: role === "AUTHOR" ? "AUTHOR" : "READER",
+        role: "READER",
         birthdate: parsedBirthdate,
         ageVerified: isAgeVerified,
         wallet: {
@@ -49,16 +49,6 @@ export async function POST(req: NextRequest) {
             freeCoinsExpiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days expiry
           },
         },
-        ...(role === "AUTHOR"
-          ? {
-              authorProfile: {
-                create: {
-                  bio: "นักเขียนใหม่ประจำแพลตฟอร์ม",
-                  kycStatus: "APPROVED",
-                },
-              },
-            }
-          : {}),
       },
       include: {
         wallet: true,

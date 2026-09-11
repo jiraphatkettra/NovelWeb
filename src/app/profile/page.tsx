@@ -19,7 +19,9 @@ import {
   Clock,
   Sparkles,
   ArrowRight,
+  PenTool,
 } from "lucide-react";
+import { BecomeAuthorModal } from "@/components/author/BecomeAuthorModal";
 
 interface SessionItem {
   id: string;
@@ -41,6 +43,7 @@ export default function ProfilePage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [showBecomeModal, setShowBecomeModal] = useState(false);
 
   // Profile Edit State
   const [name, setName] = useState("");
@@ -279,22 +282,14 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            {appStatus?.hasApplied ? (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-neutral-800 border border-neutral-700 text-xs font-semibold">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span className="text-amber-300">
-                  สถานะใบสมัคร: {appStatus.kycStatus === "PENDING" ? "กำลังรอแอดมินตรวจสอบ" : appStatus.kycStatus}
-                </span>
-              </div>
-            ) : (
-              <Link
-                href="/author/apply"
-                className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-bold text-xs hover:bg-neutral-200 transition shadow-md shadow-white/10"
-              >
-                <span>สมัครเป็นนักเขียนทันที</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            )}
+            <button
+              onClick={() => setShowBecomeModal(true)}
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-black font-bold text-xs transition shadow-md shadow-amber-500/20 active:scale-95"
+            >
+              <PenTool className="w-3.5 h-3.5" />
+              <span>เปิดโหมดนักเขียนทันที (ฟรี)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}
@@ -561,6 +556,12 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      {/* Become Author Modal */}
+      <BecomeAuthorModal
+        isOpen={showBecomeModal}
+        onClose={() => setShowBecomeModal(false)}
+        onSuccess={() => refreshUser()}
+      />
     </div>
   );
 }

@@ -15,7 +15,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [birthdate, setBirthdate] = useState("2000-01-01");
-  const [role, setRole] = useState("READER");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -29,7 +28,6 @@ export default function RegisterPage() {
       password,
       name,
       penName: penName || name,
-      role,
       birthdate,
     });
 
@@ -118,29 +116,23 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-zinc-300 font-semibold block mb-1">วันเกิด (ยืนยันอายุ 18+)</label>
-              <input
-                type="date"
-                required
-                value={birthdate}
-                onChange={(e) => setBirthdate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
+          <div>
+            <label className="text-zinc-300 font-semibold block mb-1">วันเกิด (ยืนยันอายุ 18+)</label>
+            <input
+              type="date"
+              required
+              value={birthdate}
+              onChange={(e) => setBirthdate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
 
-            <div>
-              <label className="text-zinc-300 font-semibold block mb-1">บทบาทหลัก</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-amber-500"
-              >
-                <option value="READER">ผู้อ่านทั่วไป (Reader)</option>
-                <option value="AUTHOR">นักเขียน/นักวาด (Author)</option>
-              </select>
-            </div>
+          {/* Author Mode Notice */}
+          <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-start gap-2.5 text-[11px] text-zinc-400">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span>
+              ทุกบัญชีเริ่มต้นเป็นผู้อ่าน และสามารถกด <strong className="text-amber-300 font-semibold">"เปิดโหมดนักเขียน"</strong> เพื่อลงนิยายหรือมังงะได้ฟรีทุกเมื่อหลังเข้าสู่ระบบ
+            </span>
           </div>
 
           <button

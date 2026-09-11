@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #000000;
+  --foreground: #f5f5f7;
+  --card: #0e0f12;
+  --card-foreground: #f5f5f7;
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #ffffff;
+}
+
+/* Reader Theme Variables */
+.theme-light {
+  --reader-bg: #ffffff;
+  --reader-text: #1a1a1a;
+  --reader-subtext: #666666;
+  --reader-border: #eeeeee;
+  --reader-accent: #000000;
+}
+
+.theme-sepia {
+  --reader-bg: #f7efe2;
+  --reader-text: #3c3022;
+  --reader-subtext: #706250;
+  --reader-border: #e8ddce;
+  --reader-accent: #3c3022;
+}
+
+.theme-night {
+  --reader-bg: #141417;
+  --reader-text: #e0e0e0;
+  --reader-subtext: #888888;
+  --reader-border: #222226;
+  --reader-accent: #ffffff;
+}
+
+.theme-black {
+  --reader-bg: #000000;
+  --reader-text: #a0a0a0;
+  --reader-subtext: #606060;
+  --reader-border: #1a1a1a;
+  --reader-accent: #ffffff;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sarabun), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Apple & Kakao Glassmorphism Navigation */
+.apple-glass-nav {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.apple-pill-btn {
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.apple-pill-btn:active {
+  transform: scale(0.97);
+}
+
+/* Kakao Pure Dark Vignette */
+.kakao-vignette {
+  background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.98) 95%);
+}
+
+.kakao-card-glow {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.kakao-card-glow:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.95);
+}
+
+/* Watermark styles for anti-piracy */
+.piracy-watermark {
+  user-select: none;
+  pointer-events: none;
+}

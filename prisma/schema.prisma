@@ -1,0 +1,393 @@
+// Prisma Schema for Novel & Manga Platform (AGENTS_v2.1)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  penName       String?
+  avatar        String?
+  role          String         @default("READER") // GUEST, READER, AUTHOR, MODERATOR, FINANCE_ADMIN, SUPER_ADMIN
+  status        String         @default("ACTIVE") // ACTIVE, SUSPENDED, DEACTIVATED, DELETED
+  birthdate     DateTime?      // For Age Verification (18+)
+  ageVerified   Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  sessions      UserSession[]
+  wallet        CoinWallet?
+  authorProfile AuthorProfile?
+  stories       Story[]        @relation("AuthorStories")
+  purchases     ChapterPurchase[]
+  comments      Comment[]
+  ratings       Rating[]
+  bookmarks     Bookmark[]
+  checkins      DailyCheckin[]
+  achievements  UserAchievement[]
+  tickets       SupportTicket[]
+  orders        PaymentOrder[]
+  auditLogs     AuditLog[]
+  reports       Report[]       @relation("UserReports")
+  userTickets   UserTicket[]
+  dailyGiftClaims DailyGiftClaim[]
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  deviceName String   @default("Web Browser")
+  ipAddress  String?
+  userAgent  String?
+  lastActive DateTime @default(now())
+  isRevoked  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuthorProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  bio              String?
+  bankName         String?
+  bankAccountNo    String?
+  bankAccountName  String?
+  idCardNumber     String?
+  kycStatus        String   @default("APPROVED") // PENDING, APPROVED, REJECTED
+  agreementAccepted Boolean  @default(true)
+  totalEarnings    Int      @default(0) // in satang or coins
+  pendingPayout    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payoutRequests   PayoutRequest[]
+}
+
+model Story {
+  id            String    @id @default(cuid())
+  authorId      String
+  title         String
+  slug          String    @unique
+  synopsis      String
+  coverUrl      String
+  bannerUrl     String?
+  type          String    @default("NOVEL") // NOVEL, MANGA
+  status        String    @default("PUBLISHED") // DRAFT, PENDING_REVIEW, APPROVED, PUBLISHED, SUSPENDED, ARCHIVED
+  contentRating String    @default("ALL_AGES") // ALL_AGES, TEEN_13, MATURE_18
+  viewsCount    Int       @default(0)
+  ratingAverage Float     @default(5.0)
+  ratingsCount  Int       @default(0)
+  category      String    @default("Fantasy") // Fantasy, Romance, Action, Sci-Fi, Horror, Slice of Life, Mystery
+  tags          String    @default("[]") // JSON string of tags
+  isFeatured    Boolean   @default(false)
+  releaseDay    String    @default("MON") // MON, TUE, WED, THU, FRI, SAT, SUN, COMPLETED, NONE
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  author        User      @relation("AuthorStories", fields: [authorId], references: [id], onDelete: Cascade)
+  chapters      Chapter[]
+  bookmarks     Bookmark[]
+  ratings       Rating[]
+  comments      Comment[]
+  userTickets   UserTicket[]
+}
+
+model Chapter {
+  id            String          @id @default(cuid())
+  storyId       String
+  chapterNumber Int
+  title         String
+  coinPrice     Int             @default(0) // 0 means Free
+  isFree        Boolean         @default(true)
+  isWuf         Boolean         @default(true) // Wait-Until-Free eligible
+  status        String          @default("PUBLISHED") // DRAFT, PENDING_REVIEW, APPROVED, PUBLISHED, SUSPENDED, ARCHIVED
+  viewsCount    Int             @default(0)
+  publishedAt   DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  story         Story           @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  content       ChapterContent?
+  purchases     ChapterPurchase[]
+  comments      Comment[]
+
+  @@unique([storyId, chapterNumber])
+}
+
+model ChapterContent {
+  id          String   @id @default(cuid())
+  chapterId   String   @unique
+  textContent String?  // For novels (text / rich-text)
+  imageUrls   String?  // JSON string array of image URLs for manga/webtoon
+  previewText String?  // Free preview snippet
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
+
+model CoinWallet {
+  id               String            @id @default(cuid())
+  userId           String            @unique
+  paidBalance      Int               @default(0) // Real money purchased coins (no expiry)
+  freeBalance      Int               @default(0) // Free reward coins (has expiry)
+  freeCoinsExpiry  DateTime?
+  updatedAt        DateTime          @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     CoinTransaction[]
+}
+
+model CoinTransaction {
+  id           String      @id @default(cuid())
+  walletId     String
+  type         String      // DEPOSIT, PURCHASE, REFUND, REWARD, PAYOUT, ADJUSTMENT
+  amount       Int         // positive for addition, negative for deduction
+  coinType     String      @default("PAID") // PAID, FREE
+  balanceAfter Int
+  referenceId  String?     // ChapterPurchase ID or PaymentOrder ID
+  note         String?
+  createdAt    DateTime    @default(now())
+
+  wallet       CoinWallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}
+
+model CoinPackage {
+  id          String         @id @default(cuid())
+  name        String
+  coins       Int
+  bonusCoins  Int            @default(0)
+  priceThb    Int
+  badge       String?        // e.g. "HOT", "BEST VALUE", "+20% โบนัส"
+  isPopular   Boolean        @default(false)
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+
+  orders      PaymentOrder[]
+}
+
+model PaymentOrder {
+  id                   String       @id @default(cuid())
+  userId               String
+  packageId            String
+  amountThb            Int
+  coinsTotal           Int
+  status               String       @default("PENDING") // PENDING, PAID, FAILED, EXPIRED, CANCELLED, REFUNDED
+  provider             String       @default("PROMPTPAY") // PROMPTPAY, CREDIT_CARD, TRUEMONEY
+  providerTxId         String?
+  idempotencyKey       String?      @unique
+  qrData               String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package              CoinPackage  @relation(fields: [packageId], references: [id])
+}
+
+model ChapterPurchase {
+  id           String   @id @default(cuid())
+  userId       String
+  chapterId    String
+  pricePaid    Int
+  coinTypeUsed String   @default("PAID") // PAID, FREE, MIXED
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter      Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  chapterId String?
+  storyId   String?
+  userId    String
+  parentId  String?   // For nested replies
+  content   String
+  likes     Int       @default(0)
+  isPinned  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter   Chapter?  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  story     Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  storyId   String
+  userId    String
+  score     Int      // 1 to 5
+  review    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+}
+
+model Bookmark {
+  id             String    @id @default(cuid())
+  userId         String
+  storyId        String
+  lastChapterId  String?
+  progressPercent Float    @default(0.0)
+  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime  @default(now())
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story          Story     @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storyId])
+}
+
+model DailyCheckin {
+  id             String   @id @default(cuid())
+  userId         String
+  checkinDate    String   // YYYY-MM-DD
+  streakCount    Int      @default(1)
+  coinsRewarded  Int      @default(10)
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, checkinDate])
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  key         String            @unique // e.g. "FIRST_READ", "READ_10_CHAPTERS", "CHECKIN_7_DAYS"
+  title       String
+  description String
+  icon        String
+  coinsReward Int               @default(20)
+  createdAt   DateTime          @default(now())
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model PayoutRequest {
+  id             String        @id @default(cuid())
+  authorId       String
+  amountThb      Int
+  feeThb         Int           @default(0)
+  netAmountThb   Int
+  status         String        @default("UNDER_REVIEW") // REQUESTED, UNDER_REVIEW, APPROVED, PROCESSING, COMPLETED, REJECTED
+  bankName       String
+  bankAccountNo  String
+  accountName    String
+  transferSlip   String?
+  rejectedReason String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  author         AuthorProfile @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  category    String   // ACCOUNT, COIN, PAYMENT, REPORT, OTHER
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, WAITING_FOR_USER, RESOLVED, CLOSED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  description String
+  adminNotes  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  adminRole  String   // SUPER_ADMIN, MODERATOR, FINANCE_ADMIN
+  action     String   // USER_SUSPEND, CONTENT_APPROVE, PAYOUT_APPROVE, REFUND_EXECUTE
+  targetType String   // USER, STORY, CHAPTER, PAYOUT, ORDER
+  targetId   String
+  details    String?  // JSON string
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  reporterId   String
+  targetType   String   // STORY, CHAPTER, COMMENT, USER
+  targetId     String
+  reason       String
+  details      String?
+  status       String   @default("PENDING") // PENDING, INVESTIGATING, RESOLVED, DISMISSED
+  actionTaken  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reporter     User     @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+}
+
+model UserTicket {
+  id         String    @id @default(cuid())
+  userId     String
+  ticketType String    @default("GIFT") // WUF (Wait-Until-Free), GIFT (Gift Box)
+  storyId    String?
+  expiresAt  DateTime
+  isUsed     Boolean   @default(false)
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story      Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+}
+
+model DailyGiftClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  claimDate String   // e.g. "2026-09-11"
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, claimDate])
+}
+
+model AuthorFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, authorId])
+}

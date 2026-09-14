@@ -30,6 +30,46 @@ async function handleProfileUpdate(req: NextRequest) {
       },
     });
 
+    // Track profile changes in Audit Log for historical inspection
+    const changes: Array<{ field: string; oldVal: string; newVal: string }> = [];
+    if (name && name.trim() !== user.name) {
+      changes.push({ field: "ชื่อแสดง (Name)", oldVal: user.name, newVal: name.trim() });
+    }
+    if (penName !== undefined && (penName?.trim() || null) !== user.penName) {
+      changes.push({
+        field: "นามปากกา (Pen Name)",
+        oldVal: user.penName || "ไม่มี",
+        newVal: penName?.trim() || "ไม่มี",
+      });
+    }
+    if (avatar !== undefined && avatar !== user.avatar) {
+      changes.push({
+        field: "รูปโปรไฟล์ (Avatar)",
+        oldVal: user.avatar ? "รูปเดิม" : "ไม่มีรูป",
+        newVal: avatar ? "อัปเดตรูปใหม่" : "ลบรูป",
+      });
+    }
+    if (bio !== undefined && typeof bio === "string" && bio.trim() !== (user.authorProfile?.bio || "")) {
+      changes.push({
+        field: "คำอธิบายตัวตน (Bio)",
+        oldVal: user.authorProfile?.bio || "ไม่มี",
+        newVal: bio.trim(),
+      });
+    }
+
+    if (changes.length > 0) {
+      await prisma.auditLog.create({
+        data: {
+          adminId: user.id,
+          adminRole: user.role,
+          action: "PROFILE_UPDATE",
+          targetType: "USER",
+          targetId: user.id,
+          details: JSON.stringify({ actor: "USER_SELF", changes }),
+        },
+      });
+    }
+
     if (bio !== undefined && typeof bio === "string") {
       if (user.authorProfile) {
         await prisma.authorProfile.update({

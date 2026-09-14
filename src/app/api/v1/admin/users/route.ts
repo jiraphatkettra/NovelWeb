@@ -77,7 +77,29 @@ export async function GET(req: NextRequest) {
         return apiError("RESOURCE_NOT_FOUND", "ไม่พบผู้ใช้นี้", null, 404);
       }
 
-      return apiSuccess(target);
+      const auditLogs = await prisma.auditLog.findMany({
+        where: {
+          targetId: userId,
+          targetType: "USER",
+        },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        include: {
+          admin: {
+            select: {
+              id: true,
+              name: true,
+              penName: true,
+              role: true,
+            },
+          },
+        },
+      });
+
+      return apiSuccess({
+        ...target,
+        auditLogs,
+      });
     }
 
     const where: any = {};
@@ -153,7 +175,32 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return apiSuccess(users);
+    const userIds = users.map((u) => u.id);
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        targetId: { in: userIds },
+        targetType: "USER",
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        admin: {
+          select: {
+            id: true,
+            name: true,
+            penName: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    const usersWithLogs = users.map((u) => ({
+      ...u,
+      auditLogs: auditLogs.filter((log) => log.targetId === u.id),
+    }));
+
+    return apiSuccess(usersWithLogs);
   } catch (error) {
     console.error("Admin users list error:", error);
     return apiError("INTERNAL_SERVER_ERROR", "ไม่สามารถดึงข้อมูลผู้ใช้ได้");
@@ -360,9 +407,31 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        targetId: userId,
+        targetType: "USER",
+      },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      include: {
+        admin: {
+          select: {
+            id: true,
+            name: true,
+            penName: true,
+            role: true,
+          },
+        },
+      },
+    });
+
     return apiSuccess({
       message: `อัปเดตข้อมูลผู้ใช้ ${targetUser.name} สำเร็จ`,
-      user: updated,
+      user: {
+        ...updated,
+        auditLogs,
+      },
     });
   } catch (error) {
     console.error("Admin user update error:", error);

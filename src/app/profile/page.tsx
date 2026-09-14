@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import {
-  User,
   Shield,
   Laptop,
   LogOut,
@@ -16,12 +15,12 @@ import {
   Feather,
   AlertCircle,
   Save,
-  Clock,
-  Sparkles,
   ArrowRight,
   PenTool,
 } from "lucide-react";
 import { BecomeAuthorModal } from "@/components/author/BecomeAuthorModal";
+import { ImageUploadDropzone } from "@/components/common/ImageUploadDropzone";
+import { useToast } from "@/context/ToastContext";
 
 interface SessionItem {
   id: string;
@@ -40,6 +39,7 @@ interface ApplicationStatus {
 
 export default function ProfilePage() {
   const { user, refreshUser, logout } = useAuth();
+  const { toast } = useToast();
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -101,19 +101,19 @@ export default function ProfilePage() {
     setSavingProfile(true);
     try {
       const res = await fetch("/api/v1/users/profile", {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, penName, avatar, bio }),
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success("บันทึกข้อมูลเรียบร้อยแล้ว", "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว");
         refreshUser();
       } else {
-        alert(json.error?.message || "บันทึกข้อมูลไม่สำเร็จ");
+        toast.error("บันทึกไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     } finally {
       setSavingProfile(false);
     }
@@ -122,64 +122,62 @@ export default function ProfilePage() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      alert("รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน");
+      toast.warning("รหัสผ่านไม่ตรงกัน", "กรุณากรอกรหัสผ่านใหม่และยืนยันให้ตรงกัน");
       return;
     }
     setChangingPass(true);
     try {
-      const res = await fetch("/api/v1/users/change-password", {
+      const res = await fetch("/api/v1/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ oldPassword, newPassword }),
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success("เปลี่ยนรหัสผ่านสำเร็จ!", "กรุณาใช้รหัสผ่านใหม่ในการเข้าสู่ระบบครั้งถัดไป");
         setOldPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        alert(json.error?.message || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+        toast.error("เปลี่ยนรหัสผ่านไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      toast.error("เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
     } finally {
       setChangingPass(false);
     }
   };
 
   const handleRevokeAll = async () => {
-    if (!confirm("คุณต้องการออกจากระบบจากทุกอุปกรณ์อื่นหรือไม่?")) return;
     try {
-      const res = await fetch("/api/v1/users/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "REVOKE_ALL_OTHERS" }),
-      });
+      const res = await fetch("/api/v1/users/sessions", { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success("ออกจากระบบอุปกรณ์อื่นเรียบร้อยแล้ว");
         fetchSessions();
       }
-    } catch {}
+    } catch {
+      toast.error("เกิดข้อผิดพลาดในการยกเลิกเซสชัน");
+    }
   };
 
   const handleExportData = async () => {
     setExporting(true);
     try {
-      const res = await fetch("/api/v1/users/export");
+      const res = await fetch("/api/v1/users/export-pdpa");
       const json = await res.json();
       if (json.success) {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(json.data, null, 2));
         const downloadAnchor = document.createElement("a");
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `pdpa-export-${user?.id || "user"}.json`);
+        downloadAnchor.setAttribute("download", `user_data_${user?.id}.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
+        toast.success("ส่งออกข้อมูลสำเร็จ", "ไฟล์ JSON ถูกดาวน์โหลดลงในอุปกรณ์แล้ว");
       }
     } catch {
-      alert("ไม่สามารถส่งออกข้อมูลได้");
+      toast.error("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
     } finally {
       setExporting(false);
     }
@@ -187,7 +185,6 @@ export default function ProfilePage() {
 
   const handleDeleteAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!deletePass) return;
     setDeletingAccount(true);
     try {
       const res = await fetch("/api/v1/users/delete-account", {
@@ -197,26 +194,28 @@ export default function ProfilePage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.info("ลบบัญชีเรียบร้อยแล้ว", "ข้อมูลทั้งหมดของคุณถูกลบออกจากระบบ");
         logout();
-        window.location.href = "/";
       } else {
-        alert(json.error?.message || "รหัสผ่านไม่ถูกต้อง ไม่สามารถลบบัญชีได้");
+        toast.error("ลบบัญชีไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการลบบัญชี");
+      toast.error("เกิดข้อผิดพลาดในการลบบัญชี");
     } finally {
       setDeletingAccount(false);
+      setShowDeleteModal(false);
     }
   };
 
   if (!user) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
-        <User className="w-16 h-16 text-neutral-600 mb-4" />
-        <h1 className="text-2xl font-bold text-white font-prompt mb-2">โปรไฟล์ผู้ใช้งาน</h1>
-        <p className="text-sm text-neutral-400 max-w-sm mb-6">กรุณาเข้าสู่ระบบเพื่อดูข้อมูลส่วนตัว</p>
-        <Link href="/auth/login" className="px-6 py-2 rounded-full bg-white text-black font-semibold text-xs">
+        <h1 className="text-xl font-bold text-white font-prompt mb-2">โปรดเข้าสู่ระบบ</h1>
+        <p className="text-xs text-neutral-400 mb-5">คุณต้องเข้าสู่ระบบก่อนเพื่อจัดการข้อมูลส่วนตัว</p>
+        <Link
+          href="/auth/login"
+          className="px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+        >
           เข้าสู่ระบบ
         </Link>
       </div>
@@ -224,67 +223,65 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-8">
-      {/* Profile Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-        <div className="relative group">
-          <img
-            src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"}
-            alt={user.name}
-            className="w-24 h-24 rounded-2xl object-cover ring-2 ring-white/20 shadow-xl"
-          />
-        </div>
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-6">
+      {/* Profile Overview Card */}
+      <div className="p-6 rounded-xl bg-[#121215] border border-white/[0.08] flex flex-col sm:flex-row items-center gap-5">
+        <img
+          src={
+            user.avatar ||
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+          }
+          alt={user.name}
+          className="w-20 h-20 rounded-full object-cover bg-neutral-900 border-2 border-white/10"
+        />
 
-        <div className="flex-1 text-center sm:text-left">
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-            <h1 className="text-2xl font-bold text-white font-prompt">{user.name}</h1>
-            {user.penName && (
-              <span className="text-sm text-neutral-400 font-medium font-prompt">({user.penName})</span>
-            )}
-            <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white text-xs font-semibold border border-white/15">
+        <div className="flex-1 text-center sm:text-left space-y-1">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <h1 className="text-xl font-bold text-white font-prompt">{user.name}</h1>
+            <span className="px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 text-[11px] font-medium">
               {user.role}
             </span>
           </div>
           <p className="text-xs text-neutral-400">{user.email}</p>
 
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-4 text-xs text-neutral-300">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-xs text-neutral-400">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span>ยืนยันอายุ 18+ แล้ว</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-blue-400" />
+              <Shield className="w-3.5 h-3.5 text-neutral-300" />
               <span>สถานะ: {user.status}</span>
             </div>
             {user.wallet && (
-              <div className="text-amber-400 font-bold">
-                เหรียญคงเหลือ: {(user.wallet.paidBalance || 0) + (user.wallet.freeBalance || 0)} เหรียญ
+              <div className="text-[#FFE600] font-bold">
+                เหรียญ: {(user.wallet.paidBalance || 0) + (user.wallet.freeBalance || 0)} 🪙
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* SECTION E: BECOME AN AUTHOR CTA (For Readers) */}
+      {/* BECOME AN AUTHOR CTA (For Readers) */}
       {user.role === "READER" && (
-        <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-neutral-900 to-neutral-900 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-5 rounded-xl bg-[#121215] border border-[#FFE600]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300">
-              <Feather className="w-4 h-4" />
-              <span>ก้าวสู่การเป็นนักเขียน (หมวด E)</span>
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FFE600]">
+              <Feather className="w-3.5 h-3.5" />
+              <span>ก้าวสู่การเป็นนักเขียน</span>
             </div>
-            <h3 className="text-lg font-bold text-white font-prompt">
-              คุณต้องการเริ่มต้นเผยแพร่ผลงานนิยายหรือมังงะของคุณใช่ไหม?
+            <h3 className="text-sm font-bold text-white font-prompt">
+              ต้องการเริ่มต้นเผยแพร่ผลงานนิยายหรือมังงะของคุณใช่ไหม?
             </h3>
-            <p className="text-xs text-neutral-400 max-w-lg">
-              สมัครเป็นนักเขียนเพื่อสร้างสรรค์ผลงาน ตั้งราคาเหรียญ และรับส่วนแบ่งรายได้ 70% สู่บัญชีธนาคารของคุณโดยตรง
+            <p className="text-xs text-neutral-400 max-w-lg leading-relaxed">
+              สมัครเป็นนักเขียนเพื่อสร้างสรรค์ผลงาน ตั้งราคาเหรียญ และรับส่วนแบ่งรายได้ 70% สู่บัญชีธนาคาร
             </p>
           </div>
 
           <div>
             <button
               onClick={() => setShowBecomeModal(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-black font-bold text-xs transition shadow-md shadow-amber-500/20 active:scale-95"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.99]"
             >
               <PenTool className="w-3.5 h-3.5" />
               <span>เปิดโหมดนักเขียนทันที (ฟรี)</span>
@@ -294,106 +291,105 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* SECTION D: EDIT PROFILE DETAILS (Universal Profile Settings) */}
-      <div className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 space-y-6">
-        <div className="border-b border-neutral-800 pb-4">
-          <h2 className="text-base font-bold text-white font-prompt flex items-center gap-2">
-            <Edit3 className="w-4 h-4 text-white" />
-            <span>แก้ไขข้อมูลส่วนตัว (Edit Personal Info)</span>
+      {/* EDIT PROFILE DETAILS */}
+      <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
+        <div className="border-b border-white/[0.08] pb-3">
+          <h2 className="text-sm font-bold text-white font-prompt flex items-center gap-2">
+            <Edit3 className="w-4 h-4 text-[#FFE600]" />
+            <span>แก้ไขข้อมูลส่วนตัว</span>
           </h2>
-          <p className="text-xs text-neutral-400 mt-0.5">
-            ชื่อและรูปโปรไฟล์จะอัปเดตไปยังทุกความคิดเห็นและผลงานของคุณ
+          <p className="text-[11px] text-neutral-400 mt-0.5">
+            ชื่อและรูปโปรไฟล์จะแสดงในทุกความคิดเห็นและผลงานของคุณ
           </p>
         </div>
 
-        <form onSubmit={handleUpdateProfile} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleUpdateProfile} className="space-y-3.5 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-neutral-400 mb-1.5">ชื่อที่แสดง (Display Name)</label>
+              <label className="block text-neutral-400 mb-1">ชื่อที่แสดง</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-white/40"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
               />
             </div>
 
             <div>
-              <label className="block text-neutral-400 mb-1.5">นามปากกา (Pen Name - สำหรับนักเขียน)</label>
+              <label className="block text-neutral-400 mb-1">นามปากกา (สำหรับนักเขียน)</label>
               <input
                 type="text"
                 value={penName}
                 onChange={(e) => setPenName(e.target.value)}
                 placeholder="เช่น นามปากกาสุดเท่"
-                className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-white/40"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-neutral-400 mb-1.5">URL รูปโปรไฟล์ (Avatar URL)</label>
-            <input
-              type="url"
+            <ImageUploadDropzone
               value={avatar}
-              onChange={(e) => setAvatar(e.target.value)}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-white/40"
+              onChange={(val) => setAvatar(typeof val === "string" ? val : val[0] || "")}
+              label="รูปโปรไฟล์ (Avatar)"
+              helperText="ลากรูปมาวาง หรือคลิกเพื่ออัปโหลดจากอุปกรณ์ (JPG, PNG, WEBP)"
+              aspectRatio="avatar"
             />
           </div>
 
           <div>
-            <label className="block text-neutral-400 mb-1.5">คำอธิบายตัวตน / Bio</label>
+            <label className="block text-neutral-400 mb-1">คำอธิบายตัวตน / Bio</label>
             <textarea
               rows={3}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="บอกเล่าเรื่องราวความชอบ หรือสไตล์งานเขียนของคุณ..."
-              className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-white/40 resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600] resize-none leading-relaxed"
             />
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-1">
             <button
               type="submit"
               disabled={savingProfile}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-black font-bold text-xs hover:bg-neutral-200 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{savingProfile ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}</span>
+              <span>{savingProfile ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</span>
             </button>
           </div>
         </form>
       </div>
 
-      {/* SECTION D: CHANGE PASSWORD */}
-      <div className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 space-y-6">
-        <div className="border-b border-neutral-800 pb-4">
-          <h2 className="text-base font-bold text-white font-prompt flex items-center gap-2">
-            <Lock className="w-4 h-4 text-white" />
-            <span>เปลี่ยนรหัสผ่าน (Change Password)</span>
+      {/* CHANGE PASSWORD */}
+      <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
+        <div className="border-b border-white/[0.08] pb-3">
+          <h2 className="text-sm font-bold text-white font-prompt flex items-center gap-2">
+            <Lock className="w-4 h-4 text-[#FFE600]" />
+            <span>เปลี่ยนรหัสผ่าน</span>
           </h2>
-          <p className="text-xs text-neutral-400 mt-0.5">
-            ต้องระบุรหัสผ่านเดิมเพื่อความปลอดภัยในการตั้งรหัสผ่านใหม่
+          <p className="text-[11px] text-neutral-400 mt-0.5">
+            ระบุรหัสผ่านเดิมเพื่อความปลอดภัยในการตั้งรหัสผ่านใหม่
           </p>
         </div>
 
-        <form onSubmit={handleChangePassword} className="space-y-4 text-xs max-w-lg">
+        <form onSubmit={handleChangePassword} className="space-y-3 text-xs max-w-md">
           <div>
-            <label className="block text-neutral-400 mb-1.5">รหัสผ่านเดิม</label>
+            <label className="block text-neutral-400 mb-1">รหัสผ่านเดิม</label>
             <input
               type="password"
               required
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-white/40"
+              className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-neutral-400 mb-1.5">รหัสผ่านใหม่</label>
+              <label className="block text-neutral-400 mb-1">รหัสผ่านใหม่</label>
               <input
                 type="password"
                 required
@@ -401,11 +397,11 @@ export default function ProfilePage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-white/40"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
               />
             </div>
             <div>
-              <label className="block text-neutral-400 mb-1.5">ยืนยันรหัสผ่านใหม่</label>
+              <label className="block text-neutral-400 mb-1">ยืนยันรหัสผ่านใหม่</label>
               <input
                 type="password"
                 required
@@ -413,7 +409,7 @@ export default function ProfilePage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-white/40"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
               />
             </div>
           </div>
@@ -421,7 +417,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={changingPass}
-            className="px-6 py-2.5 rounded-full bg-white text-black font-bold text-xs hover:bg-neutral-200 transition disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-semibold text-xs transition border border-white/[0.08] disabled:opacity-50"
           >
             {changingPass ? "กำลังเปลี่ยนรหัส..." : "ยืนยันการเปลี่ยนรหัสผ่าน"}
           </button>
@@ -429,46 +425,46 @@ export default function ProfilePage() {
       </div>
 
       {/* Session Management */}
-      <div className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-neutral-800">
+      <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/[0.08]">
           <div>
-            <h2 className="text-base font-bold text-white font-prompt">
-              จัดการอุปกรณ์ที่เข้าสู่ระบบ (Session Management)
+            <h2 className="text-sm font-bold text-white font-prompt">
+              จัดการอุปกรณ์ที่เข้าสู่ระบบ
             </h2>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-[11px] text-neutral-400 mt-0.5">
               ตรวจสอบอุปกรณ์ที่ล็อกอินอยู่ในปัจจุบัน เพื่อความปลอดภัยของบัญชี
             </p>
           </div>
           <button
             onClick={handleRevokeAll}
-            className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition flex items-center justify-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center justify-center gap-1.5"
           >
-            <LogOut className="w-4 h-4" />
-            <span>ออกจากระบบอุปกรณ์อื่นทั้งหมด</span>
+            <LogOut className="w-3.5 h-3.5" />
+            <span>ออกจากระบบอุปกรณ์อื่น</span>
           </button>
         </div>
 
         {loadingSessions ? (
-          <p className="text-xs text-neutral-500 py-4">กำลังโหลดข้อมูลอุปกรณ์...</p>
+          <p className="text-xs text-neutral-500 py-3">กำลังโหลดข้อมูลอุปกรณ์...</p>
         ) : sessions.length === 0 ? (
-          <p className="text-xs text-neutral-500 py-4">มีเพียงเซสชันปัจจุบันของคุณเท่านั้น</p>
+          <p className="text-xs text-neutral-500 py-3">มีเพียงเซสชันปัจจุบันของคุณเท่านั้น</p>
         ) : (
-          <div className="divide-y divide-neutral-800 text-xs">
+          <div className="divide-y divide-white/[0.06] text-xs">
             {sessions.map((sess) => (
-              <div key={sess.id} className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400">
-                    <Laptop className="w-4 h-4" />
+              <div key={sess.id} className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-white/[0.04] flex items-center justify-center text-neutral-400">
+                    <Laptop className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{sess.deviceName}</p>
-                    <p className="text-[11px] text-neutral-500 mt-0.5">
-                      IP: {sess.ipAddress || "127.0.0.1"} • เข้าใช้งานล่าสุด:{" "}
+                    <p className="font-semibold text-white text-xs">{sess.deviceName}</p>
+                    <p className="text-[10px] text-neutral-500">
+                      IP: {sess.ipAddress || "127.0.0.1"} • เข้าใช้งาน:{" "}
                       {new Date(sess.lastActive).toLocaleString("th-TH")}
                     </p>
                   </div>
                 </div>
-                <span className="text-[11px] px-2 py-1 rounded bg-emerald-500/10 text-emerald-400">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-medium">
                   ใช้งานอยู่
                 </span>
               </div>
@@ -478,52 +474,52 @@ export default function ProfilePage() {
       </div>
 
       {/* PDPA Data Rights & Delete Account */}
-      <div className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 space-y-6">
+      <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
         <div>
-          <h2 className="text-base font-bold text-white font-prompt">
+          <h2 className="text-sm font-bold text-white font-prompt">
             สิทธิ์ในข้อมูลส่วนบุคคลและจัดการบัญชี (PDPA Rights)
           </h2>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-[11px] text-neutral-400 mt-0.5">
             คุณสามารถขอรับสำเนาข้อมูลส่วนตัว หรือยื่นคำขอลบบัญชีผู้ใช้ของคุณได้ตามกฎหมาย PDPA
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 pt-2">
+        <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             onClick={handleExportData}
             disabled={exporting}
-            className="px-5 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 text-xs font-semibold transition flex items-center justify-center gap-2"
+            className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] text-xs font-semibold transition flex items-center justify-center gap-2"
           >
-            <Download className="w-4 h-4 text-white" />
+            <Download className="w-3.5 h-3.5 text-neutral-300" />
             <span>{exporting ? "กำลังส่งออก..." : "ขอส่งออกข้อมูล (Export Data JSON)"}</span>
           </button>
 
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="px-5 py-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition flex items-center justify-center gap-2"
+            className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition flex items-center justify-center gap-1.5"
           >
-            <Trash2 className="w-4 h-4" />
-            <span>ขอลบบัญชีผู้ใช้ (Delete Account)</span>
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>ขอลบบัญชีผู้ใช้</span>
           </button>
         </div>
       </div>
 
       {/* Modal: Delete Account Confirmation */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-md bg-neutral-900 border border-rose-500/40 rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 mx-auto">
-              <AlertCircle className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-[#121215] border border-rose-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-5 h-5" />
             </div>
 
             <div className="text-center">
-              <h3 className="text-lg font-bold text-white font-prompt">ยืนยันการขอลบบัญชีผู้ใช้</h3>
+              <h3 className="text-base font-bold text-white font-prompt">ยืนยันการขอลบบัญชีผู้ใช้</h3>
               <p className="text-xs text-neutral-400 mt-1">
                 การลบบัญชีจะยุติการเข้าถึงยอดเหรียญ ชั้นหนังสือ และผลงานทั้งหมดของคุณอย่างถาวร
               </p>
             </div>
 
-            <form onSubmit={handleDeleteAccount} className="space-y-4 text-xs">
+            <form onSubmit={handleDeleteAccount} className="space-y-3 text-xs">
               <div>
                 <label className="block text-neutral-400 mb-1">กรุณากรอกรหัสผ่านเพื่อยืนยัน</label>
                 <input
@@ -532,22 +528,22 @@ export default function ProfilePage() {
                   value={deletePass}
                   onChange={(e) => setDeletePass(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-3 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-rose-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-rose-500"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-neutral-300 font-semibold"
+                  className="flex-1 py-2 rounded-xl bg-white/[0.06] text-neutral-300 font-semibold hover:bg-white/[0.1]"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={deletingAccount}
-                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold"
+                  className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold"
                 >
                   {deletingAccount ? "กำลังลบ..." : "ยืนยันลบบัญชี"}
                 </button>
@@ -556,6 +552,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
       {/* Become Author Modal */}
       <BecomeAuthorModal
         isOpen={showBecomeModal}

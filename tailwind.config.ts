@@ -12,18 +12,16 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        brand: {
-          50: "#fbf7ee",
-          100: "#f5ecce",
-          200: "#ebd99b",
-          300: "#dec063",
-          400: "#d4a938",
-          500: "#b88a24",
-          600: "#96691c",
-          700: "#754d1a",
-          800: "#603e1b",
-          900: "#52351c",
-          950: "#2f1b0c",
+        kakao: {
+          yellow: "#FFE600",
+          "yellow-hover": "#FFD600",
+          black: "#000000",
+          dark: "#0A0A0C",
+          card: "#121215",
+          surface: "#1A1A1E",
+          border: "#222226",
+          muted: "#999999",
+          "muted-dark": "#666666",
         },
         paper: {
           light: "#ffffff",

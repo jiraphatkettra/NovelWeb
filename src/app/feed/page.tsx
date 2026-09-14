@@ -101,17 +101,17 @@ export default function FeedPage() {
               <Link
                 key={ch.id}
                 href={readerUrl}
-                className="group flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-neutral-900/60 hover:bg-neutral-800/80 border border-neutral-800/80 hover:border-neutral-700 transition"
+                className="group flex items-center justify-between p-4 rounded-xl bg-[#121215] hover:bg-neutral-900 border border-white/[0.06] hover:border-white/20 transition"
               >
-                <div className="flex items-center gap-4 min-w-0">
+                <div className="flex items-center gap-3.5 min-w-0">
                   <img
                     src={ch.story.coverUrl}
                     alt={ch.story.title}
-                    className="w-14 aspect-[2/3] object-cover rounded-xl bg-neutral-800 shrink-0 shadow-md group-hover:scale-105 transition duration-300"
+                    className="w-12 aspect-[2/3] object-cover rounded-lg bg-neutral-800 shrink-0 shadow group-hover:scale-105 transition duration-300"
                   />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 font-medium">
                         {ch.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
                       </span>
                       <span className="text-[11px] text-neutral-400 truncate">
@@ -119,14 +119,14 @@ export default function FeedPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-neutral-200 transition truncate font-prompt">
+                    <h3 className="text-sm font-bold text-white group-hover:text-[#FFE600] transition truncate font-prompt">
                       ตอนที่ {ch.chapterNumber}: {ch.title}
                     </h3>
 
-                    <div className="flex items-center gap-3 mt-1.5 text-xs text-neutral-400">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-neutral-400">
                       <span>โดย: <strong className="text-neutral-300">{ch.story.author.penName || ch.story.author.name}</strong></span>
-                      <span className="flex items-center gap-1 text-[11px]">
-                        <Clock className="w-3 h-3 text-neutral-500" />
+                      <span className="flex items-center gap-1 text-[11px] text-neutral-500">
+                        <Clock className="w-3 h-3" />
                         {new Date(ch.publishedAt).toLocaleDateString("th-TH")}
                       </span>
                     </div>
@@ -135,15 +135,15 @@ export default function FeedPage() {
 
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   {ch.isFree || ch.coinPrice === 0 ? (
-                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                    <span className="px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
                       อ่านฟรี
                     </span>
                   ) : (
-                    <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                    <span className="px-2.5 py-0.5 rounded bg-[#FFE600]/10 border border-[#FFE600]/30 text-[#FFE600] text-xs font-bold font-mono">
                       {ch.coinPrice} เหรียญ
                     </span>
                   )}
-                  <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white group-hover:translate-x-1 transition" />
+                  <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-[#FFE600] group-hover:translate-x-0.5 transition" />
                 </div>
               </Link>
             );

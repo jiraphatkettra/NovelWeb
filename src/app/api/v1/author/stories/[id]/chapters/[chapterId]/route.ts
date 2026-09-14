@@ -65,7 +65,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
           ...(user.role !== "SUPER_ADMIN" ? { authorId: user.id } : {}),
         },
       },
-      include: { content: true },
+      include: { content: true, story: true },
     });
 
     if (!existing) {
@@ -78,6 +78,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       coinPrice,
       isFree,
       status, // DRAFT, PUBLISHED, SCHEDULED
+      scheduledPublishAt,
       textContent,
       imageUrls,
       previewText,
@@ -85,6 +86,13 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     const price = coinPrice !== undefined ? Number(coinPrice) : existing.coinPrice;
     const freeStatus = price === 0 || (isFree !== undefined ? Boolean(isFree) : existing.isFree);
+
+    let publishDate = existing.publishedAt;
+    if (status === "PUBLISHED" && existing.status !== "PUBLISHED") {
+      publishDate = new Date();
+    } else if (status === "SCHEDULED" && scheduledPublishAt) {
+      publishDate = new Date(scheduledPublishAt);
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const ch = await tx.chapter.update({
@@ -94,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
           coinPrice: price,
           isFree: freeStatus,
           ...(status ? { status } : {}),
-          ...(status === "PUBLISHED" && existing.status !== "PUBLISHED" ? { publishedAt: new Date() } : {}),
+          publishedAt: publishDate,
         },
       });
 
@@ -123,6 +131,22 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
       return ch;
     });
+
+    // Notify author's followers if updated to PUBLISHED
+    if (status === "PUBLISHED" && existing.status !== "PUBLISHED") {
+      const { notifyFollowersOfNewChapter } = await import("@/lib/notifications");
+      notifyFollowersOfNewChapter({
+        storyId: existing.storyId,
+        storySlug: existing.story.slug,
+        storyTitle: existing.story.title,
+        chapterId: updated.id,
+        chapterNumber: updated.chapterNumber,
+        chapterTitle: updated.title,
+        authorId: user.id,
+        authorName: user.penName || user.name,
+        storyType: existing.story.type,
+      }).catch((e) => console.error("Notification trigger error:", e));
+    }
 
     return apiSuccess({
       message: "บันทึกข้อมูลตอนเรียบร้อยแล้ว",

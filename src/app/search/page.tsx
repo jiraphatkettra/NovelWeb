@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, BookOpen, Eye, Star, Filter, Sparkles, ArrowRight } from "lucide-react";
+import { Search, BookOpen, Star } from "lucide-react";
 
 interface SearchStory {
   id: string;
@@ -66,38 +66,31 @@ function SearchPageContent() {
   };
 
   return (
-    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-8">
-      {/* Search Bar & Header */}
-      <div className="space-y-4 text-center max-w-2xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-white font-prompt tracking-tight">
-          ค้นหานิยายและมังงะ
-        </h1>
-        <p className="text-xs text-neutral-400">
-          ค้นหาผลงานจากชื่อเรื่อง เรื่องย่อ นามปากกานักเขียน หรือแนวเรื่องที่คุณสนใจ
-        </p>
-
-        <form onSubmit={handleSearchSubmit} className="relative mt-4">
-          <Search className="w-5 h-5 text-neutral-500 absolute left-4 top-1/2 -translate-y-1/2" />
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-6">
+      {/* Search Bar */}
+      <div className="max-w-xl mx-auto">
+        <form onSubmit={handleSearchSubmit} className="relative">
+          <Search className="w-4 h-4 text-neutral-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="พิมพ์ชื่อเรื่อง, นามปากกา, หรือคีย์เวิร์ด..."
-            className="w-full pl-12 pr-28 py-3.5 rounded-full bg-neutral-900 border border-neutral-800 text-sm text-white focus:outline-none focus:border-white/40 shadow-xl"
+            placeholder="ค้นหาชื่อเรื่อง, นามปากกา..."
+            className="w-full pl-10 pr-20 py-3 rounded-xl bg-kakao-card border border-kakao-border text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition"
           />
           <button
             type="submit"
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2 rounded-full bg-white text-black font-bold text-xs hover:bg-neutral-200 transition"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-lg bg-kakao-yellow text-black font-bold text-xs hover:bg-kakao-yellow-hover transition"
           >
             ค้นหา
           </button>
         </form>
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800 text-xs">
-        {/* Type Filter */}
-        <div className="flex items-center gap-1 bg-neutral-950 p-1 rounded-xl border border-neutral-800">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        {/* Type filter */}
+        <div className="flex items-center gap-1">
           {[
             { key: "ALL", label: "ทั้งหมด" },
             { key: "NOVEL", label: "นิยาย" },
@@ -106,10 +99,10 @@ function SearchPageContent() {
             <button
               key={t.key}
               onClick={() => setType(t.key as any)}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                 type === t.key
-                  ? "bg-white text-black shadow-sm"
-                  : "text-neutral-400 hover:text-white"
+                  ? "bg-white text-black"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
               }`}
             >
               {t.label}
@@ -117,16 +110,16 @@ function SearchPageContent() {
           ))}
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:pb-0">
+        {/* Category chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {CATEGORIES.map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
-              className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs transition ${
+              className={`px-3 py-1 rounded-lg text-xs font-medium shrink-0 transition ${
                 category === c
-                  ? "bg-white/20 text-white font-bold border border-white/30"
-                  : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white"
+                  ? "bg-kakao-yellow text-black font-bold"
+                  : "bg-kakao-card text-neutral-400 border border-kakao-border hover:text-white"
               }`}
             >
               {c === "ALL" ? "ทุกหมวด" : c}
@@ -135,62 +128,55 @@ function SearchPageContent() {
         </div>
       </div>
 
-      {/* Search Results */}
+      {/* Results */}
       {loading ? (
-        <div className="py-24 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto" />
+        <div className="py-20 flex justify-center">
+          <div className="w-6 h-6 border-2 border-kakao-yellow/30 border-t-kakao-yellow rounded-full animate-spin" />
         </div>
       ) : stories.length === 0 ? (
-        <div className="py-20 text-center rounded-3xl bg-neutral-900/40 border border-neutral-800 p-8 space-y-3">
-          <BookOpen className="w-12 h-12 text-neutral-600 mx-auto" />
-          <h2 className="text-lg font-bold text-white font-prompt">ไม่พบผลงานที่ตรงกับคำค้นหา</h2>
-          <p className="text-xs text-neutral-400 max-w-sm mx-auto">
-            ลองปรับเปลี่ยนคำค้นหา หรือเลือกหมวดหมู่อื่นดูใหม่อีกครั้ง
-          </p>
+        <div className="py-16 text-center">
+          <BookOpen className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-white font-prompt">ไม่พบผลงาน</p>
+          <p className="text-xs text-neutral-500 mt-1">ลองเปลี่ยนคำค้นหาหรือหมวดหมู่</p>
         </div>
       ) : (
         <div>
-          <p className="text-xs text-neutral-400 mb-4">
-            พบทั้งหมด <strong className="text-white">{stories.length}</strong> เรื่อง
+          <p className="text-xs text-neutral-500 mb-4">
+            พบ <span className="text-white font-semibold">{stories.length}</span> เรื่อง
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 animate-stagger">
             {stories.map((story) => (
               <Link
                 key={story.id}
                 href={`/stories/${story.slug}`}
-                className="group flex flex-col rounded-2xl bg-neutral-900/60 border border-neutral-800/80 hover:border-neutral-700 overflow-hidden transition"
+                className="kakao-card group"
               >
-                <div className="relative aspect-[2/3] w-full overflow-hidden bg-neutral-800">
+                <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-neutral-900">
                   <img
                     src={story.coverUrl}
                     alt={story.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
                   />
-                  <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-white font-medium">
+                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/70 text-white backdrop-blur-sm">
                     {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
                   </span>
                 </div>
 
-                <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition line-clamp-2 font-prompt">
-                      {story.title}
-                    </h3>
-                    <p className="text-[11px] text-neutral-400 mt-1 truncate">
-                      {story.author.penName || story.author.name}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-neutral-800">
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {story.viewsCount.toLocaleString()}
+                <div className="mt-2 space-y-0.5">
+                  <h4 className="text-xs font-semibold text-white line-clamp-1 font-prompt group-hover:text-neutral-200 transition">
+                    {story.title}
+                  </h4>
+                  <p className="text-[11px] text-neutral-500 truncate">
+                    {story.author.penName || story.author.name}
+                  </p>
+                  <div className="flex items-center gap-2 text-[10px] text-neutral-600">
+                    <span className="flex items-center gap-0.5">
+                      <Star className="w-2.5 h-2.5 fill-kakao-yellow text-kakao-yellow" />
+                      <span className="text-neutral-400">{story.ratingAverage.toFixed(1)}</span>
                     </span>
-                    <span className="flex items-center gap-1 text-amber-400 font-medium">
-                      <Star className="w-3 h-3 fill-amber-400" />
-                      {story.ratingAverage.toFixed(1)}
-                    </span>
+                    <span>{story._count.chapters} ตอน</span>
                   </div>
                 </div>
               </Link>
@@ -204,7 +190,7 @@ function SearchPageContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen py-20 text-center text-white text-xs">กำลังโหลด...</div>}>
+    <Suspense fallback={<div className="min-h-screen py-20 text-center text-neutral-500 text-xs">กำลังโหลด...</div>}>
       <SearchPageContent />
     </Suspense>
   );

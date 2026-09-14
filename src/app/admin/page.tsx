@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import {
   Shield,
   Users,
@@ -116,6 +117,7 @@ interface AuthorApplicationItem {
 
 export default function AdminPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "content" | "payouts" | "packages" | "applications">("overview");
   const [overview, setOverview] = useState<AdminOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -253,14 +255,14 @@ export default function AdminPage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success(json.data.message);
         fetchApplications();
         fetchOverview();
       } else {
-        alert(json.error?.message || "ดำเนินการไม่สำเร็จ");
+        toast.error("ดำเนินการไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาด");
+      toast.error("เกิดข้อผิดพลาดในการตรวจสอบใบสมัคร");
     }
   };
 
@@ -275,11 +277,13 @@ export default function AdminPage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success(json.data.message);
         fetchUsers();
+      } else {
+        toast.error("ดำเนินการไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาด");
+      toast.error("เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้");
     }
   };
 
@@ -300,14 +304,14 @@ export default function AdminPage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success(json.data.message);
         fetchContent();
         fetchOverview();
       } else {
-        alert(json.error?.message || "ดำเนินการไม่สำเร็จ");
+        toast.error("ดำเนินการไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการตรวจสอบเนื้อหา");
+      toast.error("เกิดข้อผิดพลาดในการตรวจสอบเนื้อหา");
     }
   };
 
@@ -326,13 +330,13 @@ export default function AdminPage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success(json.data.message);
         fetchOverview();
       } else {
-        alert(json.error?.message || "ดำเนินการไม่สำเร็จ");
+        toast.error("ดำเนินการไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาด");
+      toast.error("เกิดข้อผิดพลาดในการจัดการคำขอถอนเงิน");
     }
   };
 
@@ -358,15 +362,15 @@ export default function AdminPage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success(json.data.message);
         setShowPackageModal(false);
         setEditingPackage(null);
         fetchPackages();
       } else {
-        alert(json.error?.message || "บันทึกแพ็กเกจไม่สำเร็จ");
+        toast.error("บันทึกแพ็กเกจไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาด");
+      toast.error("เกิดข้อผิดพลาดในการบันทึกแพ็กเกจ");
     }
   };
 

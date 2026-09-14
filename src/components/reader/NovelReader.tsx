@@ -4,12 +4,14 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { THAI_FONTS } from "@/lib/fonts";
+import { useAuthModal } from "@/context/AuthModalContext";
+import { useToast } from "@/context/ToastContext";
 import {
   ReaderSettingsDrawer,
   ReaderSettings,
   DEFAULT_READER_SETTINGS,
 } from "./ReaderSettingsDrawer";
+import { THAI_FONTS } from "@/lib/fonts";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -27,6 +29,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { CommentSection } from "@/components/story/CommentSection";
+import { ContentProtection } from "./ContentProtection";
 
 interface ChapterData {
   id: string;
@@ -56,6 +59,8 @@ interface ChapterData {
 export function NovelReader({ initialChapter }: { initialChapter: ChapterData }) {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const { toast } = useToast();
   const [chapter, setChapter] = useState<ChapterData>(initialChapter);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
@@ -65,23 +70,46 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
   // Settings State with LocalStorage persistence
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_READER_SETTINGS);
 
-  // Auto-record reading progress & bookmark chapter position (B.3 Checklist)
+  // Auto-record reading progress & bookmark chapter position with real scroll percentage
   useEffect(() => {
     if (!user || !chapter?.id) return;
-    const recordProgress = async () => {
-      try {
-        await fetch("/api/v1/bookmarks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            storyId: chapter.story.id,
-            lastChapterId: chapter.id,
-            progressPercent: 50,
-          }),
-        });
-      } catch {}
+
+    let timer: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (scrollHeight > 0) {
+          const percent = Math.min(100, Math.max(5, Math.round((window.scrollY / scrollHeight) * 100)));
+          fetch("/api/v1/reading-progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storyId: chapter.story.id,
+              chapterId: chapter.id,
+              progressPercent: percent,
+            }),
+          }).catch(() => {});
+        }
+      }, 1000);
     };
-    recordProgress();
+
+    // Initial reading progress sync
+    fetch("/api/v1/reading-progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storyId: chapter.story.id,
+        chapterId: chapter.id,
+        progressPercent: 5,
+      }),
+    }).catch(() => {});
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timer);
+    };
   }, [user, chapter?.id, chapter?.story?.id]);
 
   useEffect(() => {
@@ -122,7 +150,8 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
   // Handle Chapter Unlock
   const handleUnlock = async () => {
     if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนปลดล็อกตอน");
+      toast.info("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบเพื่อปลดล็อกอ่านตอนพรีเมียม");
+      router.push(`/auth/login?redirect=/reader/novel/${chapter.id}`);
       return;
     }
 
@@ -130,6 +159,8 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
     try {
       const res = await fetch(`/api/v1/chapters/${chapter.id}/unlock`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "AUTO" }),
       });
       const json = await res.json();
       if (json.success) {
@@ -138,6 +169,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
           spread: 70,
           origin: { y: 0.6 },
         });
+        toast.success("ปลดล็อกตอนสำเร็จ!", "คุณสามารถอ่านเนื้อหาฉบับเต็มได้ทันที");
         refreshUser();
         // Reload content
         const contentRes = await fetch(`/api/v1/chapters/${chapter.id}/content`);
@@ -146,10 +178,10 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
           setChapter(contentJson.data);
         }
       } else {
-        alert(json.error?.message || "ปลดล็อกไม่สำเร็จ");
+        toast.error("ปลดล็อกไม่สำเร็จ", json.error?.message || "กรุณาตรวจสอบยอดเหรียญของคุณ");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการปลดล็อก");
+      toast.error("เกิดข้อผิดพลาด", "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
     } finally {
       setUnlocking(false);
     }
@@ -214,7 +246,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
             }}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition ${
               isAutoScrolling
-                ? "bg-amber-500 text-black border-amber-400"
+                ? "bg-[#FFE600] text-black border-[#FFE600]"
                 : "bg-white/5 border-white/10 hover:bg-white/10"
             }`}
             title="เลื่อนหน้าอัตโนมัติ"
@@ -223,19 +255,19 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
             <span className="hidden sm:inline">{isAutoScrolling ? "หยุดเลื่อน" : "เลื่อนอัตโนมัติ"}</span>
           </button>
 
-          {/* ReadAWrite Style Font & Settings Button */}
+          {/* Thai Font & Settings Button */}
           <button
             onClick={() => setIsDrawerOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-xs font-bold transition"
-            title="ตั้งค่าฟอนต์ไทยและธีมอ่าน (ReadAWrite style)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] text-white text-xs font-semibold transition"
+            title="ตั้งค่าฟอนต์ไทยและธีมอ่าน"
           >
-            <span className="font-chonburi text-sm">กA</span>
+            <span className="font-chonburi text-sm text-[#FFE600]">กA</span>
             <span className="hidden sm:inline">ฟอนต์ & ขนาด</span>
           </button>
 
           <Link
             href="/"
-            className="p-2 rounded-xl hover:bg-white/10 transition"
+            className="p-2 rounded-xl hover:bg-white/10 transition text-neutral-400 hover:text-white"
             title="กลับสู่หน้าหลัก"
           >
             <Home className="w-4 h-4" />
@@ -243,14 +275,15 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
         </div>
       </header>
 
-      {/* Reader Main Content Container */}
-      <main className={`mx-auto py-10 px-4 sm:px-6 ${containerMaxWidth}`}>
+      {/* Reader Main Content Container with Content Protection */}
+      <ContentProtection showWatermark={chapter.isUnlocked}>
+        <main className={`mx-auto py-10 px-4 sm:px-6 ${containerMaxWidth}`}>
         {/* Chapter Title Headline */}
         <div className="mb-8 text-center border-b border-white/10 pb-6">
-          <span className="text-xs uppercase tracking-widest text-amber-400 font-semibold mb-2 inline-block">
+          <span className="text-xs uppercase tracking-widest text-[#FFE600] font-semibold mb-2 inline-block">
             {chapter.story.title}
           </span>
-          <h1 className="text-2xl sm:text-3xl font-bold font-prompt leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold font-prompt leading-tight text-white">
             {chapter.title}
           </h1>
           <p className="text-xs opacity-60 mt-2">
@@ -258,58 +291,93 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
           </p>
         </div>
 
-        {/* LOCKED CHAPTER PREMIUM STATE */}
+        {/* LOCKED CHAPTER KAKAO WEBTOON STYLE PREVIEW + UNLOCK CARD */}
         {!chapter.isUnlocked ? (
-          <div className="my-12 p-8 rounded-3xl bg-zinc-900/90 border border-amber-500/30 shadow-2xl text-center text-white relative overflow-hidden">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-              <Lock className="w-8 h-8" />
-            </div>
-
-            <h2 className="text-xl font-bold font-prompt text-amber-300">ตอนนี้เป็นตอนพรีเมียม</h2>
-            <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
-              สนับสนุนนักเขียนคนโปรดเพื่ออ่านต่อฉบับเต็ม ปลดล็อกเพียงครั้งเดียว อ่านซ้ำได้ตลอดไป!
-            </p>
-
-            {/* Preview Snippet */}
-            <div className="my-6 p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800 text-sm text-zinc-300 text-left italic leading-relaxed">
-              "{chapter.previewText}"
-            </div>
-
-            {/* Unlock Price and Wallet Balance */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 my-6 text-sm">
-              <div className="flex items-center gap-2 bg-zinc-800/80 px-4 py-2 rounded-xl border border-zinc-700">
-                <Coins className="w-4 h-4 text-amber-400" />
-                <span>ราคาตอน:</span>
-                <strong className="text-amber-300">{chapter.coinPrice} เหรียญ</strong>
-              </div>
-              <div className="flex items-center gap-2 bg-zinc-800/80 px-4 py-2 rounded-xl border border-zinc-700">
-                <span>เหรียญของคุณ:</span>
-                <strong className="text-white">{userTotalCoins} เหรียญ</strong>
-              </div>
-            </div>
-
-            {/* Unlock or Coin Shop Buttons */}
-            {userTotalCoins >= chapter.coinPrice ? (
-              <button
-                onClick={handleUnlock}
-                disabled={unlocking}
-                className="w-full max-w-sm mx-auto py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-bold text-base shadow-lg shadow-amber-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2"
+          <div className="relative space-y-6">
+            {/* 1. Teaser Reading Preview with Soft Gradient Fade */}
+            <div className="relative overflow-hidden rounded-xl p-6 bg-white/[0.02] border border-white/[0.05]">
+              <article
+                className={`prose max-w-none transition-all duration-200 whitespace-pre-line select-none opacity-80 ${selectedFontObj.className}`}
+                style={{
+                  fontSize: `${settings.fontSize}px`,
+                  lineHeight: settings.lineHeight,
+                  textAlign: settings.textAlign,
+                }}
               >
-                <Sparkles className="w-5 h-5" />
-                <span>{unlocking ? "กำลังปลดล็อก..." : `ใช้ ${chapter.coinPrice} เหรียญ ปลดล็อกทันที`}</span>
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-rose-400">เหรียญของคุณไม่เพียงพอ กรุณาเติมเหรียญก่อนปลดล็อก</p>
-                <Link
-                  href="/coin-shop"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm shadow-md transition"
-                >
-                  <Coins className="w-4 h-4" />
-                  <span>ไปเติมเหรียญที่ Coin Shop</span>
-                </Link>
+                {chapter.previewText ||
+                  (chapter.textContent
+                    ? chapter.textContent.slice(0, 500) + "...\n\n(เนื้อหาตอนเต็มถูกล็อค กรุณาปลดล็อกเพื่ออ่านต่อ)"
+                    : "เตรียมพบกับความสนุกและเรื่องราวสุดเข้มข้นในตอนนี้...")}
+              </article>
+
+              {/* Bottom Fade Mask */}
+              <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
+            </div>
+
+            {/* 2. Kakao Webtoon Unlock Card */}
+            <div className="relative -mt-16 z-10 max-w-lg mx-auto p-6 sm:p-8 rounded-2xl bg-[#121215] border border-white/10 shadow-2xl text-center text-white">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600]">
+                <Lock className="w-6 h-6" />
               </div>
-            )}
+
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFE600]/10 text-[#FFE600] text-[11px] font-bold font-prompt uppercase tracking-wider mb-2">
+                <Sparkles className="w-3 h-3" />
+                ตอนพรีเมียม
+              </span>
+
+              <h2 className="text-lg sm:text-xl font-bold font-prompt text-white">
+                ปลดล็อกเพื่ออ่านฉบับเต็ม
+              </h2>
+              <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto leading-relaxed">
+                ปลดล็อก 1 ครั้ง เข้าอ่านซ้ำได้ตลอดไป
+              </p>
+
+              {/* Price & Balance Pill */}
+              <div className="flex flex-wrap items-center justify-center gap-3 my-5 text-xs">
+                <div className="flex items-center gap-2 bg-white/[0.04] px-3.5 py-2 rounded-xl border border-white/[0.08]">
+                  <Coins className="w-4 h-4 text-[#FFE600]" />
+                  <span className="text-neutral-400">ราคา:</span>
+                  <strong className="text-white font-mono font-bold text-xs">{chapter.coinPrice} เหรียญ</strong>
+                </div>
+                <div className="flex items-center gap-2 bg-white/[0.04] px-3.5 py-2 rounded-xl border border-white/[0.08]">
+                  <span className="text-neutral-400">เหรียญของคุณ:</span>
+                  <strong className={`font-mono font-bold text-xs ${userTotalCoins >= chapter.coinPrice ? "text-emerald-400" : "text-rose-400"}`}>
+                    {userTotalCoins} เหรียญ
+                  </strong>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              {!user ? (
+                <button
+                  onClick={() => openAuthModal("LOGIN")}
+                  className="w-full py-3.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition flex items-center justify-center gap-2 active:scale-[0.99]"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>เข้าสู่ระบบเพื่อปลดล็อก</span>
+                </button>
+              ) : userTotalCoins >= chapter.coinPrice ? (
+                <button
+                  onClick={handleUnlock}
+                  disabled={unlocking}
+                  className="w-full py-3.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{unlocking ? "กำลังปลดล็อก..." : `ใช้ ${chapter.coinPrice} เหรียญ ปลดล็อกทันที`}</span>
+                </button>
+              ) : (
+                <div className="space-y-2.5">
+                  <p className="text-[11px] text-rose-400">เหรียญไม่เพียงพอ ขาดอีก {chapter.coinPrice - userTotalCoins} เหรียญ</p>
+                  <Link
+                    href="/coin-shop"
+                    className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                  >
+                    <Coins className="w-4 h-4" />
+                    <span>ไปเติมเหรียญที่ Coin Shop</span>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           /* UNLOCKED / FREE TEXT CONTENT WITH DYNAMIC THAI FONT */
@@ -326,22 +394,22 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
         )}
 
         {/* Chapter Navigation Footer */}
-        <div className="mt-14 pt-8 border-t border-white/10 flex items-center justify-between gap-4">
+        <div className="mt-12 pt-6 border-t border-white/10 flex items-center justify-between gap-4">
           {chapter.prevChapter ? (
             <Link
               href={`/reader/novel/${chapter.prevChapter.id}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium transition"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>ตอนก่อนหน้า</span>
             </Link>
           ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-4 py-2.5">ตอนแรกสุด</div>
+            <div className="text-xs opacity-30 cursor-not-allowed px-3.5 py-2">ตอนแรกสุด</div>
           )}
 
           <Link
             href={`/stories/${chapter.story.slug}`}
-            className="px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold transition"
+            className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 text-xs font-medium transition"
           >
             สารบัญตอน
           </Link>
@@ -349,13 +417,13 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
           {chapter.nextChapter ? (
             <Link
               href={`/reader/novel/${chapter.nextChapter.id}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition shadow-md"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
             >
               <span>ตอนถัดไป</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-4 py-2.5">ตอนล่าสุด</div>
+            <div className="text-xs opacity-30 cursor-not-allowed px-3.5 py-2">ตอนล่าสุด</div>
           )}
         </div>
 
@@ -368,6 +436,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
           />
         </div>
       </main>
+      </ContentProtection>
 
       {/* ReadAWrite Style Settings Drawer */}
       <ReaderSettingsDrawer

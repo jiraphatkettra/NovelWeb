@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { AlertTriangle, X, CheckCircle2 } from "lucide-react";
 
 interface ReportModalProps {
@@ -23,6 +24,7 @@ const REPORT_REASONS = [
 
 export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle }: ReportModalProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [reason, setReason] = useState(REPORT_REASONS[0]);
   const [details, setDetails] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +35,7 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนส่งรายงานเนื้อหา");
+      toast.warning("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบก่อนส่งรายงานเนื้อหา");
       return;
     }
 
@@ -53,20 +55,21 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
       const json = await res.json();
       if (json.success) {
         setSubmitted(true);
+        toast.success("ส่งรายงานเรียบร้อยแล้ว", "ทีมงานจะดำเนินการตรวจสอบ");
       } else {
-        alert(json.error?.message || "ส่งรายงานไม่สำเร็จ");
+        toast.error("ส่งรายงานไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-      <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-6 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+      <div className="w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
           <div className="flex items-center gap-2 text-rose-400 font-bold text-sm font-prompt">
             <AlertTriangle className="w-4 h-4" />
             <span>รายงานเนื้อหาไม่เหมาะสม</span>
@@ -76,7 +79,7 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
               setSubmitted(false);
               onClose();
             }}
-            className="text-neutral-500 hover:text-white"
+            className="text-neutral-400 hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
@@ -87,7 +90,7 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
             <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
             <h3 className="text-base font-bold text-white font-prompt">ส่งรายงานเรียบร้อยแล้ว</h3>
             <p className="text-xs text-neutral-400">
-              ขอบคุณสำหรับความร่วมมือในการช่วยดูแลชุมชน ReadVerse ให้ปลอดภัย ทีมงานจะตรวจสอบและดำเนินการโดยเร็ว
+              ขอบคุณสำหรับความร่วมมือในการช่วยดูแลชุมชนให้ปลอดภัย ทีมงานจะตรวจสอบและดำเนินการโดยเร็ว
             </p>
             <div className="pt-2">
               <button
@@ -95,7 +98,7 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
                   setSubmitted(false);
                   onClose();
                 }}
-                className="px-6 py-2 rounded-full bg-white text-black font-bold text-xs hover:bg-neutral-200"
+                className="px-5 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200"
               >
                 ปิดหน้าต่าง
               </button>
@@ -110,11 +113,11 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
             )}
 
             <div>
-              <label className="block text-neutral-400 mb-1.5">สาเหตุการรายงาน *</label>
+              <label className="block text-neutral-400 mb-1.5 font-medium">สาเหตุการรายงาน *</label>
               <select
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-rose-500"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-rose-500"
               >
                 {REPORT_REASONS.map((r) => (
                   <option key={r} value={r}>
@@ -125,13 +128,13 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
             </div>
 
             <div>
-              <label className="block text-neutral-400 mb-1.5">รายละเอียดเพิ่มเติม (ระบุตอน หรือข้อความที่พบ)</label>
+              <label className="block text-neutral-400 mb-1.5 font-medium">รายละเอียดเพิ่มเติม</label>
               <textarea
                 rows={3}
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="ระบุจุดที่พบปัญหา เช่น ตอนที่ 3 มีการคัดลอกข้อความมาจาก..."
-                className="w-full px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-white focus:outline-none focus:border-rose-500 resize-none"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-rose-500 resize-none"
               />
             </div>
 
@@ -139,14 +142,14 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2 rounded-xl bg-neutral-800 text-neutral-300 font-semibold hover:bg-neutral-700"
+                className="flex-1 py-2.5 rounded-xl bg-white/[0.06] text-neutral-300 font-semibold hover:bg-white/[0.1]"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition disabled:opacity-50"
               >
                 {loading ? "กำลังส่ง..." : "ส่งรายงาน"}
               </button>

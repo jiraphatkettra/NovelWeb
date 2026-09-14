@@ -10,21 +10,18 @@ import {
   DollarSign,
   Eye,
   BookOpen,
-  Bookmark,
-  TrendingUp,
-  X,
-  CheckCircle,
   Coins,
   Settings,
   Archive,
   Trash2,
   ExternalLink,
   Tag,
-  Sparkles,
   ShieldCheck,
-  ArrowRight,
+  X,
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { ImageUploadDropzone } from "@/components/common/ImageUploadDropzone";
+import { useToast } from "@/context/ToastContext";
 
 interface AuthorDashboardData {
   author: {
@@ -77,6 +74,7 @@ const AVAILABLE_TAGS = [
 export default function AuthorStudioPage() {
   const { user, refreshUser } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [data, setData] = useState<AuthorDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -92,19 +90,17 @@ export default function AuthorStudioPage() {
   // Form states for creating story
   const [newTitle, setNewTitle] = useState("");
   const [newSynopsis, setNewSynopsis] = useState("");
-  const [newCoverUrl, setNewCoverUrl] = useState(
-    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80"
-  );
+  const [newCoverUrl, setNewCoverUrl] = useState("");
   const [newType, setNewType] = useState<"NOVEL" | "MANGA">("NOVEL");
   const [newCategory, setNewCategory] = useState("แฟนตาซี");
+  const [newRating, setNewRating] = useState<"ALL_AGES" | "TEEN_13" | "MATURE_18">("ALL_AGES");
   const [selectedTags, setSelectedTags] = useState<string[]>(["แฟนตาซี"]);
-  const [newRating, setNewRating] = useState("ALL_AGES");
   const [creating, setCreating] = useState(false);
 
-  // Payout request states
+  // Form states for Payout Request
   const [payoutAmount, setPayoutAmount] = useState<number>(300);
   const [bankName, setBankName] = useState("ธนาคารกสิกรไทย");
-  const [bankAccountNo, setBankAccountNo] = useState("012-3-45678-9");
+  const [bankAccountNo, setBankAccountNo] = useState("");
   const [accountName, setAccountName] = useState("");
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
 
@@ -115,20 +111,26 @@ export default function AuthorStudioPage() {
       if (json.success) {
         setData(json.data);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      console.error("Failed to load author dashboard");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboard();
+    if (user && (user.role === "AUTHOR" || user.role === "SUPER_ADMIN")) {
+      fetchDashboard();
+    } else {
+      setLoading(false);
+    }
   }, [user]);
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter((t) => t !== tag));
+      if (selectedTags.length > 1) {
+        setSelectedTags(selectedTags.filter((t) => t !== tag));
+      }
     } else {
       setSelectedTags([...selectedTags, tag]);
     }
@@ -136,55 +138,63 @@ export default function AuthorStudioPage() {
 
   const handleCreateStory = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newTitle.trim() || !newSynopsis.trim()) {
+      toast.warning("กรุณากรอกข้อมูลให้ครบถ้วน", "ชื่อเรื่องและเรื่องย่อจำเป็นต้องระบุ");
+      return;
+    }
+
     setCreating(true);
     try {
       const res = await fetch("/api/v1/author/stories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: newTitle,
-          synopsis: newSynopsis,
-          coverUrl: newCoverUrl,
+          title: newTitle.trim(),
+          synopsis: newSynopsis.trim(),
+          coverUrl:
+            newCoverUrl ||
+            (newType === "NOVEL"
+              ? "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80"
+              : "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80"),
           type: newType,
           category: newCategory,
-          tags: selectedTags,
           contentRating: newRating,
+          tags: selectedTags,
         }),
       });
+
       const json = await res.json();
-      if (json.success && json.data?.story) {
+      if (json.success) {
+        toast.success("สร้างผลงานสำเร็จ!", "พาคุณไปยังหน้าจัดการตอน");
         setShowCreateModal(false);
-        // A.2: พาไปหน้าจัดการตอนของเรื่องนั้นทันที
         router.push(`/author/stories/${json.data.story.id}`);
       } else {
-        alert(json.error?.message || "สร้างเรื่องไม่สำเร็จ");
+        toast.error("สร้างเรื่องไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการสร้างเรื่อง");
+      toast.error("เกิดข้อผิดพลาดในการสร้างผลงาน");
     } finally {
       setCreating(false);
     }
   };
 
   const handleToggleArchive = async (storyId: string, currentStatus: string) => {
-    const newStatus = currentStatus === "ARCHIVED" ? "PUBLISHED" : "ARCHIVED";
-    const actionLabel = newStatus === "ARCHIVED" ? "เก็บเข้าคลัง (ซ่อนจากสาธารณะ)" : "นำกลับมาเผยแพร่";
-    if (!confirm(`คุณต้องการ${actionLabel} ใช่หรือไม่?`)) return;
-
+    const nextStatus = currentStatus === "ARCHIVED" ? "DRAFT" : "ARCHIVED";
     try {
       const res = await fetch(`/api/v1/author/stories/${storyId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: nextStatus }),
       });
       const json = await res.json();
       if (json.success) {
+        toast.success(nextStatus === "ARCHIVED" ? "เก็บผลงานเข้าคลังแล้ว" : "นำผลงานกลับมาแสดงแล้ว");
         fetchDashboard();
       } else {
-        alert(json.error?.message || "ไม่สามารถเปลี่ยนสถานะได้");
+        toast.error("ไม่สามารถเปลี่ยนสถานะได้", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     }
   };
 
@@ -199,13 +209,13 @@ export default function AuthorStudioPage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert("ลบผลงานเรียบร้อยแล้ว");
+        toast.success("ลบผลงานเรียบร้อยแล้ว");
         fetchDashboard();
       } else {
-        alert(json.error?.message || "ลบผลงานไม่สำเร็จ");
+        toast.error("ลบผลงานไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการลบผลงาน");
+      toast.error("เกิดข้อผิดพลาดในการลบผลงาน");
     }
   };
 
@@ -225,14 +235,14 @@ export default function AuthorStudioPage() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(json.data.message);
+        toast.success("ส่งคำขอถอนเงินสำเร็จ!", json.data?.message);
         setShowPayoutModal(false);
         fetchDashboard();
       } else {
-        alert(json.error?.message || "ไม่สามารถยื่นคำขอถอนเงินได้");
+        toast.error("ไม่สามารถยื่นคำขอถอนเงินได้", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setPayoutSubmitting(false);
     }
@@ -241,34 +251,39 @@ export default function AuthorStudioPage() {
   const handleBecomeAuthor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!onboardingAgreement) {
-      setOnboardingError("กรุณายอมรับข้อตกลงนักเขียนก่อนเริ่มต้น");
+      setOnboardingError("กรุณายอมรับข้อกำหนดและสัญญาของนักเขียน");
       return;
     }
+
     setOnboardingLoading(true);
     setOnboardingError("");
+
     try {
-      const res = await fetch("/api/v1/author/become", {
+      const res = await fetch("/api/v1/author/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           penName: onboardingPenName || user?.penName || user?.name,
           bio: onboardingBio,
-          agreementAccepted: true,
+          acceptedTerms: true,
         }),
       });
+
       const json = await res.json();
       if (json.success) {
         confetti({
-          particleCount: 120,
-          spread: 80,
+          particleCount: 100,
+          spread: 70,
           origin: { y: 0.6 },
         });
+        toast.success("เปิดใช้งานสตูดิโอนักเขียนสำเร็จ!", "คุณสามารถเริ่มสร้างและจัดการผลงานได้ทันที");
         await refreshUser();
+        fetchDashboard();
       } else {
-        setOnboardingError(json.error?.message || "เกิดข้อผิดพลาดในการเปิดใช้งาน");
+        setOnboardingError(json.error?.message || "ไม่สามารถเปิดใช้งานบัญชีนักเขียนได้");
       }
     } catch {
-      setOnboardingError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+      setOnboardingError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setOnboardingLoading(false);
     }
@@ -277,14 +292,16 @@ export default function AuthorStudioPage() {
   if (!user) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
-        <PenTool className="w-16 h-16 text-zinc-600 mb-4" />
-        <h1 className="text-2xl font-bold text-white font-prompt mb-2">สตูดิโอนักเขียน ReadVerse</h1>
-        <p className="text-sm text-zinc-400 max-w-sm mb-6">
+        <div className="w-12 h-12 rounded-xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mb-4">
+          <PenTool className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-bold text-white font-prompt mb-2">สตูดิโอนักเขียน</h2>
+        <p className="text-xs text-neutral-400 max-w-sm mb-6">
           กรุณาเข้าสู่ระบบเพื่อเข้าใช้งานสตูดิโอนักเขียน หรือเปิดใช้งานบัญชีนักเขียนของคุณ
         </p>
         <Link
           href="/auth/login"
-          className="px-6 py-2.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition"
+          className="px-6 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
         >
           เข้าสู่ระบบ
         </Link>
@@ -294,48 +311,44 @@ export default function AuthorStudioPage() {
 
   if (user.role !== "AUTHOR" && user.role !== "SUPER_ADMIN") {
     return (
-      <div className="min-h-[85vh] flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-2xl bg-zinc-900/90 border border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden space-y-8">
-          {/* Subtle decorative glow */}
-          <div className="absolute -top-24 -right-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>ยินดีต้อนรับสู่สตูดิโอนักเขียน (Creator Studio)</span>
+      <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-2xl bg-[#121215] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 rounded-xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mx-auto mb-2">
+              <PenTool className="w-6 h-6" />
             </div>
-            <h1 className="text-3xl font-extrabold text-white font-prompt">
-              ปลดปล่อยจินตนาการของคุณ สู่สายตานับหมื่น
+            <h1 className="text-2xl sm:text-3xl font-bold text-white font-prompt">
+              สตูดิโอนักเขียน (Creator Studio)
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto">
-              เปิดใช้งานบัญชีนักเขียนได้ทันทีฟรี ไม่มีค่าใช้จ่าย เริ่มเขียนนิยายหรือวาดมังงะ จัดการตอน และสร้างรายได้จากผลงานของคุณ
+            <p className="text-xs text-neutral-400 max-w-lg mx-auto leading-relaxed">
+              เปิดใช้งานบัญชีนักเขียนฟรี เริ่มสร้างนิยายหรือมังงะ จัดการตอน และสร้างรายได้จากผลงานของคุณ
             </p>
           </div>
 
           {/* Value props */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-            <div className="p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700/60 space-y-1.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 font-bold">
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+              <div className="w-7 h-7 rounded-lg bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600]">
                 <Coins className="w-4 h-4" />
               </div>
               <p className="text-xs font-bold text-white">ส่วนแบ่งรายได้ 70%</p>
-              <p className="text-[11px] text-zinc-400">กำหนดราคาเหรียญปลดล็อกตอน และรับส่วนแบ่งเต็มเม็ดเต็มหน่วย</p>
+              <p className="text-[11px] text-neutral-400">กำหนดราคาเหรียญปลดล็อกตอน และรับส่วนแบ่งเต็มเม็ดเต็มหน่วย</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700/60 space-y-1.5">
-              <div className="w-8 h-8 rounded-xl bg-sky-500/20 flex items-center justify-center text-sky-400 font-bold">
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+              <div className="w-7 h-7 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400">
                 <BookOpen className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-white">รองรับทั้งนิยาย & มังงะ</p>
-              <p className="text-[11px] text-zinc-400">ระบบ Rich Text Editor สำหรับนิยาย และอัปโหลดภาพแบบเว็บตูนต่อเนื่อง</p>
+              <p className="text-xs font-bold text-white">นิยาย & มังงะ</p>
+              <p className="text-[11px] text-neutral-400">รองรับทั้งระบบเขียน Rich Text สำหรับนิยาย และอัปโหลดภาพแบบต่อเนื่องสำหรับมังงะ</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700/60 space-y-1.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                 <ShieldCheck className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-white">เปิดใช้ทันที ไม่ต้องรอคิว</p>
-              <p className="text-[11px] text-zinc-400">ยืนยันตัวตนการเงิน (KYC) เพิ่มเติมได้ภายหลังเมื่อต้องการถอนเงิน</p>
+              <p className="text-xs font-bold text-white">เปิดใช้ได้ทันที</p>
+              <p className="text-[11px] text-neutral-400">สามารถสร้างเรื่องและตอนได้ทันที ยืนยันข้อมูลการเงิน (KYC) เมื่อต้องการถอนเงิน</p>
             </div>
           </div>
 
@@ -346,11 +359,11 @@ export default function AuthorStudioPage() {
           )}
 
           {/* Quick Activation Form */}
-          <form onSubmit={handleBecomeAuthor} className="space-y-4 pt-2 border-t border-zinc-800">
+          <form onSubmit={handleBecomeAuthor} className="space-y-4 pt-2 border-t border-white/[0.08]">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1.5">
-                  นามปากกา (Pen Name) <span className="text-amber-400">*</span>
+                <label className="block text-neutral-300 font-medium mb-1.5">
+                  นามปากกา (Pen Name) <span className="text-[#FFE600]">*</span>
                 </label>
                 <input
                   type="text"
@@ -358,53 +371,47 @@ export default function AuthorStudioPage() {
                   defaultValue={user.penName || user.name}
                   onChange={(e) => setOnboardingPenName(e.target.value)}
                   placeholder="เช่น นามปากกาในดวงใจ"
-                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1.5">
-                  แนะนำตัวสั้นๆ หรือแนวงานที่ชอบ
+                <label className="block text-neutral-300 font-medium mb-1.5">
+                  เกี่ยวกับตัวคุณ / แนวที่ชอบเขียน (Bio)
                 </label>
                 <input
                   type="text"
-                  value={onboardingBio}
                   onChange={(e) => setOnboardingBio(e.target.value)}
-                  placeholder="เช่น สายดาร์กแฟนตาซี และรักหวานแหวว"
-                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                  placeholder="เช่น นักเขียนนิยายแฟนตาซีและเกิดใหม่"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
                 />
               </div>
             </div>
 
-            <label className="flex items-start gap-2.5 cursor-pointer pt-1">
-              <input
-                type="checkbox"
-                checked={onboardingAgreement}
-                onChange={(e) => setOnboardingAgreement(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded border-zinc-700 text-amber-500 focus:ring-amber-500 bg-zinc-800"
-              />
-              <span className="text-xs text-zinc-400 leading-relaxed">
-                ฉันยืนยันว่าผลงานที่จะเผยแพร่เป็นผลงานของตนเอง และยอมรับ{" "}
-                <Link href="/legal/author-agreement" target="_blank" className="text-amber-400 underline hover:text-amber-300">
-                  สัญญาข้อตกลงนักเขียน (Author Agreement)
-                </Link>
-              </span>
-            </label>
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-[11px] text-neutral-400 space-y-2">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={onboardingAgreement}
+                  onChange={(e) => setOnboardingAgreement(e.target.checked)}
+                  className="mt-0.5 rounded accent-[#FFE600]"
+                />
+                <span>
+                  ฉันยอมรับ{" "}
+                  <Link href="/legal/author-agreement" target="_blank" className="text-[#FFE600] underline">
+                    สัญญาข้อตกลงและเงื่อนไขของนักเขียน
+                  </Link>{" "}
+                  และยืนยันว่าเป็นเจ้าของลิขสิทธิ์ผลงานที่นำมาลง
+                </span>
+              </label>
+            </div>
 
             <button
               type="submit"
               disabled={onboardingLoading}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 text-black font-bold text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.99] disabled:opacity-50"
             >
-              {onboardingLoading ? (
-                <span>กำลังเปิดใช้งานบัญชีนักเขียน...</span>
-              ) : (
-                <>
-                  <PenTool className="w-4 h-4" />
-                  <span>เปิดใช้งานสตูดิโอนักเขียน และเริ่มสร้างผลงาน</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              {onboardingLoading ? "กำลังเปิดใช้งาน..." : "เปิดใช้งานบัญชีนักเขียนทันที"}
             </button>
           </form>
         </div>
@@ -413,23 +420,23 @@ export default function AuthorStudioPage() {
   }
 
   return (
-    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-8 border-b border-zinc-800">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
         <div>
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
-            <PenTool className="w-4 h-4" />
-            <span>Author Creator Studio</span>
+          <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold uppercase tracking-wider mb-1">
+            <PenTool className="w-3.5 h-3.5" />
+            <span>สตูดิโอนักเขียน</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white font-prompt">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white font-prompt tracking-tight">
             แดชบอร์ดนักเขียน: {user.penName || user.name}
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => setShowPayoutModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition border border-zinc-700"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-bold transition border border-white/[0.08]"
           >
             <DollarSign className="w-4 h-4 text-emerald-400" />
             <span>ขอถอนเงิน</span>
@@ -437,7 +444,7 @@ export default function AuthorStudioPage() {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-black text-xs font-bold transition shadow-md shadow-amber-500/20"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition active:scale-[0.99]"
           >
             <Plus className="w-4 h-4" />
             <span>สร้างเรื่องใหม่</span>
@@ -447,112 +454,112 @@ export default function AuthorStudioPage() {
 
       {loading || !data ? (
         <div className="py-20 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto" />
+          <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full mx-auto" />
         </div>
       ) : (
-        <div className="my-8 space-y-10">
+        <div className="my-6 space-y-8">
           {/* Stats Overview Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-3xl bg-zinc-900/80 border border-zinc-800">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2">
-                <BookOpen className="w-4 h-4 text-amber-400" />
-                <span>จำนวนผลงานทั้งหมด</span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-4 rounded-xl bg-[#121215] border border-white/[0.08]">
+              <div className="flex items-center gap-2 text-neutral-400 text-xs mb-1.5">
+                <BookOpen className="w-4 h-4 text-[#FFE600]" />
+                <span>จำนวนผลงาน</span>
               </div>
-              <p className="text-2xl font-black text-white font-prompt">{data.stats.totalStories} เรื่อง</p>
+              <p className="text-xl font-bold text-white font-prompt">{data.stats.totalStories} เรื่อง</p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-zinc-900/80 border border-zinc-800">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2">
-                <Eye className="w-4 h-4 text-blue-400" />
+            <div className="p-4 rounded-xl bg-[#121215] border border-white/[0.08]">
+              <div className="flex items-center gap-2 text-neutral-400 text-xs mb-1.5">
+                <Eye className="w-4 h-4 text-neutral-300" />
                 <span>ยอดอ่านรวม</span>
               </div>
-              <p className="text-2xl font-black text-white font-prompt">{data.stats.totalViews.toLocaleString()} ครั้ง</p>
+              <p className="text-xl font-bold text-white font-prompt">{data.stats.totalViews.toLocaleString()} ครั้ง</p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-zinc-900/80 border border-zinc-800">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2">
-                <Coins className="w-4 h-4 text-yellow-400" />
+            <div className="p-4 rounded-xl bg-[#121215] border border-white/[0.08]">
+              <div className="flex items-center gap-2 text-neutral-400 text-xs mb-1.5">
+                <Coins className="w-4 h-4 text-[#FFE600]" />
                 <span>รายได้รวมสะสม (70%)</span>
               </div>
-              <p className="text-2xl font-black text-amber-300 font-prompt">฿{data.author.totalEarnings.toLocaleString()}</p>
+              <p className="text-xl font-bold text-[#FFE600] font-prompt">฿{data.author.totalEarnings.toLocaleString()}</p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/10 to-zinc-900 border border-amber-500/40">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2">
+            <div className="p-4 rounded-xl bg-[#121215] border border-white/[0.08]">
+              <div className="flex items-center gap-2 text-neutral-400 text-xs mb-1.5">
                 <DollarSign className="w-4 h-4 text-emerald-400" />
                 <span>ยอดที่ถอนได้</span>
               </div>
-              <p className="text-2xl font-black text-emerald-400 font-prompt">฿{data.author.pendingPayout.toLocaleString()}</p>
+              <p className="text-xl font-bold text-emerald-400 font-prompt">฿{data.author.pendingPayout.toLocaleString()}</p>
             </div>
           </div>
 
-          {/* Stories Management List (A.1 Checklist) */}
+          {/* Stories Management List */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white font-prompt">ผลงานของคุณ ({data.stories.length} เรื่อง)</h2>
-              <span className="text-xs text-zinc-500">จัดการตอน เนื้อหา และตั้งราคาได้โดยตรง</span>
+              <h2 className="text-base font-bold text-white font-prompt">ผลงานของคุณ ({data.stories.length} เรื่อง)</h2>
+              <span className="text-xs text-neutral-500">จัดการตอน เนื้อหา และตั้งราคาได้โดยตรง</span>
             </div>
 
             {data.stories.length === 0 ? (
-              <div className="text-center py-16 px-4 rounded-3xl bg-zinc-900/40 border border-dashed border-zinc-800">
-                <BookOpen className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-white font-prompt">คุณยังไม่มีผลงานในสตูดิโอ</h3>
-                <p className="text-xs text-zinc-400 max-w-sm mx-auto mt-1 mb-6">
-                  เริ่มต้นสร้างผลงานชิ้นแรกของคุณ ไม่ว่าจะเป็นนิยายบรรยายหรือการ์ตูนมังงะ เพื่อเผยแพร่สู่สายตานักอ่าน
+              <div className="text-center py-12 px-4 rounded-xl bg-white/[0.02] border border-dashed border-white/[0.08]">
+                <BookOpen className="w-10 h-10 text-neutral-600 mx-auto mb-2.5" />
+                <h3 className="text-sm font-bold text-white font-prompt">ยังไม่มีผลงานในสตูดิโอ</h3>
+                <p className="text-xs text-neutral-400 max-w-sm mx-auto mt-1 mb-5">
+                  เริ่มต้นสร้างผลงานชิ้นแรกของคุณ ไม่ว่าจะเป็นนิยายบรรยายหรือการ์ตูนมังงะ
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>สร้างเรื่องแรกเลย</span>
+                  <span>สร้างเรื่องแรก</span>
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3">
                 {data.stories.map((story) => {
                   const isArchived = story.status === "ARCHIVED";
                   return (
                     <div
                       key={story.id}
-                      className={`p-5 rounded-3xl bg-zinc-900/80 border transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 ${
-                        isArchived ? "border-zinc-800 opacity-60 bg-zinc-950" : "border-zinc-800 hover:border-zinc-700"
+                      className={`p-4 rounded-xl bg-[#121215] border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                        isArchived ? "border-white/[0.04] opacity-60 bg-black" : "border-white/[0.08] hover:border-white/20"
                       }`}
                     >
                       {/* Left: Cover & Info */}
-                      <div className="flex items-start sm:items-center gap-4">
+                      <div className="flex items-start sm:items-center gap-3.5">
                         <img
                           src={story.coverUrl}
                           alt={story.title}
-                          className="w-16 h-22 rounded-xl object-cover bg-zinc-800 shadow-md flex-shrink-0"
+                          className="w-14 h-20 rounded-lg object-cover bg-neutral-900 flex-shrink-0"
                         />
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-amber-300 border border-zinc-700">
-                              {story.type === "NOVEL" ? "📖 นิยาย" : "🎨 มังงะ"}
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 font-medium">
+                              {story.type === "NOVEL" ? "นิยาย" : "มังงะ"}
                             </span>
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
                                 story.status === "PUBLISHED"
                                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                   : story.status === "ARCHIVED"
-                                  ? "bg-zinc-800 text-zinc-400 border-zinc-700"
-                                  : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                  ? "bg-neutral-800 text-neutral-400 border-neutral-700"
+                                  : "bg-[#FFE600]/10 text-[#FFE600] border-[#FFE600]/20"
                               }`}
                             >
                               {story.status === "PUBLISHED"
                                 ? "เผยแพร่แล้ว"
                                 : story.status === "ARCHIVED"
-                                ? "เก็บเข้าคลัง (ซ่อนอยู่)"
+                                ? "เก็บเข้าคลัง"
                                 : "ฉบับร่าง"}
                             </span>
-                            <span className="text-xs text-zinc-500">{story.category}</span>
+                            <span className="text-xs text-neutral-500">{story.category}</span>
                           </div>
 
-                          <h3 className="text-base font-bold text-white font-prompt line-clamp-1">{story.title}</h3>
+                          <h3 className="text-sm font-bold text-white font-prompt line-clamp-1">{story.title}</h3>
 
-                          <div className="flex items-center gap-4 text-xs text-zinc-400 pt-0.5">
-                            <span>{story._count.chapters} ตอนในระบบ</span>
+                          <div className="flex items-center gap-3 text-[11px] text-neutral-400 pt-0.5">
+                            <span>{story._count.chapters} ตอน</span>
                             <span>•</span>
                             <span>{story.viewsCount.toLocaleString()} ยอดอ่าน</span>
                             <span>•</span>
@@ -562,40 +569,36 @@ export default function AuthorStudioPage() {
                       </div>
 
                       {/* Right: Actions */}
-                      <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-zinc-800">
-                        {/* จัดการตอน (Primary Action) */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-white/[0.06]">
                         <Link
                           href={`/author/stories/${story.id}`}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
                         >
                           <Settings className="w-3.5 h-3.5" />
-                          <span>จัดการตอน & เนื้อหา</span>
+                          <span>จัดการตอน</span>
                         </Link>
 
-                        {/* ดูหน้าเรื่องจริงบนเว็บสาธารณะ */}
                         <Link
                           href={`/stories/${story.slug}`}
                           target="_blank"
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition border border-zinc-700"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-neutral-200 text-xs font-medium transition border border-white/[0.08]"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           <span>ดูหน้าเรื่อง</span>
                         </Link>
 
-                        {/* Archive / Unarchive */}
                         <button
                           onClick={() => handleToggleArchive(story.id, story.status)}
-                          title={isArchived ? "นำกลับมาแสดงบนเว็บ" : "เก็บเข้าคลัง (ซ่อนจากสาธารณะ)"}
-                          className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition border border-zinc-700"
+                          title={isArchived ? "นำกลับมาแสดง" : "เก็บเข้าคลัง"}
+                          className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white transition border border-white/[0.08]"
                         >
                           <Archive className="w-4 h-4" />
                         </button>
 
-                        {/* ลบเรื่อง */}
                         <button
                           onClick={() => handleDeleteStory(story.id, story.title)}
-                          title="ลบเรื่องนี้"
-                          className="p-2 rounded-xl bg-zinc-800 hover:bg-red-950/60 text-zinc-400 hover:text-red-400 transition border border-zinc-700 hover:border-red-800/60"
+                          title="ลบผลงานนี้"
+                          className="p-2 rounded-xl bg-white/[0.04] hover:bg-rose-500/20 text-neutral-400 hover:text-rose-400 transition border border-white/[0.08]"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -609,76 +612,76 @@ export default function AuthorStudioPage() {
         </div>
       )}
 
-      {/* Modal: Create Story (A.2 Checklist) */}
+      {/* Modal: Create Story */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-lg bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
             <button
               onClick={() => setShowCreateModal(false)}
-              className="absolute top-5 right-5 p-2 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-800 transition"
+              className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/[0.06]"
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
-              <Sparkles className="w-4 h-4" />
-              <span>New Masterpiece</span>
-            </div>
-            <h2 className="text-2xl font-extrabold text-white font-prompt mb-6">สร้างผลงานเรื่องใหม่</h2>
 
-            <form onSubmit={handleCreateStory} className="space-y-5 text-xs">
-              {/* ประเภท (กำหนดตายตัวครั้งแรก) */}
+            <h2 className="text-lg font-bold text-white font-prompt mb-1">สร้างผลงานเรื่องใหม่</h2>
+            <p className="text-xs text-neutral-400 mb-5">
+              กำหนดรูปแบบเนื้อหา ชื่อเรื่อง และหมวดหมู่
+            </p>
+
+            <form onSubmit={handleCreateStory} className="space-y-4 text-xs">
+              {/* ประเภทผลงาน */}
               <div>
-                <label className="text-zinc-300 font-semibold block mb-2">ประเภทเนื้อหา (เลือกได้ครั้งเดียว)</label>
+                <label className="text-neutral-300 font-medium block mb-2">ประเภทผลงาน (เลือกแล้วเปลี่ยนไม่ได้)</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setNewType("NOVEL")}
-                    className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition ${
+                    className={`p-3 rounded-xl border text-left flex flex-col gap-0.5 transition ${
                       newType === "NOVEL"
-                        ? "bg-amber-500/10 border-amber-500 text-white"
-                        : "bg-zinc-800/60 border-zinc-700 text-zinc-400 hover:border-zinc-600"
+                        ? "bg-[#FFE600]/10 border-[#FFE600] text-white"
+                        : "bg-white/[0.03] border-white/[0.08] text-neutral-400 hover:border-white/20"
                     }`}
                   >
-                    <span className="font-bold text-sm">📖 นิยาย (Text Novel)</span>
-                    <span className="text-[11px] text-zinc-500">ตอนถัดไปจะใช้เครื่องมือเขียน Rich Text Editor</span>
+                    <span className="font-bold text-xs">นิยาย (Novel)</span>
+                    <span className="text-[10px] text-neutral-500">เขียนด้วย Rich Text Editor</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setNewType("MANGA")}
-                    className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition ${
+                    className={`p-3 rounded-xl border text-left flex flex-col gap-0.5 transition ${
                       newType === "MANGA"
-                        ? "bg-amber-500/10 border-amber-500 text-white"
-                        : "bg-zinc-800/60 border-zinc-700 text-zinc-400 hover:border-zinc-600"
+                        ? "bg-[#FFE600]/10 border-[#FFE600] text-white"
+                        : "bg-white/[0.03] border-white/[0.08] text-neutral-400 hover:border-white/20"
                     }`}
                   >
-                    <span className="font-bold text-sm">🎨 มังงะ/เว็บตูน (Webtoon)</span>
-                    <span className="text-[11px] text-zinc-500">ตอนถัดไปจะใช้เครื่องมืออัปโหลดไฟล์ภาพหลายหน้า</span>
+                    <span className="font-bold text-xs">มังงะ (Manga / Webtoon)</span>
+                    <span className="text-[10px] text-neutral-500">อัปโหลดไฟล์ภาพหลายหน้า</span>
                   </button>
                 </div>
               </div>
 
               {/* ชื่อเรื่อง */}
               <div>
-                <label className="text-zinc-300 font-semibold block mb-1">ชื่อเรื่อง</label>
+                <label className="text-neutral-300 font-medium block mb-1">ชื่อเรื่อง</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="เช่น มหาศึกราชันย์มนตราเก้าสวรรค์"
-                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 text-sm"
+                  placeholder="เช่น มหาศึกราชันย์มนตรา"
+                  className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] text-xs"
                 />
               </div>
 
               {/* หมวดหมู่ & เรตอายุ */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-zinc-300 font-semibold block mb-1">หมวดหมู่หลัก</label>
+                  <label className="text-neutral-300 font-medium block mb-1">หมวดหมู่หลัก</label>
                   <select
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
                   >
                     {AVAILABLE_TAGS.map((c) => (
                       <option key={c} value={c}>
@@ -689,24 +692,24 @@ export default function AuthorStudioPage() {
                 </div>
 
                 <div>
-                  <label className="text-zinc-300 font-semibold block mb-1">เรตติ้งอายุผู้อ่าน</label>
+                  <label className="text-neutral-300 font-medium block mb-1">เรตติ้งอายุ</label>
                   <select
                     value={newRating}
-                    onChange={(e) => setNewRating(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-amber-500"
+                    onChange={(e) => setNewRating(e.target.value as "ALL_AGES" | "TEEN_13" | "MATURE_18")}
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
                   >
                     <option value="ALL_AGES">ทั่วไป (All Ages)</option>
-                    <option value="TEEN_13">13+ (สำหรับวัยรุ่น)</option>
-                    <option value="MATURE_18">18+ (สงวนสิทธิ์ยืนยันอายุ)</option>
+                    <option value="TEEN_13">13+ (วัยรุ่น)</option>
+                    <option value="MATURE_18">18+ (ผู้ใหญ่)</option>
                   </select>
                 </div>
               </div>
 
-              {/* Multi-select Tags */}
+              {/* Tags */}
               <div>
-                <label className="text-zinc-300 font-semibold block mb-2 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-amber-400" />
-                  <span>แนว/แท็กของเรื่อง (เลือกได้หลายข้อ)</span>
+                <label className="text-neutral-300 font-medium block mb-1.5 flex items-center gap-1.5">
+                  <Tag className="w-3 h-3 text-[#FFE600]" />
+                  <span>แนว/แท็กของเรื่อง</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {AVAILABLE_TAGS.map((t) => {
@@ -716,10 +719,10 @@ export default function AuthorStudioPage() {
                         key={t}
                         type="button"
                         onClick={() => toggleTag(t)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition ${
                           isSelected
-                            ? "bg-amber-500 text-black font-semibold"
-                            : "bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700"
+                            ? "bg-[#FFE600] text-black font-semibold"
+                            : "bg-white/[0.04] text-neutral-400 hover:text-white border border-white/[0.08]"
                         }`}
                       >
                         {t}
@@ -729,50 +732,27 @@ export default function AuthorStudioPage() {
                 </div>
               </div>
 
-              {/* รูปหน้าปก พร้อม Preview */}
+              {/* รูปหน้าปก */}
               <div>
-                <label className="text-zinc-300 font-semibold block mb-1">ลิงก์ภาพหน้าปก (URL)</label>
-                <div className="flex gap-4 items-start">
-                  <div className="w-20 h-28 rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0 relative">
-                    <img
-                      src={newCoverUrl}
-                      alt="Cover Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80";
-                      }}
-                    />
-                    <span className="absolute bottom-1 inset-x-1 bg-black/70 text-[9px] text-center text-zinc-300 rounded py-0.5">
-                      Preview
-                    </span>
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <input
-                      type="url"
-                      required
-                      value={newCoverUrl}
-                      onChange={(e) => setNewCoverUrl(e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
-                    />
-                    <p className="text-[11px] text-zinc-500">
-                      แนะนำภาพอัตราส่วนแนวตั้ง 3:4 ขนาดความกว้างอย่างน้อย 600px
-                    </p>
-                  </div>
-                </div>
+                <ImageUploadDropzone
+                  value={newCoverUrl}
+                  onChange={(val) => setNewCoverUrl(typeof val === "string" ? val : val[0] || "")}
+                  label="ภาพหน้าปกผลงาน (Cover Image)"
+                  helperText="ลากรูปมาวาง หรือคลิกเพื่ออัปโหลดจากอุปกรณ์ (JPG, PNG, WEBP)"
+                  aspectRatio="cover"
+                />
               </div>
 
               {/* เรื่องย่อ */}
               <div>
-                <label className="text-zinc-300 font-semibold block mb-1">เรื่องย่อ (Synopsis)</label>
+                <label className="text-neutral-300 font-medium block mb-1">เรื่องย่อ</label>
                 <textarea
                   required
                   rows={3}
                   value={newSynopsis}
                   onChange={(e) => setNewSynopsis(e.target.value)}
-                  placeholder="เขียนเรื่องย่อที่น่าติดตามเพื่อดึงดูดผู้อ่าน..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 resize-none leading-relaxed"
+                  placeholder="เขียนเรื่องย่อเพื่อดึงดูดผู้อ่าน..."
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] resize-none leading-relaxed"
                 />
               </div>
 
@@ -780,7 +760,7 @@ export default function AuthorStudioPage() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-black font-bold text-sm transition disabled:opacity-50 shadow-md shadow-amber-500/20 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{creating ? "กำลังสร้างผลงาน..." : "บันทึกและไปหน้าจัดการตอน"}</span>
@@ -791,37 +771,37 @@ export default function AuthorStudioPage() {
         </div>
       )}
 
-      {/* Modal: Request Payout (A.7 Checklist) */}
+      {/* Modal: Request Payout */}
       {showPayoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl">
             <button
               onClick={() => setShowPayoutModal(false)}
-              className="absolute top-5 right-5 p-2 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-800 transition"
+              className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">
               <DollarSign className="w-4 h-4" />
-              <span>Earnings Payout</span>
+              <span>ถอนเงินรายได้</span>
             </div>
-            <h2 className="text-xl font-bold text-white font-prompt mb-4">ยื่นคำขอถอนเงินรายได้</h2>
+            <h2 className="text-lg font-bold text-white font-prompt mb-3">ยื่นคำขอถอนเงิน</h2>
 
-            <div className="p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700 mb-5">
-              <div className="flex justify-between text-xs text-zinc-400 mb-1">
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] mb-4">
+              <div className="flex justify-between text-xs text-neutral-400 mb-1">
                 <span>ยอดที่สามารถถอนได้จริง</span>
                 <span className="font-bold text-emerald-400 font-mono text-sm">
                   ฿{data?.author.pendingPayout.toLocaleString()}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[10px] text-neutral-500">
                 ขั้นต่ำ 300 บาท • หักภาษี ณ ที่จ่าย 3% ตามกฎหมายไทย และค่าธรรมเนียมโอน 15 บาท
               </p>
             </div>
 
-            <form onSubmit={handleRequestPayout} className="space-y-4 text-xs">
+            <form onSubmit={handleRequestPayout} className="space-y-3.5 text-xs">
               <div>
-                <label className="text-zinc-300 font-semibold block mb-1">จำนวนเงินที่ต้องการถอน (บาท)</label>
+                <label className="text-neutral-300 font-medium block mb-1">จำนวนเงินที่ต้องการถอน (บาท)</label>
                 <input
                   type="number"
                   min={300}
@@ -829,16 +809,16 @@ export default function AuthorStudioPage() {
                   required
                   value={payoutAmount}
                   onChange={(e) => setPayoutAmount(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-mono text-sm focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs focus:outline-none focus:border-[#FFE600]"
                 />
               </div>
 
               <div>
-                <label className="text-zinc-300 font-semibold block mb-1">ธนาคารปลายทาง</label>
+                <label className="text-neutral-300 font-medium block mb-1">ธนาคารปลายทาง</label>
                 <select
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
                 >
                   <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย (KBANK)</option>
                   <option value="ธนาคารไทยพาณิชย์">ธนาคารไทยพาณิชย์ (SCB)</option>
@@ -849,26 +829,26 @@ export default function AuthorStudioPage() {
               </div>
 
               <div>
-                <label className="text-zinc-300 font-semibold block mb-1">เลขที่บัญชี / เบอร์พร้อมเพย์</label>
+                <label className="text-neutral-300 font-medium block mb-1">เลขที่บัญชี / เบอร์พร้อมเพย์</label>
                 <input
                   type="text"
                   required
                   value={bankAccountNo}
                   onChange={(e) => setBankAccountNo(e.target.value)}
                   placeholder="012-3-45678-9"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono focus:outline-none focus:border-[#FFE600]"
                 />
               </div>
 
               <div>
-                <label className="text-zinc-300 font-semibold block mb-1">ชื่อบัญชี (ตรงกับบัตรประชาชน)</label>
+                <label className="text-neutral-300 font-medium block mb-1">ชื่อบัญชี (ตรงกับบัตรประชาชน)</label>
                 <input
                   type="text"
                   required
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
                   placeholder={user.name}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
                 />
               </div>
 
@@ -876,7 +856,7 @@ export default function AuthorStudioPage() {
                 <button
                   type="submit"
                   disabled={payoutSubmitting || !data || data.author.pendingPayout < 300}
-                  className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition disabled:opacity-40"
+                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition disabled:opacity-40"
                 >
                   {payoutSubmitting ? "กำลังส่งคำขอ..." : "ยืนยันการขอถอนเงิน"}
                 </button>

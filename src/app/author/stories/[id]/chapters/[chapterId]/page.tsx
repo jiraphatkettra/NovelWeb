@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -9,15 +9,6 @@ import {
   Save,
   Eye,
   Send,
-  Bold,
-  Italic,
-  Heading2,
-  Heading3,
-  Quote,
-  Minus,
-  AlignLeft,
-  AlignCenter,
-  Sparkles,
   Coins,
   Upload,
   Plus,
@@ -29,8 +20,12 @@ import {
   AlertCircle,
   CheckCircle2,
   X,
-  BookOpen,
+  Calendar,
+  GripVertical,
 } from "lucide-react";
+import { ImageUploadDropzone } from "@/components/common/ImageUploadDropzone";
+import { RichChapterEditor } from "@/components/author/RichChapterEditor";
+import { useToast } from "@/context/ToastContext";
 
 interface StoryInfo {
   id: string;
@@ -43,6 +38,7 @@ export default function ChapterEditorPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
   const storyId = (params?.id as string) || "";
   const chapterId = (params?.chapterId as string) || "";
   const isNew = chapterId === "new";
@@ -51,16 +47,17 @@ export default function ChapterEditorPage() {
   const [story, setStory] = useState<StoryInfo | null>(null);
   const [title, setTitle] = useState("");
   const [coinPrice, setCoinPrice] = useState<number>(0);
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
+  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED" | "SCHEDULED">("DRAFT");
+  const [scheduledDate, setScheduledDate] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   // Novel Text states
   const [textContent, setTextContent] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Manga Image states (Array of image URLs)
+  // Manga Image states
   const [images, setImages] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
 
   // Autosave & Recovery states
   const [saving, setSaving] = useState(false);
@@ -78,17 +75,15 @@ export default function ChapterEditorPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Fetch story details first
         const storyRes = await fetch(`/api/v1/author/stories/${storyId}`);
         const storyJson = await storyRes.json();
         if (!storyJson.success || !storyJson.data?.story) {
-          alert("ไม่พบข้อมูลเรื่อง");
+          toast.error("ไม่พบข้อมูลเรื่อง");
           router.push("/author");
           return;
         }
         setStory(storyJson.data.story);
 
-        // If editing existing chapter
         if (!isNew) {
           const chRes = await fetch(`/api/v1/author/stories/${storyId}/chapters/${chapterId}`);
           const chJson = await chRes.json();
@@ -108,12 +103,10 @@ export default function ChapterEditorPage() {
             }
           }
         } else {
-          // Default title for new chapter
           const chaptersCount = storyJson.data.story.chapters?.length || 0;
           setTitle(`ตอนที่ ${chaptersCount + 1}: `);
         }
 
-        // Check local storage for draft recovery
         const savedDraft = localStorage.getItem(storageKey);
         if (savedDraft) {
           try {
@@ -135,7 +128,7 @@ export default function ChapterEditorPage() {
     if (storyId) loadData();
   }, [storyId, chapterId]);
 
-  // 2. Metrics calculation (Word count & estimated reading time)
+  // 2. Metrics calculation
   const wordCount = textContent.trim() ? textContent.trim().split(/\s+/).length : 0;
   const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
@@ -159,10 +152,10 @@ export default function ChapterEditorPage() {
     setRecoveredFromLocal(false);
   };
 
-  // 4. Save Chapter function (Used by Autosave and Manual Save)
-  const saveChapter = async (targetStatus?: "DRAFT" | "PUBLISHED") => {
+  // 4. Save Chapter function
+  const saveChapter = async (targetStatus?: "DRAFT" | "PUBLISHED" | "SCHEDULED") => {
     if (!title.trim()) {
-      alert("กรุณาระบุชื่อตอน");
+      toast.warning("กรุณาระบุชื่อตอน", "ชื่อตอนไม่สามารถเว้นว่างได้");
       return;
     }
 
@@ -174,6 +167,7 @@ export default function ChapterEditorPage() {
       coinPrice: Number(coinPrice) || 0,
       isFree: Number(coinPrice) === 0,
       status: finalStatus,
+      scheduledPublishAt: finalStatus === "SCHEDULED" && scheduledDate ? new Date(scheduledDate).toISOString() : undefined,
       textContent,
       imageUrls: images,
     };
@@ -201,33 +195,32 @@ export default function ChapterEditorPage() {
         setLastSavedTime(
           now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
         );
-        // Clear local backup once server is updated
         localStorage.removeItem(storageKey);
 
         if (isNew && json.data?.chapter?.id) {
-          // Replace URL to edit mode without full reload
           router.replace(`/author/stories/${storyId}/chapters/${json.data.chapter.id}`);
         }
 
         if (targetStatus === "PUBLISHED") {
-          alert("เผยแพร่ตอนเรียบร้อยแล้ว!");
+          toast.success("เผยแพร่ตอนสำเร็จ!", "ตอนใหม่พร้อมให้อ่านบนหน้าเว็บแล้ว");
           router.push(`/author/stories/${storyId}`);
+        } else {
+          toast.success("บันทึกฉบับร่างเรียบร้อย");
         }
       } else {
-        alert(json.error?.message || "บันทึกไม่สำเร็จ");
+        toast.error("บันทึกไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      console.error("Save chapter error");
+      toast.error("เกิดข้อผิดพลาดในการบันทึกตอน");
     } finally {
       setSaving(false);
     }
   };
 
-  // 5. Autosave mechanism (every 25 seconds if changes exist)
+  // 5. Autosave backup
   useEffect(() => {
     if (!hasUnsavedChanges || !title.trim()) return;
 
-    // Save backup to LocalStorage immediately
     localStorage.setItem(
       storageKey,
       JSON.stringify({
@@ -239,48 +232,17 @@ export default function ChapterEditorPage() {
     );
 
     const timer = setTimeout(() => {
-      // Autosave as DRAFT in background
       saveChapter("DRAFT");
     }, 25000);
 
     return () => clearTimeout(timer);
-  }, [hasUnsavedChanges, title, textContent, images]);
+  }, [hasUnsavedChanges, textContent, images, title]);
 
-  // 6. Rich Text formatting helpers
-  const insertFormatting = (prefix: string, suffix: string = "") => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-    const replacement = `${prefix}${selectedText || "ข้อความ"}${suffix}`;
-
-    const newText = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
-    setTextContent(newText);
-    setHasUnsavedChanges(true);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selectedText.length || 7));
-    }, 0);
-  };
-
-  // 7. Manga Image Management helpers
+  // 6. Manga image manipulation handlers
   const handleAddImage = () => {
     if (!newImageUrl.trim()) return;
     setImages([...images, newImageUrl.trim()]);
     setNewImageUrl("");
-    setHasUnsavedChanges(true);
-  };
-
-  const handleMoveImage = (index: number, direction: "left" | "right") => {
-    const targetIndex = direction === "left" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= images.length) return;
-    const updated = [...images];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(targetIndex, 0, moved);
-    setImages(updated);
     setHasUnsavedChanges(true);
   };
 
@@ -289,18 +251,20 @@ export default function ChapterEditorPage() {
     setHasUnsavedChanges(true);
   };
 
-  if (!user || (user.role !== "AUTHOR" && user.role !== "SUPER_ADMIN")) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center text-center p-4">
-        <h1 className="text-xl font-bold text-white">เฉพาะนักเขียนเท่านั้น</h1>
-      </div>
-    );
-  }
+  const handleMoveImage = (index: number, direction: "left" | "right") => {
+    const target = direction === "left" ? index - 1 : index + 1;
+    if (target < 0 || target >= images.length) return;
+    const updated = [...images];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(target, 0, moved);
+    setImages(updated);
+    setHasUnsavedChanges(true);
+  };
 
   if (loading || !story) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -308,42 +272,42 @@ export default function ChapterEditorPage() {
   const isNovel = story.type === "NOVEL";
 
   return (
-    <div className="min-h-screen pb-20 bg-zinc-950 text-white">
+    <div className="min-h-screen pb-20 bg-black text-white">
       {/* Top Floating Control Bar */}
-      <header className="sticky top-0 z-40 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-6 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 bg-[#121215]/95 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 py-2.5">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
               href={`/author/stories/${story.id}`}
-              className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition"
+              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white transition"
               title="กลับไปหน้าจัดการตอน"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#FFE600]">
                 {isNovel ? "NOVEL TEXT EDITOR" : "MANGA UPLOADER"}
               </span>
-              <h2 className="text-sm font-bold text-white truncate max-w-[200px] sm:max-w-xs">{story.title}</h2>
+              <h2 className="text-xs font-bold text-white truncate max-w-[180px] sm:max-w-xs">{story.title}</h2>
             </div>
           </div>
 
-          {/* Center: Autosave Status Indicator (A.4 Checklist) */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-mono text-zinc-400">
+          {/* Center: Autosave Status Indicator */}
+          <div className="hidden md:flex items-center gap-2 text-xs font-mono text-neutral-400">
             {saving ? (
-              <span className="inline-flex items-center gap-1.5 text-amber-400">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span className="inline-flex items-center gap-1.5 text-[#FFE600]">
+                <span className="w-2 h-2 rounded-full bg-[#FFE600] animate-ping" />
                 กำลังบันทึกอัตโนมัติ...
               </span>
             ) : lastSavedTime ? (
               <span className="inline-flex items-center gap-1.5 text-emerald-400">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                บันทึกแล้วเมื่อ {lastSavedTime}
+                บันทึกแล้ว {lastSavedTime}
               </span>
             ) : hasUnsavedChanges ? (
-              <span className="text-zinc-500">มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก</span>
+              <span className="text-neutral-500">มีการเปลี่ยนแปลงยังไม่ได้บันทึก</span>
             ) : (
-              <span className="text-zinc-500">พร้อมใช้งาน</span>
+              <span className="text-neutral-500">พร้อมใช้งาน</span>
             )}
           </div>
 
@@ -352,7 +316,7 @@ export default function ChapterEditorPage() {
             <button
               type="button"
               onClick={() => setShowPreview(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition border border-zinc-700"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white text-xs font-medium transition border border-white/[0.08]"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>ดูตัวอย่าง</span>
@@ -362,7 +326,7 @@ export default function ChapterEditorPage() {
               type="button"
               onClick={() => saveChapter("DRAFT")}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition border border-zinc-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-neutral-200 text-xs font-semibold transition border border-white/[0.08] disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
               <span>บันทึกร่าง</span>
@@ -372,34 +336,34 @@ export default function ChapterEditorPage() {
               type="button"
               onClick={() => saveChapter("PUBLISHED")}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition shadow-sm disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition disabled:opacity-50 active:scale-[0.99]"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>เผยแพร่ตอนนี้</span>
+              <span>เผยแพร่</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Workspace */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {/* Disaster Recovery Banner */}
         {recoveredFromLocal && (
-          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-xs text-amber-300">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span>ตรวจพบฉบับร่างที่บันทึกสำรองไว้ในเครื่องล่าสุด คุณต้องการกู้คืนเนื้อหาหรือไม่?</span>
+          <div className="mb-5 p-3.5 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5 text-xs text-[#FFE600]">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>ตรวจพบฉบับร่างที่บันทึกสำรองไว้ในเครื่อง คุณต้องการกู้คืนเนื้อหาหรือไม่?</span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={applyLocalRecovery}
-                className="px-3 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-bold hover:bg-amber-400"
+                className="px-3 py-1 rounded-lg bg-[#FFE600] text-black text-xs font-bold hover:bg-[#F5DC00]"
               >
                 กู้คืนร่าง
               </button>
               <button
                 onClick={dismissLocalRecovery}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800"
+                className="p-1 text-neutral-400 hover:text-white rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -408,9 +372,9 @@ export default function ChapterEditorPage() {
         )}
 
         {/* Chapter Title & Pricing Bar */}
-        <div className="p-6 rounded-3xl bg-zinc-900 border border-zinc-800 space-y-4 mb-6 shadow-xl">
+        <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-3.5 mb-5">
           <div>
-            <label className="text-zinc-400 text-xs font-semibold block mb-1.5">ชื่อตอน</label>
+            <label className="text-neutral-400 text-xs font-medium block mb-1">ชื่อตอน</label>
             <input
               type="text"
               required
@@ -420,16 +384,16 @@ export default function ChapterEditorPage() {
                 setHasUnsavedChanges(true);
               }}
               placeholder="เช่น ตอนที่ 1: กำเนิดราชันย์มนตรา"
-              className="w-full px-4 py-3 rounded-2xl bg-zinc-800 border border-zinc-700 text-white font-prompt text-base font-bold placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-prompt text-sm font-bold placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-zinc-800/80">
-            {/* Pricing Input (A.6 Checklist) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/[0.06]">
+            {/* Pricing Input */}
             <div>
-              <label className="text-zinc-400 text-xs font-semibold block mb-1.5 flex items-center gap-1">
-                <Coins className="w-3.5 h-3.5 text-yellow-400" />
-                <span>ราคาเหรียญ (0 = อ่านฟรี)</span>
+              <label className="text-neutral-400 text-xs font-medium block mb-1 flex items-center gap-1">
+                <Coins className="w-3.5 h-3.5 text-[#FFE600]" />
+                <span>ราคาเหรียญ (0 = ฟรี)</span>
               </label>
               <input
                 type="number"
@@ -440,225 +404,194 @@ export default function ChapterEditorPage() {
                   setCoinPrice(Number(e.target.value));
                   setHasUnsavedChanges(true);
                 }}
-                className="w-full px-3.5 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-mono text-sm focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs focus:outline-none focus:border-[#FFE600]"
               />
             </div>
 
             {/* Status Select */}
             <div>
-              <label className="text-zinc-400 text-xs font-semibold block mb-1.5">สถานะตอน</label>
+              <label className="text-neutral-400 text-xs font-medium block mb-1">สถานะตอน</label>
               <select
                 value={status}
                 onChange={(e) => {
-                  setStatus(e.target.value as "DRAFT" | "PUBLISHED");
+                  setStatus(e.target.value as "DRAFT" | "PUBLISHED" | "SCHEDULED");
                   setHasUnsavedChanges(true);
                 }}
-                className="w-full px-3.5 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#FFE600]"
               >
                 <option value="DRAFT">ฉบับร่าง (ยังไม่เปิดเผยแพร่)</option>
-                <option value="PUBLISHED">เผยแพร่สาธารณะ (ผู้อ่านเห็นทันที)</option>
+                <option value="PUBLISHED">เผยแพร่ทันที</option>
+                <option value="SCHEDULED">ตั้งเวลาเผยแพร่อัตโนมัติ</option>
               </select>
             </div>
 
             {/* Metrics Display */}
-            <div className="flex items-center sm:justify-end gap-3 text-xs text-zinc-400 self-end pb-2 font-mono">
+            <div className="flex items-center sm:justify-end gap-3 text-xs text-neutral-400 self-end pb-1.5 font-mono">
               <span className="flex items-center gap-1">
-                <FileText className="w-3.5 h-3.5 text-zinc-500" />
+                <FileText className="w-3.5 h-3.5 text-neutral-500" />
                 {isNovel ? `${wordCount.toLocaleString()} คำ` : `${images.length} หน้าภาพ`}
               </span>
               {isNovel && (
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-zinc-500" />~{readingTimeMinutes} นาทีอ่าน
+                  <Clock className="w-3.5 h-3.5 text-neutral-500" />~{readingTimeMinutes} นาทีอ่าน
                 </span>
               )}
             </div>
           </div>
-        </div>
 
-        {/* SECTION A.4: NOVEL RICH TEXT CHAPTER EDITOR */}
-        {isNovel && (
-          <div className="rounded-3xl bg-zinc-900 border border-zinc-800 overflow-hidden shadow-2xl">
-            {/* Formatting Toolbar */}
-            <div className="px-4 py-2.5 bg-zinc-800/80 border-b border-zinc-700/80 flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => insertFormatting("**", "**")}
-                title="ตัวหนา"
-                className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700 transition"
-              >
-                <Bold className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("*", "*")}
-                title="ตัวเอียง"
-                className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700 transition"
-              >
-                <Italic className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n## ", "\n")}
-                title="หัวข้อย่อย H2"
-                className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700 transition"
-              >
-                <Heading2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n### ", "\n")}
-                title="หัวข้อย่อย H3"
-                className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700 transition"
-              >
-                <Heading3 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n> ", "\n")}
-                title="กล่องข้อความ / คำคม"
-                className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700 transition"
-              >
-                <Quote className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n\n---\n\n", "")}
-                title="เส้นคั่นฉาก"
-                className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700 transition"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Editable Content Area */}
-            <div className="p-6">
-              <textarea
-                ref={textareaRef}
-                rows={22}
-                value={textContent}
+          {/* Scheduled Publishing Date-Time Picker */}
+          {status === "SCHEDULED" && (
+            <div className="pt-2 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20">
+              <div className="flex items-center gap-2 text-xs text-[#FFE600]">
+                <Calendar className="w-4 h-4 text-[#FFE600] shrink-0" />
+                <span>วันและเวลาเผยแพร่อัตโนมัติ:</span>
+              </div>
+              <input
+                type="datetime-local"
+                value={scheduledDate}
                 onChange={(e) => {
-                  setTextContent(e.target.value);
+                  setScheduledDate(e.target.value);
                   setHasUnsavedChanges(true);
                 }}
-                placeholder="เริ่มต้นถ่ายทอดจินตนาการของคุณที่นี่... สามารถใช้ Markdown ในการจัดรูปแบบได้ เช่น **ข้อความตัวหนา** หรือ *ข้อความตัวเอียง*"
-                className="w-full bg-transparent text-zinc-200 font-serif text-base leading-relaxed placeholder-zinc-600 focus:outline-none resize-y"
+                className="px-2.5 py-1 rounded-lg bg-black border border-[#FFE600]/40 text-[#FFE600] text-xs font-mono focus:outline-none focus:border-[#FFE600]"
               />
             </div>
-          </div>
+          )}
+        </div>
+
+        {/* SECTION: NOVEL RICH TEXT CHAPTER EDITOR */}
+        {isNovel && (
+          <RichChapterEditor
+            value={textContent}
+            onChange={(newVal) => {
+              setTextContent(newVal);
+              setHasUnsavedChanges(true);
+            }}
+            placeholder="เริ่มต้นบรรยายจินตนาการของคุณที่นี่..."
+          />
         )}
 
-        {/* SECTION A.5: MANGA PAGE UPLOADER */}
+        {/* SECTION: MANGA PAGE UPLOADER */}
         {!isNovel && (
-          <div className="space-y-6">
-            {/* Upload / Add image box */}
-            <div className="p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-xl space-y-4">
-              <h3 className="text-sm font-bold text-white font-prompt flex items-center gap-2">
-                <Upload className="w-4 h-4 text-amber-400" />
-                <span>เพิ่มหน้าภาพมังงะ/เว็บตูน</span>
+          <div className="space-y-5">
+            <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
+              <h3 className="text-xs font-bold text-white font-prompt flex items-center gap-2">
+                <Upload className="w-4 h-4 text-[#FFE600]" />
+                <span>อัปโหลดหน้าภาพมังงะ/เว็บตูน (Drag & Drop หลายไฟล์พร้อมกัน)</span>
               </h3>
 
-              <div className="flex gap-3">
-                <input
-                  type="url"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="ใส่ URL รูปภาพหน้ามังงะ (JPG, PNG, WebP)..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-amber-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddImage}
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>เพิ่มหน้านี้</span>
-                </button>
-              </div>
+              <ImageUploadDropzone
+                multiple={true}
+                value={images}
+                onChange={(urls) => {
+                  setImages(Array.isArray(urls) ? urls : [urls]);
+                  setHasUnsavedChanges(true);
+                }}
+                label=""
+                helperText="ลากไฟล์ภาพหลายไฟล์พร้อมกันมาวาง หรือคลิกเลือกไฟล์ (JPG, PNG, WebP) ขนาดไม่เกิน 10MB ต่อรูป"
+                aspectRatio="auto"
+              />
 
-              {/* Sample images quick-add buttons */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-800 text-xs text-zinc-400">
-                <span className="text-[11px] text-zinc-500 font-mono">ใส่ภาพตัวอย่าง:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImages([
-                      ...images,
-                      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
-                    ]);
-                    setHasUnsavedChanges(true);
-                  }}
-                  className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[11px] text-zinc-300"
-                >
-                  + หน้าภาพแนวตั้ง 1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImages([
-                      ...images,
-                      "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80",
-                    ]);
-                    setHasUnsavedChanges(true);
-                  }}
-                  className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[11px] text-zinc-300"
-                >
-                  + หน้าภาพแนวตั้ง 2
-                </button>
+              <div className="pt-3 border-t border-white/[0.06]">
+                <label className="text-[11px] font-medium text-neutral-400 block mb-1.5">หรือเพิ่มรูปภาพจาก URL โดยตรง:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    placeholder="ใส่ URL รูปภาพหน้ามังงะ..."
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddImage}
+                    className="px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>เพิ่มหน้านี้</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Thumbnail Grid & Reorder (A.5 Checklist) */}
+            {/* Thumbnail Grid & Reorder */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-bold text-white font-prompt">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold text-white font-prompt">
                   ลำดับหน้าทั้งหมด ({images.length} หน้า)
                 </h4>
-                <span className="text-xs text-zinc-500">กดปุ่มซ้าย-ขวาเพื่อสลับลำดับหน้ามังงะ</span>
+                <span className="text-[11px] text-neutral-400 flex items-center gap-1">
+                  <GripVertical className="w-3 h-3 text-[#FFE600]" />
+                  <span>สามารถลากการ์ดสลับลำดับได้ หรือใช้ปุ่มซ้าย-ขวา</span>
+                </span>
               </div>
 
               {images.length === 0 ? (
-                <div className="p-12 text-center rounded-3xl bg-zinc-900/40 border border-dashed border-zinc-800">
-                  <Upload className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-xs text-zinc-400">ยังไม่มีหน้าภาพในตอนนี้ กรุณาเพิ่มภาพด้านบน</p>
+                <div className="p-10 text-center rounded-xl bg-white/[0.02] border border-dashed border-white/[0.08]">
+                  <Upload className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
+                  <p className="text-xs text-neutral-400">ยังไม่มีหน้าภาพในตอนนี้ กรุณาอัปโหลดภาพด้านบน</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {images.map((imgUrl, idx) => (
                     <div
                       key={idx}
-                      className="group relative rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden p-2 space-y-2"
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedImageIndex(idx);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedImageIndex === null || draggedImageIndex === idx) return;
+                        const updated = [...images];
+                        const [removed] = updated.splice(draggedImageIndex, 1);
+                        updated.splice(idx, 0, removed);
+                        setImages(updated);
+                        setDraggedImageIndex(null);
+                        setHasUnsavedChanges(true);
+                      }}
+                      className={`group relative rounded-xl bg-[#121215] border overflow-hidden p-2 space-y-1.5 cursor-grab active:cursor-grabbing transition-all ${
+                        draggedImageIndex === idx
+                          ? "opacity-30 border-[#FFE600] scale-95"
+                          : "border-white/[0.08] hover:border-white/20"
+                      }`}
                     >
-                      <div className="aspect-[3/4] rounded-xl overflow-hidden bg-zinc-800 relative">
+                      <div className="aspect-[3/4] rounded-lg overflow-hidden bg-neutral-900 relative">
                         <img
                           src={imgUrl}
                           alt={`Page ${idx + 1}`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover pointer-events-none"
                         />
-                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/80 text-[10px] font-mono font-bold text-white">
+                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono font-bold text-white">
                           หน้า {idx + 1}
                         </span>
                       </div>
 
                       {/* Reorder & Delete controls */}
-                      <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center justify-between pt-0.5">
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => handleMoveImage(idx, "left")}
                             disabled={idx === 0}
                             title="สลับไปทางซ้าย"
-                            className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white disabled:opacity-20"
+                            className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white disabled:opacity-20"
                           >
-                            <MoveLeft className="w-3.5 h-3.5" />
+                            <MoveLeft className="w-3 h-3" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleMoveImage(idx, "right")}
                             disabled={idx === images.length - 1}
                             title="สลับไปทางขวา"
-                            className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white disabled:opacity-20"
+                            className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white disabled:opacity-20"
                           >
-                            <MoveRight className="w-3.5 h-3.5" />
+                            <MoveRight className="w-3 h-3" />
                           </button>
                         </div>
 
@@ -666,9 +599,9 @@ export default function ChapterEditorPage() {
                           type="button"
                           onClick={() => handleDeleteImage(idx)}
                           title="ลบหน้านี้"
-                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-red-950/60 text-zinc-400 hover:text-red-400"
+                          className="p-1 rounded bg-white/[0.04] hover:bg-rose-500/20 text-neutral-400 hover:text-rose-400"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
@@ -680,37 +613,40 @@ export default function ChapterEditorPage() {
         )}
       </main>
 
-      {/* PREVIEW MODAL (A.4 & A.5 Checklist) */}
+      {/* PREVIEW MODAL */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-2xl max-h-[85vh] bg-zinc-900 border border-zinc-800 rounded-3xl flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl max-h-[85vh] bg-[#121215] border border-white/10 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
             {/* Preview Header */}
-            <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+            <div className="px-5 py-3 border-b border-white/[0.08] flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-mono text-amber-400">PREVIEW MODE</span>
-                <h3 className="text-base font-bold text-white font-prompt">{title || "ชื่อตอน"}</h3>
+                <span className="text-[10px] font-mono text-[#FFE600]">PREVIEW MODE</span>
+                <h3 className="text-sm font-bold text-white font-prompt">{title || "ชื่อตอน"}</h3>
               </div>
               <button
                 onClick={() => setShowPreview(false)}
-                className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-800"
+                className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-white/[0.06]"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Preview Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {isNovel ? (
-                <div className="font-serif text-base text-zinc-200 leading-loose whitespace-pre-wrap">
-                  {textContent || "ยังไม่มีเนื้อหาข้อความในตอนนี้"}
-                </div>
+                <div
+                  className="font-sarabun text-sm text-neutral-200 leading-loose prose prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: textContent || "<p>ยังไม่มีเนื้อหาข้อความในตอนนี้</p>",
+                  }}
+                />
               ) : (
-                <div className="max-w-md mx-auto space-y-2">
+                <div className="max-w-md mx-auto space-y-1.5">
                   {images.length === 0 ? (
-                    <p className="text-center text-xs text-zinc-500 py-10">ยังไม่มีรูปภาพสำหรับดูตัวอย่าง</p>
+                    <p className="text-center text-xs text-neutral-500 py-10">ยังไม่มีรูปภาพสำหรับดูตัวอย่าง</p>
                   ) : (
                     images.map((url, i) => (
-                      <div key={i} className="rounded-xl overflow-hidden bg-black shadow-lg">
+                      <div key={i} className="rounded-lg overflow-hidden bg-black">
                         <img src={url} alt={`Preview ${i + 1}`} className="w-full h-auto block" />
                       </div>
                     ))

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
+import { moderateContent } from "@/lib/profanity-filter";
 
 export async function GET(req: NextRequest) {
   try {
@@ -55,13 +56,19 @@ export async function POST(req: NextRequest) {
       return apiError("VALIDATION_ERROR", "กรุณากรอกเนื้อหาความคิดเห็น");
     }
 
+    // Automated Moderation Check (Profanity & Gambling Spam Filter)
+    const moderation = moderateContent(content);
+    if (!moderation.isValid) {
+      return apiError("CONTENT_POLICY_VIOLATION", moderation.rejectReason || "ความคิดเห็นของคุณไม่ผ่านเกณฑ์การเผยแพร่", null, 400);
+    }
+
     const comment = await prisma.comment.create({
       data: {
         userId: user.id,
         storyId: storyId || null,
         chapterId: chapterId || null,
         parentId: parentId || null,
-        content: content.trim(),
+        content: moderation.cleanText,
       },
       include: {
         user: {

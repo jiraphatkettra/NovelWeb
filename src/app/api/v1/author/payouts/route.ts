@@ -29,9 +29,11 @@ export async function POST(req: NextRequest) {
       return apiError("PAYOUT_NOT_ELIGIBLE", "ยอดเงินที่สามารถถอนได้ไม่เพียงพอ");
     }
 
-    // Processing fee (e.g. 15 THB for bank transfer)
-    const feeThb = 15;
-    const netAmountThb = amountThb - feeThb;
+    // Thai Revenue Department Withholding Tax (มาตรา 40(3) ค่าลิขสิทธิ์: หัก 3%)
+    const taxRate = 0.03;
+    const taxThb = Math.round(amountThb * taxRate);
+    const feeThb = 15; // ค่าธรรมเนียมการโอนธนาคาร
+    const netAmountThb = Math.max(0, amountThb - taxThb - feeThb);
 
     const payout = await prisma.$transaction(async (tx) => {
       // Deduct from pendingPayout
@@ -57,8 +59,14 @@ export async function POST(req: NextRequest) {
     });
 
     return apiSuccess({
-      message: "ยื่นคำขอถอนเงินเรียบร้อยแล้ว ทีมงานจะดำเนินการตรวจสอบภายใน 1-3 วันทำการ",
+      message: "ยื่นคำขอถอนเงินเรียบร้อยแล้ว (หักภาษี ณ ที่จ่าย 3% และค่าธรรมเนียมโอนเงิน 15 บาท เรียบร้อยแล้ว)",
       payout,
+      breakdown: {
+        amountThb,
+        taxThb,
+        feeThb,
+        netAmountThb,
+      },
     });
   } catch (error) {
     console.error("Payout request error:", error);

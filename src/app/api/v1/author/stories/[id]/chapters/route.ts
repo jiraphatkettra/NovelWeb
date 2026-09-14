@@ -58,6 +58,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       coinPrice = 0,
       isFree = true,
       status = "DRAFT", // DRAFT, PUBLISHED, SCHEDULED
+      scheduledPublishAt,
       textContent,
       imageUrls,
       previewText,
@@ -74,6 +75,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     });
     const nextChapterNumber = (lastChapter?.chapterNumber ?? 0) + 1;
 
+    let publishDate = new Date();
+    if (status === "SCHEDULED" && scheduledPublishAt) {
+      publishDate = new Date(scheduledPublishAt);
+    }
+
     const chapter = await prisma.$transaction(async (tx) => {
       const createdChapter = await tx.chapter.create({
         data: {
@@ -83,7 +89,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           coinPrice: Number(coinPrice) || 0,
           isFree: Number(coinPrice) === 0 || Boolean(isFree),
           status,
-          publishedAt: status === "PUBLISHED" ? new Date() : new Date(),
+          publishedAt: publishDate,
         },
       });
 
@@ -99,8 +105,24 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return createdChapter;
     });
 
+    // Notify author's followers if published immediately
+    if (status === "PUBLISHED") {
+      const { notifyFollowersOfNewChapter } = await import("@/lib/notifications");
+      notifyFollowersOfNewChapter({
+        storyId: story.id,
+        storySlug: story.slug,
+        storyTitle: story.title,
+        chapterId: chapter.id,
+        chapterNumber: chapter.chapterNumber,
+        chapterTitle: chapter.title,
+        authorId: user.id,
+        authorName: user.penName || user.name,
+        storyType: story.type,
+      }).catch((e) => console.error("Notification trigger error:", e));
+    }
+
     return apiSuccess({
-      message: "สร้างตอนใหม่เรียบร้อยแล้ว",
+      message: status === "SCHEDULED" ? "ตั้งเวลาเผยแพร่ตอนเรียบร้อยแล้ว" : "สร้างตอนใหม่เรียบร้อยแล้ว",
       chapter,
     });
   } catch (error) {

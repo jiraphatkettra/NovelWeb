@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { KeyRound, Mail, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/context/ToastContext";
 
 export default function ForgotPasswordPage() {
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetLink, setResetLink] = useState<string | null>(null);
@@ -24,13 +26,14 @@ export default function ForgotPasswordPage() {
       });
       const json = await res.json();
       if (json.success) {
+        toast.success("สร้างลิงก์รีเซ็ตรหัสผ่านแล้ว");
         setMessage(json.data.message);
         setResetLink(json.data.resetLink);
       } else {
-        alert(json.error?.message || "ไม่พบบัญชีนี้ในระบบ");
+        toast.error("ไม่สามารถดำเนินการได้", json.error?.message || "ไม่พบบัญชีนี้ในระบบ");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setLoading(false);
     }

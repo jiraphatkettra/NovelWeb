@@ -3,9 +3,16 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api-response";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`login:${ip}`, { windowMs: 60 * 1000, max: 10 });
+    if (!rl.success) {
+      return apiError("TOO_MANY_REQUESTS", `คุณพยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอ ${rl.reset} วินาที`, null, 429);
+    }
+
     const body = await req.json();
     const { email, password } = body;
 

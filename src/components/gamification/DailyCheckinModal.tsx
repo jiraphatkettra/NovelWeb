@@ -2,11 +2,13 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { X, Flame, Coins, Sparkles, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/context/ToastContext";
+import { X, Flame, Coins, CheckCircle2 } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
   const { user, refreshUser } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     alreadyCheckedIn?: boolean;
@@ -17,7 +19,7 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
 
   const handleCheckin = async () => {
     if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนเช็คอิน");
+      toast.warning("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบก่อนทำการเช็คอิน");
       return;
     }
 
@@ -31,15 +33,20 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
         setResult(json.data);
         if (!json.data.alreadyCheckedIn) {
           confetti({
-            particleCount: 80,
+            particleCount: 70,
             spread: 60,
             origin: { y: 0.6 },
           });
+          toast.success("เช็คอินสำเร็จ!", `ได้รับ ${json.data.coinsReward || 10} เหรียญ`);
           refreshUser();
+        } else {
+          toast.info("เช็คอินแล้ว", json.data.message || "คุณได้ทำการเช็คอินของวันนี้แล้ว");
         }
+      } else {
+        toast.error("เช็คอินไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเช็คอิน");
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setLoading(false);
     }
@@ -49,29 +56,23 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
-        {/* Decorative background glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl" />
-
+      <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl overflow-hidden">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header */}
         <div className="flex flex-col items-center text-center mt-2">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-400 p-0.5 shadow-lg shadow-orange-500/30 flex items-center justify-center mb-3">
-            <div className="w-full h-full bg-zinc-950 rounded-[14px] flex items-center justify-center">
-              <Flame className="w-8 h-8 text-orange-500 fill-orange-500/30 animate-pulse" />
-            </div>
+          <div className="w-14 h-14 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 flex items-center justify-center mb-3">
+            <Flame className="w-7 h-7 text-[#FFE600]" />
           </div>
-          <h2 className="text-xl font-bold text-white font-prompt">เช็คอินรายวัน รับเหรียญฟรี!</h2>
-          <p className="text-xs text-zinc-400 mt-1 max-w-xs">
-            เข้าอ่านและเช็คอินต่อเนื่องเพื่อรับเหรียญโบนัสพิเศษ ยิ่งอ่านติดต่อกันมาก ยิ่งได้เยอะ!
+          <h2 className="text-xl font-bold text-white font-prompt">เช็คอินรายวัน</h2>
+          <p className="text-xs text-neutral-400 mt-1 max-w-xs">
+            เข้าอ่านและเช็คอินต่อเนื่องเพื่อรับเหรียญโบนัส ยิ่งต่อเนื่องยิ่งได้มาก
           </p>
         </div>
 
@@ -87,19 +88,19 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
                 key={day}
                 className={`flex flex-col items-center p-2 rounded-xl border text-center transition ${
                   isToday
-                    ? "bg-amber-500/10 border-amber-500/50 shadow-md shadow-amber-500/10"
+                    ? "bg-[#FFE600]/10 border-[#FFE600]/40 text-[#FFE600]"
                     : isCompleted
-                    ? "bg-zinc-800/80 border-zinc-700 text-zinc-300"
-                    : "bg-zinc-950/40 border-zinc-800/60 text-zinc-500"
+                    ? "bg-white/[0.06] border-white/[0.1] text-white"
+                    : "bg-white/[0.02] border-white/[0.05] text-neutral-500"
                 }`}
               >
-                <span className="text-[10px] font-medium mb-1">วันที่ {day}</span>
+                <span className="text-[10px] font-medium mb-1">วัน {day}</span>
                 {isCompleted ? (
-                  <CheckCircle2 className="w-4 h-4 text-amber-400 my-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-[#FFE600] my-0.5" />
                 ) : (
-                  <Coins className="w-4 h-4 text-zinc-500 my-0.5" />
+                  <Coins className="w-4 h-4 text-neutral-600 my-0.5" />
                 )}
-                <span className="text-[10px] font-bold text-amber-300">+{10 + (day - 1) * 5}</span>
+                <span className="text-[10px] font-bold text-[#FFE600]">+{10 + (day - 1) * 5}</span>
               </div>
             );
           })}
@@ -107,28 +108,28 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
 
         {/* Result Message or Action Button */}
         {result ? (
-          <div className="bg-zinc-800/80 border border-zinc-700/60 rounded-2xl p-4 text-center">
-            <p className="text-sm font-semibold text-amber-300">{result.message}</p>
+          <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 text-center">
+            <p className="text-xs font-semibold text-[#FFE600]">{result.message}</p>
             {result.coinsReward && (
-              <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-zinc-300">
+              <div className="mt-1.5 flex items-center justify-center gap-1.5 text-xs text-neutral-300">
                 <span>เหรียญฟรีที่ได้รับ:</span>
                 <span className="font-bold text-white">+{result.coinsReward} 🪙</span>
               </div>
             )}
             <button
               onClick={onClose}
-              className="mt-4 w-full py-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white font-medium text-sm transition"
+              className="mt-3 w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium text-xs transition"
             >
-              ปิดหน้าต่าง
+              ปิด
             </button>
           </div>
         ) : (
           <button
             onClick={handleCheckin}
             disabled={loading}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 hover:from-orange-400 hover:to-yellow-300 text-black font-bold text-base shadow-lg shadow-orange-500/25 transition active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <Sparkles className="w-5 h-5 text-black" />
+            <Flame className="w-4 h-4" />
             <span>{loading ? "กำลังเช็คอิน..." : "กดรับเหรียญฟรีวันนี้"}</span>
           </button>
         )}

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAuthModal } from "@/context/AuthModalContext";
+import { useToast } from "@/context/ToastContext";
 import { UserPlus, UserCheck } from "lucide-react";
 
 interface AuthorFollowButtonProps {
@@ -12,6 +14,8 @@ interface AuthorFollowButtonProps {
 
 export function AuthorFollowButton({ authorId, authorName, className = "" }: AuthorFollowButtonProps) {
   const { user } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const { toast } = useToast();
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -42,12 +46,13 @@ export function AuthorFollowButton({ authorId, authorName, className = "" }: Aut
     e.stopPropagation();
 
     if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนกดติดตามนักเขียน");
+      toast.info("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบเพื่อติดตามผลงานของนักเขียน");
+      openAuthModal("LOGIN");
       return;
     }
 
     if (user.id === authorId) {
-      alert("ไม่สามารถติดตามบัญชีตนเองได้");
+      toast.warning("ไม่สามารถติดตามบัญชีตนเองได้");
       return;
     }
 
@@ -60,11 +65,16 @@ export function AuthorFollowButton({ authorId, authorName, className = "" }: Aut
       if (json.success) {
         setIsFollowing(json.data.isFollowing);
         setFollowerCount(json.data.followerCount);
+        toast.success(
+          json.data.isFollowing
+            ? `ติดตาม ${authorName || "นักเขียน"} เรียบร้อยแล้ว`
+            : `เลิกติดตาม ${authorName || "นักเขียน"} แล้ว`
+        );
       } else {
-        alert(json.error?.message || "ดำเนินการไม่สำเร็จ");
+        toast.error("ดำเนินการไม่สำเร็จ", json.error?.message);
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setToggling(false);
     }

@@ -39,3 +39,4 @@ dev.db-journal
 
 # backup / temporary folders
 /2/
+public/uploads/

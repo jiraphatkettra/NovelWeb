@@ -14,6 +14,10 @@ import {
   Home,
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useToast } from "@/context/ToastContext";
+import { useAuthModal } from "@/context/AuthModalContext";
+import { useRouter } from "next/navigation";
+import { CommentSection } from "@/components/story/CommentSection";
 
 interface MangaChapterData {
   id: string;
@@ -41,27 +45,53 @@ interface MangaChapterData {
 }
 
 export function MangaReader({ initialChapter }: { initialChapter: MangaChapterData }) {
+  const router = useRouter();
   const { user, refreshUser } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const { toast } = useToast();
   const [chapter, setChapter] = useState<MangaChapterData>(initialChapter);
   const [unlocking, setUnlocking] = useState(false);
 
-  // Auto-record reading progress & bookmark chapter position (B.3 Checklist)
+  // Auto-record reading progress & bookmark chapter position with real scroll percentage
   useEffect(() => {
     if (!user || !chapter?.id) return;
-    const recordProgress = async () => {
-      try {
-        await fetch("/api/v1/bookmarks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            storyId: chapter.story.id,
-            lastChapterId: chapter.id,
-            progressPercent: 50,
-          }),
-        });
-      } catch {}
+
+    let timer: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (scrollHeight > 0) {
+          const percent = Math.min(100, Math.max(5, Math.round((window.scrollY / scrollHeight) * 100)));
+          fetch("/api/v1/reading-progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storyId: chapter.story.id,
+              chapterId: chapter.id,
+              progressPercent: percent,
+            }),
+          }).catch(() => {});
+        }
+      }, 1000);
     };
-    recordProgress();
+
+    // Initial reading progress sync
+    fetch("/api/v1/reading-progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storyId: chapter.story.id,
+        chapterId: chapter.id,
+        progressPercent: 5,
+      }),
+    }).catch(() => {});
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timer);
+    };
   }, [user, chapter?.id, chapter?.story?.id]);
 
   // Anti-piracy: disable right-click context menu and dragging
@@ -75,7 +105,8 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
 
   const handleUnlock = async () => {
     if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนปลดล็อกตอน");
+      toast.info("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบเพื่อปลดล็อกมังงะตอนพรีเมียม");
+      router.push(`/auth/login?redirect=/reader/manga/${chapter.id}`);
       return;
     }
 
@@ -83,6 +114,8 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
     try {
       const res = await fetch(`/api/v1/chapters/${chapter.id}/unlock`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "AUTO" }),
       });
       const json = await res.json();
       if (json.success) {
@@ -91,6 +124,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           spread: 70,
           origin: { y: 0.6 },
         });
+        toast.success("ปลดล็อกมังงะสำเร็จ!", "เพลิดเพลินกับภาพคมชัดระดับ HD ได้ทันที");
         refreshUser();
         const contentRes = await fetch(`/api/v1/chapters/${chapter.id}/content`);
         const contentJson = await contentRes.json();
@@ -98,10 +132,10 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           setChapter(contentJson.data);
         }
       } else {
-        alert(json.error?.message || "ปลดล็อกไม่สำเร็จ");
+        toast.error("ปลดล็อกไม่สำเร็จ", json.error?.message || "กรุณาตรวจสอบเหรียญคงเหลือ");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการปลดล็อก");
+      toast.error("เกิดข้อผิดพลาด", "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
     } finally {
       setUnlocking(false);
     }
@@ -149,50 +183,71 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
       {/* Manga Panels Container */}
       <main className="max-w-3xl mx-auto min-h-[80vh] flex flex-col items-center">
         {!chapter.isUnlocked ? (
-          /* LOCKED CHAPTER */
-          <div className="my-20 p-8 rounded-3xl bg-zinc-900 border border-amber-500/30 text-center max-w-lg mx-4">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400">
-              <Lock className="w-8 h-8" />
+          /* LOCKED CHAPTER KAKAO WEBTOON STYLE */
+          <div className="my-16 max-w-lg w-full mx-4 p-6 sm:p-8 rounded-2xl bg-[#121215] border border-white/10 shadow-2xl text-center text-white">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600]">
+              <Lock className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold font-prompt text-amber-300">ตอนมังงะพรีเมียม</h2>
-            <p className="text-xs text-zinc-400 mt-1">
-              ปลดล็อกเพื่อรับชมภาพมังงะ/เว็บตูนความคมชัดสูงฉบับเต็ม
+
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFE600]/10 text-[#FFE600] text-[11px] font-bold font-prompt uppercase tracking-wider mb-2">
+              <Sparkles className="w-3 h-3" />
+              มังงะ & เว็บตูนพรีเมียม
+            </span>
+
+            <h2 className="text-lg sm:text-xl font-bold font-prompt text-white">
+              ปลดล็อกเพื่ออ่านฉบับเต็ม
+            </h2>
+            <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto leading-relaxed">
+              ภาพต้นฉบับคมชัดพิเศษ ปลดล็อก 1 ครั้ง เข้าอ่านซ้ำได้ตลอดไป
             </p>
 
-            <div className="flex items-center justify-center gap-4 my-6 text-sm">
-              <div className="bg-zinc-800 px-4 py-2 rounded-xl border border-zinc-700 flex items-center gap-2">
-                <Coins className="w-4 h-4 text-amber-400" />
-                <span>ราคา:</span>
-                <strong className="text-amber-300">{chapter.coinPrice} เหรียญ</strong>
+            <div className="flex flex-wrap items-center justify-center gap-3 my-5 text-xs">
+              <div className="flex items-center gap-2 bg-white/[0.04] px-3.5 py-2 rounded-xl border border-white/[0.08]">
+                <Coins className="w-4 h-4 text-[#FFE600]" />
+                <span className="text-neutral-400">ราคา:</span>
+                <strong className="text-white font-mono font-bold text-xs">{chapter.coinPrice} เหรียญ</strong>
               </div>
-              <div className="bg-zinc-800 px-4 py-2 rounded-xl border border-zinc-700">
-                <span>เหรียญของคุณ:</span>
-                <strong className="text-white ml-1">{userTotalCoins}</strong>
+              <div className="flex items-center gap-2 bg-white/[0.04] px-3.5 py-2 rounded-xl border border-white/[0.08]">
+                <span className="text-neutral-400">เหรียญของคุณ:</span>
+                <strong className={`font-mono font-bold text-xs ${userTotalCoins >= chapter.coinPrice ? "text-emerald-400" : "text-rose-400"}`}>
+                  {userTotalCoins} เหรียญ
+                </strong>
               </div>
             </div>
 
-            {userTotalCoins >= chapter.coinPrice ? (
+            {!user ? (
+              <button
+                onClick={() => openAuthModal("LOGIN")}
+                className="w-full py-3.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition flex items-center justify-center gap-2 active:scale-[0.99]"
+              >
+                <Lock className="w-4 h-4" />
+                <span>เข้าสู่ระบบเพื่อปลดล็อก</span>
+              </button>
+            ) : userTotalCoins >= chapter.coinPrice ? (
               <button
                 onClick={handleUnlock}
                 disabled={unlocking}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-black font-bold transition flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
               >
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
                 <span>{unlocking ? "กำลังปลดล็อก..." : `ใช้ ${chapter.coinPrice} เหรียญ ปลดล็อกทันที`}</span>
               </button>
             ) : (
-              <Link
-                href="/coin-shop"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-500 text-black font-bold text-sm"
-              >
-                <Coins className="w-4 h-4" />
-                <span>ไปซื้อเหรียญที่ Coin Shop</span>
-              </Link>
+              <div className="space-y-2.5">
+                <p className="text-[11px] text-rose-400">เหรียญของคุณไม่เพียงพอ ขาดอีก {chapter.coinPrice - userTotalCoins} เหรียญ</p>
+                <Link
+                  href="/coin-shop"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                >
+                  <Coins className="w-4 h-4" />
+                  <span>ไปเติมเหรียญที่ Coin Shop</span>
+                </Link>
+              </div>
             )}
           </div>
         ) : (
-          /* UNLOCKED WEBTOON PANELS WITH WATERMARK */
-          <div className="w-full relative flex flex-col items-center">
+          /* UNLOCKED WEBTOON PANELS WITH WATERMARK (Optimized for Phone & Tablet) */
+          <div className="w-full max-w-2xl mx-auto relative flex flex-col items-center">
             {chapter.imageUrls && chapter.imageUrls.length > 0 ? (
               chapter.imageUrls.map((imgUrl, index) => (
                 <div key={index} className="relative w-full overflow-hidden">
@@ -204,7 +259,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
                     loading="lazy"
                   />
 
-                  {/* Forensic Dynamic Watermark Overlay (Section 7) */}
+                  {/* Forensic Dynamic Watermark Overlay */}
                   <div className="absolute inset-0 pointer-events-none piracy-watermark flex flex-col justify-around items-center opacity-15 rotate-[-25deg] text-[11px] font-mono text-white tracking-widest">
                     <span>READVERSE • {user?.name || "READER"} • ID: {chapter.id.substring(0, 8)}</span>
                     <span>READVERSE • PROTECTED CONTENT</span>
@@ -223,18 +278,18 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           {chapter.prevChapter ? (
             <Link
               href={`/reader/manga/${chapter.prevChapter.id}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium transition"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>ตอนก่อนหน้า</span>
             </Link>
           ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-4 py-2.5">ตอนแรกสุด</div>
+            <div className="text-xs opacity-30 cursor-not-allowed px-3.5 py-2">ตอนแรกสุด</div>
           )}
 
           <Link
             href={`/stories/${chapter.story.slug}`}
-            className="px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold transition"
+            className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 text-xs font-medium transition"
           >
             สารบัญตอน
           </Link>
@@ -242,14 +297,23 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           {chapter.nextChapter ? (
             <Link
               href={`/reader/manga/${chapter.nextChapter.id}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
             >
               <span>ตอนถัดไป</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-4 py-2.5">ตอนล่าสุด</div>
+            <div className="text-xs opacity-30 cursor-not-allowed px-3.5 py-2">ตอนล่าสุด</div>
           )}
+        </div>
+
+        {/* Real Chapter Comments */}
+        <div className="w-full max-w-3xl mt-6 pt-8 border-t border-white/10 px-4">
+          <CommentSection
+            chapterId={chapter.id}
+            storyId={chapter.story.id}
+            authorId={chapter.story.author.id}
+          />
         </div>
       </main>
     </div>

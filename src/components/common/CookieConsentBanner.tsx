@@ -27,10 +27,10 @@ export function CookieConsentBanner() {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 animate-in slide-in-from-bottom-5 duration-300">
-      <div className="p-4 sm:p-5 rounded-3xl bg-neutral-900/95 backdrop-blur-xl border border-white/10 shadow-2xl space-y-3 text-xs text-neutral-300">
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#121215] border border-white/10 shadow-2xl space-y-3 text-xs text-neutral-300">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 text-white font-bold font-prompt">
-            <Cookie className="w-4 h-4 text-amber-400" />
+            <Cookie className="w-4 h-4 text-[#FFE600]" />
             <span>นโยบายการใช้งานคุกกี้ (PDPA)</span>
           </div>
           <button
@@ -51,13 +51,13 @@ export function CookieConsentBanner() {
         <div className="flex items-center gap-2 pt-1">
           <button
             onClick={handleAccept}
-            className="flex-1 py-2 rounded-full bg-white text-black font-bold text-xs hover:bg-neutral-200 transition shadow-sm"
+            className="flex-1 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition shadow-sm"
           >
             ยอมรับทั้งหมด
           </button>
           <button
             onClick={() => setVisible(false)}
-            className="px-4 py-2 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold transition"
+            className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 text-neutral-300 text-xs font-semibold transition"
           >
             ปฏิเสธ
           </button>

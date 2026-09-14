@@ -1,16 +1,36 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { allFontVariables } from "@/lib/fonts";
 import { AuthProvider } from "@/context/AuthContext";
+import { AuthModalProvider } from "@/context/AuthModalContext";
+import { ToastProvider } from "@/context/ToastContext";
 import { Navbar } from "@/components/layout/Navbar";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { LoginModal } from "@/components/auth/LoginModal";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
 import { CookieConsentBanner } from "@/components/common/CookieConsentBanner";
+import { ParticleCanvas } from "@/components/effects/ParticleCanvas";
+import { AnimatedGradientOrbs } from "@/components/effects/AnimatedGradientOrbs";
 import "./globals.css";
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
-  title: "ReadVerse — แพลตฟอร์มอ่าน-เขียนนิยายและมังงะออนไลน์พรีเมียม",
+  title: "ReadVerse — อ่านนิยายและมังงะออนไลน์",
   description:
-    "เพลิดเพลินกับการอ่านนิยายและมังงะคุณภาพสูง พร้อมระบบสลับฟอนต์ไทยสไตล์ ReadAWrite และระบบเหรียญสนับสนุนนักเขียน",
+    "แพลตฟอร์มอ่านนิยายและมังงะคุณภาพ พร้อมระบบสนับสนุนนักเขียน",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ReadVerse",
+  },
 };
 
 export default function RootLayout({
@@ -20,60 +40,53 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th" className={allFontVariables}>
-      <body className="min-h-screen flex flex-col bg-black text-[#f5f5f7] selection:bg-white selection:text-black">
+      <body className="min-h-screen flex flex-col bg-black text-[#f5f5f7]">
         <AuthProvider>
-          <Navbar />
-          <div className="flex-1">{children}</div>
+          <AuthModalProvider>
+            <ToastProvider>
+              {/* 🎆 Ambient Visual Effects */}
+              <ParticleCanvas />
+              <AnimatedGradientOrbs />
 
-          {/* Global Minimalist Footer */}
-          <footer className="border-t border-white/[0.06] bg-black py-12 px-4 sm:px-6 lg:px-8 text-xs text-neutral-400">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-              {/* Brand Col */}
-              <div className="space-y-3 md:col-span-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-black font-bold">
-                    <BookOpen className="w-4 h-4" />
+              <Navbar />
+              <LoginModal />
+              <div className="flex-1 pb-14 md:pb-0 relative z-10">{children}</div>
+
+              {/* Footer — Clean & Minimal */}
+              <footer className="border-t border-kakao-border bg-black py-8 px-4 sm:px-6 lg:px-8 text-xs text-neutral-500 relative z-10">
+                <div className="max-w-7xl mx-auto">
+                  {/* Links row */}
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6">
+                    <Link href="/" className="text-white font-bold font-prompt text-sm">
+                      ReadVerse
+                    </Link>
+                    <Link href="/?type=NOVEL" className="hover:text-white transition">นิยาย</Link>
+                    <Link href="/?type=MANGA" className="hover:text-white transition">มังงะ</Link>
+                    <Link href="/coin-shop" className="hover:text-white transition">เหรียญ</Link>
+                    <Link href="/library" className="hover:text-white transition">ชั้นหนังสือ</Link>
+                    <Link href="/help" className="hover:text-white transition">ช่วยเหลือ</Link>
                   </div>
-                  <span className="text-base font-bold text-white font-prompt tracking-tight">ReadVerse</span>
+
+                  {/* Legal row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4 text-neutral-600">
+                    <Link href="/legal/terms" className="hover:text-neutral-400 transition">ข้อตกลงการใช้งาน</Link>
+                    <span>·</span>
+                    <Link href="/legal/privacy" className="hover:text-neutral-400 transition">นโยบายความเป็นส่วนตัว</Link>
+                    <span>·</span>
+                    <Link href="/legal/author-agreement" className="hover:text-neutral-400 transition">ข้อตกลงนักเขียน</Link>
+                  </div>
+
+                  {/* Copyright */}
+                  <p className="text-neutral-700">
+                    © 2026 ReadVerse. สงวนลิขสิทธิ์ทุกประการ
+                  </p>
                 </div>
-                <p className="text-xs text-neutral-500 max-w-sm leading-relaxed">
-                  แพลตฟอร์มคอนเทนต์สำหรับนักอ่านและนักเขียนนิยาย-มังงะ โฟกัสประสบการณ์อ่านแบบไร้สิ่งรบกวน พร้อมระบบส่วนแบ่งรายได้ 70% สู่ผู้สร้างสรรค์
-                </p>
-              </div>
+              </footer>
 
-              {/* Navigation Links */}
-              <div>
-                <h4 className="text-xs font-semibold text-white font-prompt uppercase tracking-wider mb-3">เมนูหลัก</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/" className="hover:text-white transition-colors">หน้าแรก</Link></li>
-                  <li><Link href="/?type=NOVEL" className="hover:text-white transition-colors">นิยายออนไลน์</Link></li>
-                  <li><Link href="/?type=MANGA" className="hover:text-white transition-colors">มังงะ & เว็บตูน</Link></li>
-                  <li><Link href="/coin-shop" className="hover:text-white transition-colors">ร้านค้าเหรียญ</Link></li>
-                  <li><Link href="/library" className="hover:text-white transition-colors">ชั้นหนังสือของฉัน</Link></li>
-                </ul>
-              </div>
-
-              {/* Legal & Policy Links */}
-              <div>
-                <h4 className="text-xs font-semibold text-white font-prompt uppercase tracking-wider mb-3">นโยบาย</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/profile" className="hover:text-white transition-colors">สิทธิ์ข้อมูลส่วนบุคคล (PDPA)</Link></li>
-                  <li><Link href="/legal/terms" className="hover:text-white transition-colors">ข้อตกลงการใช้งาน</Link></li>
-                  <li><Link href="/legal/privacy" className="hover:text-white transition-colors">นโยบายความเป็นส่วนตัว</Link></li>
-                  <li><Link href="/legal/author-agreement" className="hover:text-white transition-colors">สัญญาข้อตกลงนักเขียน</Link></li>
-                  <li><Link href="/help" className="hover:text-white transition-colors">ศูนย์ช่วยเหลือและแจ้งปัญหา</Link></li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4 text-neutral-600">
-              <p>© 2026 ReadVerse Platform. Built according to AGENTS_v2.1.md specification.</p>
-              <p className="flex items-center gap-1">
-                Crafted for Thai Writers & Readers
-              </p>
-            </div>
-          </footer>
-          <CookieConsentBanner />
+              <CookieConsentBanner />
+              <MobileBottomNav />
+            </ToastProvider>
+          </AuthModalProvider>
         </AuthProvider>
       </body>
     </html>

@@ -82,15 +82,36 @@ export async function uploadFileToStorage(
     }
   }
 
-  // 2. Local File System Fallback (`public/uploads`)
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-  const filePath = path.join(uploadDir, fileName);
-  await writeFile(filePath, buffer);
+  // 2. Local File System or Serverless Fallback
+  // On Vercel serverless functions, the file system is read-only (/var/task).
+  // If R2 is not yet configured, gracefully fall back to base64 Data URI so avatars and images upload seamlessly.
+  if (process.env.VERCEL) {
+    const base64 = buffer.toString("base64");
+    return {
+      url: `data:${mimeType};base64,${base64}`,
+      provider: "local",
+      fileName,
+    };
+  }
 
-  return {
-    url: `/uploads/${fileName}`,
-    provider: "local",
-    fileName,
-  };
+  try {
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    await mkdir(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, fileName);
+    await writeFile(filePath, buffer);
+
+    return {
+      url: `/uploads/${fileName}`,
+      provider: "local",
+      fileName,
+    };
+  } catch (fsErr: any) {
+    console.warn("Disk write failed, using data URI fallback:", fsErr?.message);
+    const base64 = buffer.toString("base64");
+    return {
+      url: `data:${mimeType};base64,${base64}`,
+      provider: "local",
+      fileName,
+    };
+  }
 }

@@ -18,7 +18,12 @@ import {
   FileCheck,
   Eye,
   Sliders,
+  Settings,
+  UserCheck,
+  ShoppingBag,
+  Sparkles,
 } from "lucide-react";
+import { UserManagementModal, AdminUserDetail } from "@/components/admin/UserManagementModal";
 
 interface AdminOverviewData {
   adminRole: string;
@@ -51,17 +56,7 @@ interface AdminOverviewData {
   }>;
 }
 
-interface UserItem {
-  id: string;
-  email: string;
-  name: string;
-  penName?: string;
-  role: string;
-  status: string;
-  ageVerified: boolean;
-  createdAt: string;
-  wallet?: { paidBalance: number; freeBalance: number };
-}
+type UserItem = AdminUserDetail;
 
 interface StoryItem {
   id: string;
@@ -132,6 +127,7 @@ export default function AdminPage() {
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
   const [userStatusFilter, setUserStatusFilter] = useState("ALL");
   const [usersLoading, setUsersLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUserDetail | null>(null);
 
   // Content state
   const [storiesList, setStoriesList] = useState<StoryItem[]>([]);
@@ -607,46 +603,124 @@ export default function AdminPage() {
                 ) : usersList.length === 0 ? (
                   <div className="py-12 text-center text-neutral-500">ไม่พบผู้ใช้ตามเงื่อนไขที่ค้นหา</div>
                 ) : (
-                  usersList.map((u) => (
-                    <div key={u.id} className="p-4 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-sm">{u.name}</span>
-                          {u.penName && (
-                            <span className="text-neutral-400 text-xs">({u.penName})</span>
-                          )}
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-800 text-amber-300">
-                            {u.role}
-                          </span>
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded ${
-                              u.status === "ACTIVE"
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-rose-500/10 text-rose-400"
-                            }`}
-                          >
-                            {u.status}
-                          </span>
-                        </div>
-                        <p className="text-neutral-400 text-xs mt-0.5">
-                          {u.email} • กระเป๋าเหรียญ: {(u.wallet?.paidBalance || 0) + (u.wallet?.freeBalance || 0)} เหรียญ
-                        </p>
-                      </div>
+                  usersList.map((u) => {
+                    const paidCoins = u.wallet?.paidBalance || 0;
+                    const freeCoins = u.wallet?.freeBalance || 0;
+                    const totalCoins = paidCoins + freeCoins;
 
-                      {user.role === "SUPER_ADMIN" && (
-                        <button
-                          onClick={() => handleToggleUserStatus(u.id, u.status)}
-                          className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition ${
-                            u.status === "ACTIVE"
-                              ? "border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
-                              : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-                          }`}
-                        >
-                          {u.status === "ACTIVE" ? "ระงับบัญชี (Suspend)" : "ปลดระงับ (Activate)"}
-                        </button>
-                      )}
-                    </div>
-                  ))
+                    return (
+                      <div
+                        key={u.id}
+                        className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-neutral-800/30 transition"
+                      >
+                        {/* User Basic Info */}
+                        <div className="flex items-start sm:items-center gap-3 min-w-0">
+                          {/* Avatar */}
+                          {u.avatar ? (
+                            <img
+                              src={u.avatar}
+                              alt={u.name}
+                              className="w-11 h-11 rounded-xl object-cover bg-neutral-800 border border-neutral-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500/20 to-purple-600/20 border border-neutral-700 flex items-center justify-center text-amber-300 font-bold text-base shrink-0">
+                              {u.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="font-bold text-white text-sm truncate">{u.name}</span>
+                              {u.penName && (
+                                <span className="text-neutral-400 text-xs">({u.penName})</span>
+                              )}
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                  u.role === "SUPER_ADMIN"
+                                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                    : u.role === "AUTHOR"
+                                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                    : u.role === "FINANCE_ADMIN"
+                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                    : u.role === "MODERATOR"
+                                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                    : "bg-neutral-800 text-neutral-300"
+                                }`}
+                              >
+                                {u.role}
+                              </span>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                  u.status === "ACTIVE"
+                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                    : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                }`}
+                              >
+                                {u.status}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-neutral-400 text-xs mt-1">
+                              <span>{u.email}</span>
+                              <span className="text-neutral-600 hidden sm:inline">•</span>
+                              <span className="font-mono text-[11px] text-neutral-500">ID: {u.id.slice(0, 8)}...</span>
+                              {u._count && (
+                                <>
+                                  <span className="text-neutral-600 hidden sm:inline">•</span>
+                                  <span className="text-neutral-400 text-[11px]">
+                                    แต่ง {u._count.stories} เรื่อง • ซื้อ {u._count.purchases} ตอน
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right: Coins Balance & Actions */}
+                        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-neutral-800/80">
+                          {/* Coin badge */}
+                          <div className="text-left md:text-right">
+                            <div className="flex items-center md:justify-end gap-1.5 font-prompt">
+                              <Coins className="w-3.5 h-3.5 text-amber-400" />
+                              <span className="font-bold text-amber-400 text-sm">
+                                {totalCoins.toLocaleString()}
+                              </span>
+                              <span className="text-[11px] text-neutral-400">เหรียญ</span>
+                            </div>
+                            <p className="text-[10px] text-neutral-500">
+                              (ซื้อ: {paidCoins.toLocaleString()} | ฟรี: {freeCoins.toLocaleString()})
+                            </p>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedUser(u)}
+                              className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs transition shadow flex items-center gap-1"
+                              title="ตรวจสอบโปรไฟล์และจัดการผู้ใช้"
+                            >
+                              <Sliders className="w-3.5 h-3.5" />
+                              <span>จัดการ</span>
+                            </button>
+
+                            {user.role === "SUPER_ADMIN" && (
+                              <button
+                                onClick={() => handleToggleUserStatus(u.id, u.status)}
+                                className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                                  u.status === "ACTIVE"
+                                    ? "border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
+                                    : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                                }`}
+                                title={u.status === "ACTIVE" ? "ระงับบัญชี" : "ปลดระงับ"}
+                              >
+                                {u.status === "ACTIVE" ? "ระงับ" : "ปลด"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -1081,6 +1155,22 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* User Management & Profile Inspection Modal */}
+      {selectedUser && (
+        <UserManagementModal
+          user={selectedUser}
+          currentAdminRole={user.role}
+          onClose={() => setSelectedUser(null)}
+          onUserUpdated={(updated) => {
+            setSelectedUser(updated);
+            setUsersList((prev) =>
+              prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+            );
+            fetchOverview();
+          }}
+        />
       )}
     </div>
   );

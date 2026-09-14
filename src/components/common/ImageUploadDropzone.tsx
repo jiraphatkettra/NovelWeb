@@ -58,6 +58,56 @@ export function ImageUploadDropzone({
     }
   };
 
+async function compressImage(file: File, maxDim: number, quality = 0.85): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") {
+    return file;
+  }
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width <= maxDim && height <= maxDim && file.size < 300 * 1024) {
+          return resolve(file);
+        }
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(file);
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            const compressed = new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
+              type: "image/webp",
+            });
+            resolve(compressed);
+          },
+          "image/webp",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = ev.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
   const uploadFiles = async (files: File[]) => {
     setErrorMsg(null);
     setUploading(true);
@@ -65,8 +115,13 @@ export function ImageUploadDropzone({
     try {
       const formData = new FormData();
       const validFiles = files.slice(0, multiple ? maxFiles : 1);
+      const maxDim = aspectRatio === "avatar" ? 400 : 1600;
 
-      validFiles.forEach((file) => {
+      const compressedFiles = await Promise.all(
+        validFiles.map((file) => compressImage(file, maxDim, 0.85))
+      );
+
+      compressedFiles.forEach((file) => {
         formData.append("files", file);
       });
 

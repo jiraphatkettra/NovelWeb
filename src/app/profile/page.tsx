@@ -110,10 +110,11 @@ export default function ProfilePage() {
         toast.success("บันทึกข้อมูลเรียบร้อยแล้ว", "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว");
         refreshUser();
       } else {
-        toast.error("บันทึกไม่สำเร็จ", json.error?.message);
+        toast.error("บันทึกไม่สำเร็จ", json.error?.message || "กรุณาลองใหม่อีกครั้ง");
       }
-    } catch {
-      toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+    } catch (err: any) {
+      console.error("Profile update error:", err);
+      toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล", err?.message || "");
     } finally {
       setSavingProfile(false);
     }

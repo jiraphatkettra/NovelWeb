@@ -3,7 +3,15 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
 
+export async function PUT(req: NextRequest) {
+  return handleProfileUpdate(req);
+}
+
 export async function PATCH(req: NextRequest) {
+  return handleProfileUpdate(req);
+}
+
+async function handleProfileUpdate(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -22,11 +30,19 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
-    if (bio !== undefined && user.authorProfile) {
-      await prisma.authorProfile.update({
-        where: { id: user.authorProfile.id },
-        data: { bio: bio.trim() },
-      });
+    if (bio !== undefined && typeof bio === "string") {
+      if (user.authorProfile) {
+        await prisma.authorProfile.update({
+          where: { id: user.authorProfile.id },
+          data: { bio: bio.trim() },
+        });
+      } else if (user.role === "AUTHOR" || user.role === "SUPER_ADMIN") {
+        await prisma.authorProfile.upsert({
+          where: { userId: user.id },
+          create: { userId: user.id, bio: bio.trim() },
+          update: { bio: bio.trim() },
+        });
+      }
     }
 
     return apiSuccess({

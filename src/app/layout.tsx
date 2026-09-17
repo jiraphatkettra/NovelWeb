@@ -10,6 +10,9 @@ import Link from "next/link";
 import { CookieConsentBanner } from "@/components/common/CookieConsentBanner";
 import { ParticleCanvas } from "@/components/effects/ParticleCanvas";
 import { AnimatedGradientOrbs } from "@/components/effects/AnimatedGradientOrbs";
+import { SidePanelProvider } from "@/context/SidePanelContext";
+import { SidePanel } from "@/components/layout/SidePanel";
+import { GlobalIssueModal } from "@/components/support/GlobalIssueModal";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -40,52 +43,62 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th" className={allFontVariables}>
-      <body className="min-h-screen flex flex-col bg-black text-[#f5f5f7]">
+      <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text-primary)]">
         <AuthProvider>
           <AuthModalProvider>
-            <ToastProvider>
-              {/* 🎆 Ambient Visual Effects */}
-              <ParticleCanvas />
-              <AnimatedGradientOrbs />
+            <SidePanelProvider>
+              <ToastProvider>
+                {/* Visual effects disabled for minimal mode */}
+                {/* <ParticleCanvas /> */}
+                {/* <AnimatedGradientOrbs /> */}
 
-              <Navbar />
-              <LoginModal />
-              <div className="flex-1 pb-14 md:pb-0 relative z-10">{children}</div>
+                <Navbar />
+                <LoginModal />
+                <SidePanel />
+                <GlobalIssueModal />
 
-              {/* Footer — Clean & Minimal */}
-              <footer className="border-t border-kakao-border bg-black py-8 px-4 sm:px-6 lg:px-8 text-xs text-neutral-500 relative z-10">
-                <div className="max-w-7xl mx-auto">
-                  {/* Links row */}
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6">
-                    <Link href="/" className="text-white font-bold font-prompt text-sm">
-                      ReadVerse
-                    </Link>
-                    <Link href="/?type=NOVEL" className="hover:text-white transition">นิยาย</Link>
-                    <Link href="/?type=MANGA" className="hover:text-white transition">มังงะ</Link>
-                    <Link href="/coin-shop" className="hover:text-white transition">เหรียญ</Link>
-                    <Link href="/library" className="hover:text-white transition">ชั้นหนังสือ</Link>
-                    <Link href="/help" className="hover:text-white transition">ช่วยเหลือ</Link>
+                <div className="flex-1 pb-14 md:pb-0 relative z-10">{children}</div>
+
+                {/* Minimalist Editorial Footer */}
+                <footer className="border-t border-white/[0.06] bg-[#09090b] py-8 px-4 sm:px-6 lg:px-8 text-xs text-zinc-500 relative z-10">
+                  <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                    {/* Left: Brand & Tagline */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold text-zinc-200 font-prompt">
+                        ReadVerse
+                      </span>
+                      <span className="text-zinc-700">|</span>
+                      <span className="text-xs text-zinc-500">
+                        แพลตฟอร์มอ่านนิยายและมังงะออนไลน์
+                      </span>
+                    </div>
+
+                    {/* Center: Main Links */}
+                    <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
+                      <Link href="/?type=NOVEL" className="hover:text-zinc-200 transition">นิยาย</Link>
+                      <Link href="/?type=MANGA" className="hover:text-zinc-200 transition">มังงะ</Link>
+                      <Link href="/schedule" className="hover:text-zinc-200 transition">ตารางอัปเดต</Link>
+                      <Link href="/coin-shop" className="hover:text-zinc-200 transition">เหรียญ</Link>
+                      <Link href="/library" className="hover:text-zinc-200 transition">ชั้นหนังสือ</Link>
+                      <Link href="/report" className="text-rose-400/80 hover:text-rose-300 transition">แจ้งปัญหา</Link>
+                      <Link href="/help" className="hover:text-zinc-200 transition">ช่วยเหลือ</Link>
+                    </div>
+
+                    {/* Right: Legal & Copyright */}
+                    <div className="flex items-center gap-4 text-[11px] text-zinc-600">
+                      <Link href="/legal/terms" className="hover:text-zinc-400 transition">ข้อตกลง</Link>
+                      <span>·</span>
+                      <Link href="/legal/privacy" className="hover:text-zinc-400 transition">ความเป็นส่วนตัว</Link>
+                      <span>·</span>
+                      <span>© 2026 ReadVerse</span>
+                    </div>
                   </div>
+                </footer>
 
-                  {/* Legal row */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4 text-neutral-600">
-                    <Link href="/legal/terms" className="hover:text-neutral-400 transition">ข้อตกลงการใช้งาน</Link>
-                    <span>·</span>
-                    <Link href="/legal/privacy" className="hover:text-neutral-400 transition">นโยบายความเป็นส่วนตัว</Link>
-                    <span>·</span>
-                    <Link href="/legal/author-agreement" className="hover:text-neutral-400 transition">ข้อตกลงนักเขียน</Link>
-                  </div>
-
-                  {/* Copyright */}
-                  <p className="text-neutral-700">
-                    © 2026 ReadVerse. สงวนลิขสิทธิ์ทุกประการ
-                  </p>
-                </div>
-              </footer>
-
-              <CookieConsentBanner />
-              <MobileBottomNav />
-            </ToastProvider>
+                <CookieConsentBanner />
+                <MobileBottomNav />
+              </ToastProvider>
+            </SidePanelProvider>
           </AuthModalProvider>
         </AuthProvider>
       </body>

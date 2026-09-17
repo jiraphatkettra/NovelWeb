@@ -13,6 +13,7 @@ import {
   Smartphone,
   ShieldCheck,
   X,
+  Sparkles,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -125,47 +126,47 @@ export default function CoinShopPage() {
   const totalBalance = paidBalance + freeBalance;
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-white/[0.08]">
+    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-8 bg-[#09090b] text-zinc-100">
+      {/* Header & Balance Card */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-white/[0.06]">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white font-prompt tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-100 font-prompt tracking-tight">
             ร้านค้าเหรียญ
           </h1>
-          <p className="text-xs text-neutral-400 mt-1">
-            เติมเหรียญเพื่อปลดล็อกตอนและสนับสนุนผลงานที่ชื่นชอบ
+          <p className="text-xs text-zinc-400 mt-1">
+            เติมเหรียญเพื่อปลดล็อกตอนพรีเมียมและร่วมสนับสนุนนักเขียนโดยตรง
           </p>
         </div>
 
         {/* Current Balance Card */}
-        <div className="p-3.5 px-5 rounded-xl bg-[#121215] border border-white/[0.08] flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600]">
+        <div className="p-4 px-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
             <Coins className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] text-neutral-400">เหรียญคงเหลือทั้งหมด</p>
-            <p className="text-xl font-bold text-[#FFE600] font-prompt">
+            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">เหรียญคงเหลือทั้งหมด</p>
+            <p className="text-xl font-bold text-amber-400 font-mono">
               {totalBalance.toLocaleString()}{" "}
-              <span className="text-xs font-normal text-neutral-400">เหรียญ</span>
+              <span className="text-xs font-normal text-zinc-500">เหรียญ</span>
             </p>
-            <div className="flex gap-2 text-[10px] text-neutral-500 mt-0.5">
+            <div className="flex gap-2 text-[10px] text-zinc-500 font-mono mt-0.5">
               <span>ซื้อ: {paidBalance}</span>
-              <span>•</span>
-              <span className="text-neutral-400">ฟรี: {freeBalance}</span>
+              <span>·</span>
+              <span className="text-zinc-400">ฟรี: {freeBalance}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Packages Grid */}
-      <div className="my-8">
-        <h2 className="text-base font-bold text-white font-prompt mb-4">
-          แพ็กเกจเหรียญ
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-100 font-prompt mb-4">
+          เลือกแพ็กเกจเหรียญ
         </h2>
 
         {loading ? (
-          <div className="py-16 text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full mx-auto" />
+          <div className="py-20 text-center">
+            <div className="animate-spin w-6 h-6 border-2 border-white/20 border-t-white rounded-full mx-auto" />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -174,36 +175,36 @@ export default function CoinShopPage() {
               return (
                 <div
                   key={pkg.id}
-                  className={`relative p-5 rounded-xl border flex flex-col justify-between transition-all duration-200 ${
+                  className={`relative p-5 rounded-2xl border flex flex-col justify-between transition-all duration-300 ${
                     pkg.isPopular
-                      ? "bg-[#16161A] border-[#FFE600]/60 shadow-lg shadow-[#FFE600]/5"
-                      : "bg-[#121215] border-white/[0.08] hover:border-white/20"
+                      ? "bg-amber-500/[0.03] border-amber-500/40 shadow-xl shadow-amber-500/5"
+                      : "bg-white/[0.02] border-white/[0.06] hover:border-white/15"
                   }`}
                 >
                   {/* Badge */}
                   {pkg.badge && (
-                    <div className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-[#FFE600] text-black font-bold text-[10px] uppercase tracking-wider font-prompt">
+                    <div className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-amber-400 text-zinc-950 font-bold text-[10px] uppercase tracking-wider font-mono shadow-xs">
                       {pkg.badge}
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Coins className="w-4 h-4 text-[#FFE600]" />
-                      <h3 className="font-bold text-sm text-white font-prompt">{pkg.name}</h3>
+                      <Coins className="w-4 h-4 text-amber-400" />
+                      <h3 className="font-semibold text-xs text-zinc-100 font-prompt">{pkg.name}</h3>
                     </div>
 
                     <div className="my-3">
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-black text-white font-prompt">
+                        <span className="text-2xl font-bold text-zinc-100 font-mono">
                           {totalCoins.toLocaleString()}
                         </span>
-                        <span className="text-xs text-neutral-400">เหรียญ</span>
+                        <span className="text-xs text-zinc-500 font-mono">เหรียญ</span>
                       </div>
                       {pkg.bonusCoins > 0 && (
-                        <p className="text-[11px] text-[#FFE600] mt-0.5 flex items-center gap-1 font-medium">
+                        <p className="text-[11px] text-amber-400 mt-1 flex items-center gap-1 font-mono font-medium">
                           <Zap className="w-3 h-3" />
-                          <span>(เหรียญหลัก {pkg.coins} + โบนัส {pkg.bonusCoins})</span>
+                          <span>(หลัก {pkg.coins} + โบนัส {pkg.bonusCoins})</span>
                         </p>
                       )}
                     </div>
@@ -211,8 +212,8 @@ export default function CoinShopPage() {
 
                   <div className="pt-4 border-t border-white/[0.06] mt-2">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-neutral-400">ราคา</span>
-                      <span className="text-base font-bold text-white font-prompt">
+                      <span className="text-xs text-zinc-500">ราคา</span>
+                      <span className="text-base font-bold text-zinc-100 font-prompt">
                         ฿{pkg.priceThb.toLocaleString()}
                       </span>
                     </div>
@@ -222,13 +223,13 @@ export default function CoinShopPage() {
                         setSelectedPackage(pkg);
                         setSuccessOrder(null);
                       }}
-                      className={`w-full py-2.5 rounded-xl font-bold text-xs transition active:scale-[0.99] ${
+                      className={`w-full py-2.5 rounded-xl font-semibold text-xs transition active:scale-[0.99] font-prompt ${
                         pkg.isPopular
-                          ? "bg-[#FFE600] hover:bg-[#F5DC00] text-black"
-                          : "bg-white/[0.06] hover:bg-white/[0.1] text-white"
+                          ? "bg-zinc-100 hover:bg-white text-zinc-950 shadow-sm"
+                          : "bg-white/[0.05] hover:bg-white/[0.09] text-zinc-200 border border-white/[0.08]"
                       }`}
                     >
-                      ซื้อแพ็กเกจ
+                      เลือกแพ็กเกจ
                     </button>
                   </div>
                 </div>
@@ -239,36 +240,36 @@ export default function CoinShopPage() {
       </div>
 
       {/* Transaction History Ledger */}
-      <div className="my-10 pt-6 border-t border-white/[0.08]">
+      <div className="pt-6 border-t border-white/[0.06]">
         <div className="flex items-center gap-2 mb-4">
-          <History className="w-4 h-4 text-neutral-400" />
-          <h2 className="text-base font-bold text-white font-prompt">ประวัติการทำรายการ</h2>
+          <History className="w-4 h-4 text-zinc-400" />
+          <h2 className="text-sm font-semibold text-zinc-100 font-prompt">ประวัติการทำรายการล่าสุด</h2>
         </div>
 
         {transactions.length === 0 ? (
-          <div className="p-6 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center text-neutral-500 text-xs">
+          <div className="p-8 rounded-2xl bg-white/[0.01] border border-white/[0.06] text-center text-zinc-500 text-xs">
             ยังไม่มีประวัติการทำรายการ
           </div>
         ) : (
-          <div className="rounded-xl border border-white/[0.08] overflow-hidden bg-[#121215]">
-            <div className="divide-y divide-white/[0.06] text-xs">
+          <div className="rounded-2xl border border-white/[0.06] overflow-hidden bg-white/[0.01]">
+            <div className="divide-y divide-white/[0.04] text-xs">
               {transactions.map((tx) => (
-                <div key={tx.id} className="p-3.5 flex items-center justify-between gap-4">
+                <div key={tx.id} className="p-3.5 px-4 flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-semibold text-white text-xs">{tx.note || tx.type}</p>
-                    <p className="text-neutral-500 text-[10px] mt-0.5">
+                    <p className="font-medium text-zinc-200 text-xs">{tx.note || tx.type}</p>
+                    <p className="text-zinc-500 text-[10px] font-mono mt-0.5">
                       {new Date(tx.createdAt).toLocaleString("th-TH")} • ประเภท: {tx.coinType}
                     </p>
                   </div>
                   <div className="text-right">
                     <span
-                      className={`text-xs font-bold ${
-                        tx.amount > 0 ? "text-emerald-400" : "text-neutral-400"
+                      className={`text-xs font-mono font-bold ${
+                        tx.amount > 0 ? "text-emerald-400" : "text-zinc-400"
                       }`}
                     >
                       {tx.amount > 0 ? `+${tx.amount}` : tx.amount} 🪙
                     </span>
-                    <p className="text-[10px] text-neutral-500">คงเหลือ: {tx.balanceAfter}</p>
+                    <p className="text-[10px] text-zinc-500 font-mono">คงเหลือ: {tx.balanceAfter}</p>
                   </div>
                 </div>
               ))}
@@ -279,11 +280,11 @@ export default function CoinShopPage() {
 
       {/* Checkout Modal */}
       {selectedPackage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-[#121215] border border-white/[0.1] rounded-2xl p-6 shadow-2xl">
             <button
               onClick={() => setSelectedPackage(null)}
-              className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/[0.06]"
+              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/[0.06]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -293,104 +294,104 @@ export default function CoinShopPage() {
                 <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-white font-prompt">ชำระเงินสำเร็จ!</h3>
-                <p className="text-xs text-neutral-300">
+                <h3 className="text-base font-bold text-zinc-100 font-prompt">ชำระเงินสำเร็จ!</h3>
+                <p className="text-xs text-zinc-300">
                   คุณได้รับเหรียญจำนวน{" "}
-                  <strong className="text-[#FFE600] font-bold">
+                  <strong className="text-amber-400 font-bold font-mono">
                     +{successOrder.coinsCredited} เหรียญ
                   </strong>{" "}
-                  เข้ากระเป๋าเรียบร้อยแล้ว
+                  เข้าสู่กระเป๋าเรียบร้อยแล้ว
                 </p>
                 <button
                   onClick={() => setSelectedPackage(null)}
-                  className="mt-4 w-full py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                  className="mt-4 w-full py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition"
                 >
                   เรียบร้อย
                 </button>
               </div>
             ) : (
               <div>
-                <h3 className="text-base font-bold text-white font-prompt mb-1">
+                <h3 className="text-base font-bold text-zinc-100 font-prompt mb-1">
                   ยืนยันการชำระเงิน
                 </h3>
-                <p className="text-xs text-neutral-400 mb-5">
+                <p className="text-xs text-zinc-400 mb-5 font-mono">
                   {selectedPackage.name} • ยอดชำระ ฿{selectedPackage.priceThb}
                 </p>
 
                 {/* Payment Method Selector */}
                 <div className="space-y-2 mb-5">
-                  <label className="text-[11px] font-medium text-neutral-400 block">เลือกช่องทางชำระเงิน</label>
+                  <label className="text-[11px] font-mono text-zinc-400 block">เลือกช่องทางชำระเงิน</label>
 
                   <div
                     onClick={() => setPaymentProvider("PROMPTPAY")}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       paymentProvider === "PROMPTPAY"
-                        ? "bg-[#FFE600]/10 border-[#FFE600]"
-                        : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
+                        ? "bg-amber-500/10 border-amber-500/40"
+                        : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <QrCode className="w-4 h-4 text-[#FFE600]" />
+                      <QrCode className="w-4 h-4 text-amber-400" />
                       <div>
-                        <p className="text-xs font-bold text-white">พร้อมเพย์ (PromptPay QR)</p>
-                        <p className="text-[10px] text-neutral-400">สแกนจ่ายผ่านแอปธนาคารทุกแห่ง</p>
+                        <p className="text-xs font-semibold text-zinc-100">พร้อมเพย์ (PromptPay QR)</p>
+                        <p className="text-[10px] text-zinc-500">สแกนจ่ายผ่านแอปธนาคารทุกแห่ง</p>
                       </div>
                     </div>
-                    {paymentProvider === "PROMPTPAY" && <CheckCircle2 className="w-4 h-4 text-[#FFE600]" />}
+                    {paymentProvider === "PROMPTPAY" && <CheckCircle2 className="w-4 h-4 text-amber-400" />}
                   </div>
 
                   <div
                     onClick={() => setPaymentProvider("CREDIT_CARD")}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       paymentProvider === "CREDIT_CARD"
-                        ? "bg-[#FFE600]/10 border-[#FFE600]"
-                        : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
+                        ? "bg-amber-500/10 border-amber-500/40"
+                        : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <CreditCard className="w-4 h-4 text-neutral-300" />
+                      <CreditCard className="w-4 h-4 text-zinc-400" />
                       <div>
-                        <p className="text-xs font-bold text-white">บัตรเครดิต / เดบิต</p>
-                        <p className="text-[10px] text-neutral-400">Visa / Mastercard</p>
+                        <p className="text-xs font-semibold text-zinc-100">บัตรเครดิต / เดบิต</p>
+                        <p className="text-[10px] text-zinc-500">Visa / Mastercard</p>
                       </div>
                     </div>
-                    {paymentProvider === "CREDIT_CARD" && <CheckCircle2 className="w-4 h-4 text-[#FFE600]" />}
+                    {paymentProvider === "CREDIT_CARD" && <CheckCircle2 className="w-4 h-4 text-amber-400" />}
                   </div>
 
                   <div
                     onClick={() => setPaymentProvider("TRUEMONEY")}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       paymentProvider === "TRUEMONEY"
-                        ? "bg-[#FFE600]/10 border-[#FFE600]"
-                        : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
+                        ? "bg-amber-500/10 border-amber-500/40"
+                        : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Smartphone className="w-4 h-4 text-neutral-300" />
+                      <Smartphone className="w-4 h-4 text-zinc-400" />
                       <div>
-                        <p className="text-xs font-bold text-white">TrueMoney Wallet</p>
-                        <p className="text-[10px] text-neutral-400">กระเป๋าเงินทรูมันนี่</p>
+                        <p className="text-xs font-semibold text-zinc-100">TrueMoney Wallet</p>
+                        <p className="text-[10px] text-zinc-500">กระเป๋าเงินทรูมันนี่</p>
                       </div>
                     </div>
-                    {paymentProvider === "TRUEMONEY" && <CheckCircle2 className="w-4 h-4 text-[#FFE600]" />}
+                    {paymentProvider === "TRUEMONEY" && <CheckCircle2 className="w-4 h-4 text-amber-400" />}
                   </div>
                 </div>
 
                 {/* PromptPay QR Mock Display */}
                 {paymentProvider === "PROMPTPAY" && (
                   <div className="p-3.5 rounded-xl bg-white text-zinc-900 text-center my-3">
-                    <p className="text-[10px] font-bold text-neutral-700 mb-1.5">PromptPay QR Code (Sandbox)</p>
-                    <div className="w-28 h-28 bg-neutral-100 border border-neutral-300 rounded-lg mx-auto flex items-center justify-center p-1.5">
+                    <p className="text-[10px] font-bold text-zinc-700 mb-1.5 font-mono">PromptPay QR Code (Sandbox)</p>
+                    <div className="w-28 h-28 bg-zinc-100 border border-zinc-300 rounded-lg mx-auto flex items-center justify-center p-1.5">
                       <QrCode className="w-24 h-24 text-black" />
                     </div>
-                    <p className="text-[10px] text-neutral-600 mt-1.5 font-medium">ยอดชำระ: ฿{selectedPackage.priceThb}.00</p>
+                    <p className="text-[10px] text-zinc-600 mt-1.5 font-medium font-mono">ยอดชำระ: ฿{selectedPackage.priceThb}.00</p>
                   </div>
                 )}
 
                 <button
                   onClick={handleBuy}
                   disabled={processing}
-                  className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
+                  className="w-full py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99] font-prompt shadow-sm"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>{processing ? "กำลังทำรายการ..." : `ยืนยันชำระเงิน ฿${selectedPackage.priceThb}`}</span>

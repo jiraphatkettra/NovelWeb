@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Bookmark, Trash2, ArrowRight, BookOpen } from "lucide-react";
+import { Bookmark, Trash2, ArrowRight, BookOpen, Clock } from "lucide-react";
 
 interface BookmarkItem {
   id: string;
@@ -69,15 +69,17 @@ export default function LibraryPage() {
 
   if (!user) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
-        <Bookmark className="w-12 h-12 text-neutral-700 mb-4" />
-        <h1 className="text-xl font-bold text-white font-prompt mb-2">ชั้นหนังสือส่วนตัว</h1>
-        <p className="text-sm text-neutral-500 max-w-sm mb-6">
+      <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-zinc-500 mb-4">
+          <Bookmark className="w-6 h-6" />
+        </div>
+        <h1 className="text-lg font-bold text-zinc-100 font-prompt mb-1.5">ชั้นหนังสือส่วนตัว</h1>
+        <p className="text-xs text-zinc-400 max-w-sm mb-6 leading-relaxed">
           กรุณาเข้าสู่ระบบเพื่อบันทึกและติดตามความคืบหน้าเรื่องโปรดของคุณ
         </p>
         <Link
           href="/"
-          className="px-5 py-2 rounded-lg bg-kakao-yellow text-black font-bold text-sm"
+          className="px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition active:scale-95 shadow-sm font-prompt"
         >
           กลับหน้าหลัก
         </Link>
@@ -86,101 +88,104 @@ export default function LibraryPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white font-prompt">
-          ชั้นหนังสือของฉัน
-        </h1>
-        <p className="text-xs text-neutral-500 mt-1">
-          {bookmarks.length} เรื่อง
-        </p>
+      <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
+        <div>
+          <h1 className="text-xl font-bold text-zinc-100 font-prompt">
+            ชั้นหนังสือของฉัน
+          </h1>
+          <p className="text-xs text-zinc-500 mt-1 font-mono">
+            บันทึกไว้ทั้งหมด {bookmarks.length} เรื่อง
+          </p>
+        </div>
       </div>
 
       {loading ? (
-        <div className="py-20 flex justify-center">
-          <div className="w-6 h-6 border-2 border-kakao-yellow/30 border-t-kakao-yellow rounded-full animate-spin" />
+        <div className="py-24 flex justify-center">
+          <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
         </div>
       ) : bookmarks.length === 0 ? (
-        <div className="py-16 text-center">
-          <BookOpen className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-white font-prompt">ยังไม่มีผลงานในชั้นหนังสือ</p>
-          <p className="text-xs text-neutral-500 mt-1 mb-6">สำรวจนิยายและมังงะ แล้วกดบันทึกเพื่อเก็บไว้ที่นี่</p>
+        <div className="py-20 text-center rounded-2xl border border-white/[0.06] bg-white/[0.01]">
+          <BookOpen className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-zinc-300 font-prompt">ยังไม่มีผลงานในชั้นหนังสือ</p>
+          <p className="text-xs text-zinc-500 mt-1 mb-6">สำรวจนิยายและมังงะ แล้วกดบันทึกเพื่อติดตามความคืบหน้าที่นี่</p>
           <Link
             href="/"
-            className="px-5 py-2 rounded-lg bg-kakao-yellow text-black font-bold text-sm"
+            className="px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition active:scale-95 shadow-sm font-prompt"
           >
             สำรวจผลงาน
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {bookmarks.map((b) => (
             <div
               key={b.id}
-              className="flex items-center gap-3 p-3 rounded-xl bg-kakao-card border border-kakao-border hover:border-neutral-700 transition group"
+              className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] hover:border-white/15 transition group"
             >
               {/* Cover */}
               <Link
                 href={`/stories/${b.story.slug}`}
-                className="w-14 h-[72px] rounded-lg overflow-hidden shrink-0 bg-neutral-900"
+                className="w-14 sm:w-16 aspect-[3/4] rounded-xl overflow-hidden shrink-0 bg-zinc-900 border border-white/[0.08]"
               >
                 <img
                   src={b.story.coverUrl}
                   alt={b.story.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                 />
               </Link>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-medium">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-zinc-300 font-medium">
                     {b.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
                   </span>
-                  <span className="text-[10px] text-neutral-600">{b.story.category}</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">{b.story.category}</span>
                 </div>
                 <Link href={`/stories/${b.story.slug}`}>
-                  <h3 className="text-sm font-semibold text-white truncate font-prompt group-hover:text-neutral-200 transition">
+                  <h3 className="text-xs sm:text-sm font-semibold text-zinc-100 truncate font-prompt group-hover:text-white transition">
                     {b.story.title}
                   </h3>
                 </Link>
-                <p className="text-[11px] text-neutral-500 truncate">
+                <p className="text-[11px] text-zinc-500 truncate mt-0.5">
                   {b.story.author.penName || b.story.author.name}
                 </p>
+
                 {/* Progress bar */}
-                <div className="flex items-center gap-2 mt-1.5">
-                  <div className="flex-1 h-1 rounded-full bg-kakao-border overflow-hidden">
+                <div className="flex items-center gap-3 mt-2 max-w-sm">
+                  <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
                     <div
-                      className="h-full bg-kakao-yellow rounded-full"
+                      className="h-full bg-amber-400 rounded-full transition-all duration-300"
                       style={{ width: `${Math.max(5, b.progressPercent)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-neutral-600 shrink-0">
+                  <span className="text-[10px] text-zinc-500 font-mono shrink-0">
                     {Math.round(b.progressPercent)}%
                   </span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <Link
                   href={
                     b.lastChapterId
                       ? `/reader/${b.story.type === "MANGA" ? "manga" : "novel"}/${b.lastChapterId}`
                       : `/stories/${b.story.slug}`
                   }
-                  className="px-3 py-1.5 rounded-lg bg-kakao-yellow text-black text-[11px] font-bold hover:bg-kakao-yellow-hover transition flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-sm font-prompt"
                 >
-                  อ่านต่อ
-                  <ArrowRight className="w-3 h-3" />
+                  <span>อ่านต่อ</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-zinc-950" />
                 </Link>
                 <button
                   onClick={() => handleRemove(b.story.id)}
-                  className="p-1.5 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-white/5 transition"
-                  title="นำออก"
+                  className="p-2 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-white/[0.06] transition"
+                  title="นำออกจากชั้นหนังสือ"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>

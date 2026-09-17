@@ -22,9 +22,13 @@ import {
   X,
   Calendar,
   GripVertical,
+  UploadCloud,
+  ListOrdered,
+  ArrowUpDown,
 } from "lucide-react";
 import { ImageUploadDropzone } from "@/components/common/ImageUploadDropzone";
 import { RichChapterEditor } from "@/components/author/RichChapterEditor";
+import { GoogleDriveImportModal } from "@/components/author/GoogleDriveImportModal";
 import { useToast } from "@/context/ToastContext";
 
 interface StoryInfo {
@@ -65,8 +69,9 @@ export default function ChapterEditorPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [recoveredFromLocal, setRecoveredFromLocal] = useState(false);
 
-  // Preview Modal state
+  // Preview Modal & Google Drive Import state
   const [showPreview, setShowPreview] = useState(false);
+  const [showDriveModal, setShowDriveModal] = useState(false);
 
   // Local storage key for disaster recovery
   const storageKey = `novelverse_draft_${storyId}_${chapterId}`;
@@ -258,6 +263,36 @@ export default function ChapterEditorPage() {
     const [moved] = updated.splice(index, 1);
     updated.splice(target, 0, moved);
     setImages(updated);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleDriveImport = (newUrls: string[], append: boolean) => {
+    if (append) {
+      setImages((prev) => [...prev, ...newUrls]);
+    } else {
+      setImages(newUrls);
+    }
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSortImagesNaturally = () => {
+    const sorted = [...images].sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+    );
+    setImages(sorted);
+    setHasUnsavedChanges(true);
+    toast.success("จัดเรียงหน้าตามลำดับไฟล์เรียบร้อยแล้ว");
+  };
+
+  const handleReverseImages = () => {
+    setImages([...images].reverse());
+    setHasUnsavedChanges(true);
+    toast.info("สลับลำดับหน้าเรียบร้อยแล้ว");
+  };
+
+  const handleClearAllImages = () => {
+    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างรูปภาพทั้งหมดในตอนนี้?")) return;
+    setImages([]);
     setHasUnsavedChanges(true);
   };
 
@@ -474,21 +509,54 @@ export default function ChapterEditorPage() {
         {/* SECTION: MANGA PAGE UPLOADER */}
         {!isNovel && (
           <div className="space-y-5">
+            {/* Google Drive Import Banner */}
+            <div className="p-4 rounded-xl bg-amber-400/[0.06] border border-amber-400/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-zinc-100 font-prompt">
+                      นำเข้าและแตกไฟล์จาก Google Drive อัตโนมัติ (.ZIP / .CBZ / โฟลเดอร์)
+                    </h4>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-400 text-zinc-950">
+                      แตกไฟล์ให้เอง
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    วางลิงก์ไฟล์ .ZIP / .CBZ หรือโฟลเดอร์ ระบบจะดาวน์โหลด แตกไฟล์ จัดเรียงหน้าตามลำดับ และใส่ลงตอนให้อัตโนมัติทันที
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDriveModal(true)}
+                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs transition active:scale-95 flex items-center gap-1.5 shrink-0 shadow-sm font-prompt"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>นำเข้า & แตกไฟล์ Google Drive</span>
+              </button>
+            </div>
+
             <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
               <h3 className="text-xs font-bold text-white font-prompt flex items-center gap-2">
-                <Upload className="w-4 h-4 text-[#FFE600]" />
-                <span>อัปโหลดหน้าภาพมังงะ/เว็บตูน (Drag & Drop หลายไฟล์พร้อมกัน)</span>
+                <Upload className="w-4 h-4 text-amber-400" />
+                <span>อัปโหลดหน้าภาพจากเครื่อง (ลากไฟล์หลายภาพพร้อมกันได้ เรียงตามชื่อไฟล์อัตโนมัติ)</span>
               </h3>
 
               <ImageUploadDropzone
                 multiple={true}
+                maxFiles={500}
+                hidePreview={true}
                 value={images}
                 onChange={(urls) => {
                   setImages(Array.isArray(urls) ? urls : [urls]);
                   setHasUnsavedChanges(true);
                 }}
                 label=""
-                helperText="ลากไฟล์ภาพหลายไฟล์พร้อมกันมาวาง หรือคลิกเลือกไฟล์ (JPG, PNG, WebP) ขนาดไม่เกิน 10MB ต่อรูป"
+                helperText="ลากไฟล์ภาพหลายไฟล์พร้อมกันมาวาง หรือลากไฟล์ .ZIP / .CBZ มาวาง ระบบจะแตกไฟล์และจัดเรียงหน้าตามลำดับไฟล์ให้อัตโนมัติ"
                 aspectRatio="auto"
               />
 
@@ -500,12 +568,12 @@ export default function ChapterEditorPage() {
                     value={newImageUrl}
                     onChange={(e) => setNewImageUrl(e.target.value)}
                     placeholder="ใส่ URL รูปภาพหน้ามังงะ..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-amber-400"
                   />
                   <button
                     type="button"
                     onClick={handleAddImage}
-                    className="px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs transition flex items-center gap-1.5 font-prompt"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>เพิ่มหน้านี้</span>
@@ -516,20 +584,55 @@ export default function ChapterEditorPage() {
 
             {/* Thumbnail Grid & Reorder */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-bold text-white font-prompt">
-                  ลำดับหน้าทั้งหมด ({images.length} หน้า)
-                </h4>
-                <span className="text-[11px] text-neutral-400 flex items-center gap-1">
-                  <GripVertical className="w-3 h-3 text-[#FFE600]" />
-                  <span>สามารถลากการ์ดสลับลำดับได้ หรือใช้ปุ่มซ้าย-ขวา</span>
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-white font-prompt">
+                    ลำดับหน้าทั้งหมด ({images.length} หน้า)
+                  </h4>
+                  <span className="text-[11px] text-neutral-400 hidden sm:inline">
+                    · ลากการ์ดเพื่อสลับตำแหน่ง
+                  </span>
+                </div>
+
+                {images.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSortImagesNaturally}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] text-zinc-300 flex items-center gap-1 transition"
+                      title="จัดเรียงหน้าตามชื่อไฟล์อัตโนมัติ (1, 2, ... 10, 11)"
+                    >
+                      <ListOrdered className="w-3 h-3 text-amber-400" />
+                      <span>เรียง 1→10</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleReverseImages}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] text-zinc-300 flex items-center gap-1 transition"
+                      title="สลับลำดับหน้าย้อนกลับ"
+                    >
+                      <ArrowUpDown className="w-3 h-3" />
+                      <span>สลับกลับด้าน</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleClearAllImages}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-rose-950/40 border border-white/[0.08] hover:border-rose-800/40 text-[11px] text-rose-400 flex items-center gap-1 transition"
+                      title="ลบหน้าภาพทั้งหมด"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>ลบทั้งหมด</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {images.length === 0 ? (
                 <div className="p-10 text-center rounded-xl bg-white/[0.02] border border-dashed border-white/[0.08]">
                   <Upload className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
-                  <p className="text-xs text-neutral-400">ยังไม่มีหน้าภาพในตอนนี้ กรุณาอัปโหลดภาพด้านบน</p>
+                  <p className="text-xs text-neutral-400">ยังไม่มีหน้าภาพในตอนนี้ สามารถอัปโหลดหรือนำเข้าจาก Google Drive ด้านบน</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -561,13 +664,25 @@ export default function ChapterEditorPage() {
                           : "border-white/[0.08] hover:border-white/20"
                       }`}
                     >
-                      <div className="aspect-[3/4] rounded-lg overflow-hidden bg-neutral-900 relative">
+                      <div className="aspect-[3/4] rounded-lg overflow-hidden bg-neutral-900 relative flex items-center justify-center">
                         <img
                           src={imgUrl}
                           alt={`Page ${idx + 1}`}
                           className="w-full h-full object-cover pointer-events-none"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            const parent = e.currentTarget.parentElement;
+                            if (parent && !parent.querySelector(".img-err-badge")) {
+                              const badge = document.createElement("div");
+                              badge.className =
+                                "img-err-badge absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-rose-950/80 text-rose-300 text-xs";
+                              badge.innerHTML =
+                                '<span class="font-bold">❌ โหลดภาพไม่สำเร็จ</span><span class="text-[10px] text-zinc-400 mt-1">ไฟล์อาจไม่ใช่ภาพหรือลิงก์หมดอายุ</span>';
+                              parent.appendChild(badge);
+                            }
+                          }}
                         />
-                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono font-bold text-white">
+                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono font-bold text-white z-10">
                           หน้า {idx + 1}
                         </span>
                       </div>
@@ -657,6 +772,14 @@ export default function ChapterEditorPage() {
           </div>
         </div>
       )}
+
+      {/* Google Drive Import Modal */}
+      <GoogleDriveImportModal
+        isOpen={showDriveModal}
+        onClose={() => setShowDriveModal(false)}
+        onImport={handleDriveImport}
+        currentCount={images.length}
+      />
     </div>
   );
 }

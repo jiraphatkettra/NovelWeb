@@ -227,7 +227,7 @@ export default function StoryChapterManagerPage() {
           <Link
             href={`/stories/${story.slug}`}
             target="_blank"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-semibold text-neutral-200 transition border border-white/[0.08]"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-zinc-200 transition border border-white/[0.08]"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             <span>ดูหน้าเรื่องสาธารณะ</span>
@@ -235,10 +235,10 @@ export default function StoryChapterManagerPage() {
 
           <Link
             href={`/author/stories/${story.id}/chapters/new`}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition active:scale-[0.99]"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-bold transition active:scale-[0.99] font-prompt shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>เพิ่มตอนใหม่</span>
+            <span>{story.type === "MANGA" ? "เพิ่มตอนมังงะใหม่" : "เพิ่มตอนนิยายใหม่"}</span>
           </Link>
         </div>
       </div>
@@ -257,26 +257,30 @@ export default function StoryChapterManagerPage() {
 
           <Link
             href={`/author/stories/${story.id}/chapters/new`}
-            className="inline-flex items-center gap-1.5 text-xs text-[#FFE600] hover:underline font-bold"
+            className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:underline font-bold"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>เพิ่มตอนใหม่</span>
+            <span>{story.type === "MANGA" ? "เพิ่มตอนมังงะ" : "เพิ่มตอนนิยาย"}</span>
           </Link>
         </div>
 
         {story.chapters.length === 0 ? (
-          <div className="p-10 text-center rounded-xl bg-white/[0.02] border border-dashed border-white/[0.08]">
-            <BookOpen className="w-8 h-8 text-neutral-600 mx-auto mb-2.5" />
-            <h3 className="text-sm font-bold text-white font-prompt">ยังไม่มีตอนในผลงานนี้</h3>
+          <div className="p-12 text-center rounded-2xl bg-[#121215] border border-dashed border-white/[0.08]">
+            <BookOpen className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
+            <h3 className="text-sm font-bold text-white font-prompt">
+              {story.type === "MANGA" ? "ยังไม่มีตอนในมังงะเรื่องนี้" : "ยังไม่มีตอนในนิยายเรื่องนี้"}
+            </h3>
             <p className="text-xs text-neutral-400 max-w-sm mx-auto mt-1 mb-4">
-              เริ่มเขียนตอนที่ 1 และตั้งราคาเหรียญตามต้องการ
+              {story.type === "MANGA"
+                ? "อัปโหลดภาพมังงะ รองรับทั้งไฟล์ในเครื่องและลิงก์ Google Drive เรียงหน้าตามลำดับไฟล์อัตโนมัติ"
+                : "เริ่มเขียนตอนที่ 1 และตั้งราคาเหรียญตามต้องการ"}
             </p>
             <Link
               href={`/author/stories/${story.id}/chapters/new`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs transition active:scale-95 font-prompt shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              <span>เริ่มเขียนตอนที่ 1</span>
+              <span>{story.type === "MANGA" ? "เริ่มอัปโหลดตอนที่ 1 (Google Drive & ไฟล์เครื่อง)" : "เริ่มเขียนตอนที่ 1"}</span>
             </Link>
           </div>
         ) : (

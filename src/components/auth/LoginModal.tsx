@@ -180,8 +180,8 @@ export function LoginModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-3xl bg-[#131317] border border-white/[0.1] shadow-2xl overflow-hidden p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md rounded-3xl bg-[#131317] border border-white/[0.1] shadow-2xl max-h-[88vh] overflow-y-auto p-5 sm:p-7 space-y-5 animate-in zoom-in-95 duration-150">
         {/* Close Button */}
         <button
           type="button"

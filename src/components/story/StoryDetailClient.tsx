@@ -246,7 +246,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
     : "#";
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-28 md:pb-20">
       {/* Banner */}
       <div className="relative w-full h-[280px] sm:h-[340px] overflow-hidden">
         <img
@@ -258,11 +258,11 @@ export function StoryDetailClient({ slug }: { slug: string }) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-40 relative z-10">
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-28 sm:-mt-40 relative z-10">
+        <div className="flex flex-col md:flex-row gap-5 sm:gap-6 md:gap-8">
           {/* Cover + Actions */}
           <div className="flex flex-col items-center md:items-start shrink-0">
-            <div className="w-48 sm:w-56 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/80 border border-kakao-border bg-neutral-900">
+            <div className="w-36 sm:w-52 md:w-56 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/80 border border-kakao-border bg-neutral-900 mx-auto md:mx-0">
               <img
                 src={story.coverUrl}
                 alt={story.title}
@@ -590,6 +590,31 @@ export function StoryDetailClient({ slug }: { slug: string }) {
         onClose={() => setShowGiftModal(false)}
         onClaimed={() => fetchTickets()}
       />
+
+      {/* Mobile Sticky Floating CTA Bar (Optimized for Mobile/Tablet) */}
+      {firstChapter && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 p-3 bg-[#0B0B0E]/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-2 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-2xl">
+          <button
+            onClick={handleBookmarkToggle}
+            className={`p-3 rounded-xl border flex items-center justify-center transition shrink-0 active:scale-95 ${
+              isBookmarked
+                ? "bg-kakao-yellow/15 border-kakao-yellow/40 text-kakao-yellow"
+                : "bg-white/[0.05] border-white/10 text-neutral-300"
+            }`}
+            title="เพิ่มเข้าชั้นหนังสือ"
+          >
+            <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-kakao-yellow" : ""}`} />
+          </button>
+          <Link
+            href={firstChapterUrl}
+            onClick={(e) => handleChapterClick(e, firstChapter, firstChapterUrl)}
+            className="flex-1 py-3 px-4 rounded-xl bg-kakao-yellow hover:bg-kakao-yellow-hover text-black font-bold text-xs text-center flex items-center justify-center gap-2 shadow-lg shadow-kakao-yellow/20 active:scale-[0.98] transition font-prompt"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>อ่านตอนแรก</span>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

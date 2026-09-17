@@ -55,8 +55,8 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
   const streakDays = [1, 2, 3, 4, 5, 6, 7];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl max-h-[88vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}

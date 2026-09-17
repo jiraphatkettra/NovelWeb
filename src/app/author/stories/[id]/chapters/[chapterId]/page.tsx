@@ -464,32 +464,35 @@ export default function ChapterEditorPage() {
             )}
           </div>
 
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-2">
+          {/* Right Action Buttons — Responsive labels for mobile */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setShowPreview(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white text-xs font-medium transition border border-white/[0.08]"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white text-xs font-medium transition border border-white/[0.08]"
+              title="ดูตัวอย่างตอนอ่าน"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>ดูตัวอย่าง</span>
+              <span className="hidden sm:inline">ดูตัวอย่าง</span>
             </button>
 
             <button
               type="button"
               onClick={() => saveChapter("DRAFT")}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-neutral-200 text-xs font-semibold transition border border-white/[0.08] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-neutral-200 text-xs font-semibold transition border border-white/[0.08] disabled:opacity-50"
+              title="บันทึกฉบับร่าง"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>บันทึกร่าง</span>
+              <span className="hidden sm:inline">บันทึกร่าง</span>
             </button>
 
             <button
               type="button"
               onClick={() => saveChapter("PUBLISHED")}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition disabled:opacity-50 active:scale-[0.99]"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition disabled:opacity-50 active:scale-[0.99] shadow-sm shadow-[#FFE600]/20"
+              title="เผยแพร่ตอนให้อ่านทันที"
             >
               <Send className="w-3.5 h-3.5" />
               <span>เผยแพร่</span>

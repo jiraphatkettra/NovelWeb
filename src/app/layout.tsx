@@ -53,10 +53,10 @@ export default function RootLayout({
                 <Navbar />
               </Suspense>
               <LoginModal />
-              <div className="flex-1 pb-14 md:pb-0 relative z-10">{children}</div>
+              <div className="flex-1 pb-6 md:pb-0 relative z-10">{children}</div>
 
               {/* Footer — Clean & Minimal */}
-              <footer className="border-t border-kakao-border bg-black py-8 px-4 sm:px-6 lg:px-8 text-xs text-neutral-500 relative z-10">
+              <footer className="border-t border-kakao-border bg-black py-8 px-4 sm:px-6 lg:px-8 text-xs text-neutral-500 relative z-10 mb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] md:mb-0">
                 <div className="max-w-7xl mx-auto">
                   {/* Links row */}
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6">

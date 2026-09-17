@@ -86,13 +86,13 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* Center: Navigation Tabs — desktop with glow active indicator */}
-          <nav className="hidden md:flex items-center gap-1 h-full">
+          {/* Center: Navigation Tabs — tablet & desktop with responsive compact sizing */}
+          <nav className="hidden md:flex items-center gap-0.5 lg:gap-1.5 h-full">
             {navTabs.map((tab) => (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`relative px-3 py-2 h-full flex items-center text-[13px] transition-colors ${
+                className={`relative px-2 lg:px-3 py-2 h-full flex items-center text-xs lg:text-[13px] transition-colors whitespace-nowrap ${
                   isTabActive(tab.href)
                     ? "tab-glow-active text-white font-bold"
                     : "text-neutral-400 hover:text-white font-medium"

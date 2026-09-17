@@ -75,8 +75,8 @@ export function GiftBoxModal({ isOpen, onClose, onClaimed }: GiftBoxModalProps) 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 sm:p-8 text-center shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-5 sm:p-8 text-center shadow-2xl max-h-[88vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}

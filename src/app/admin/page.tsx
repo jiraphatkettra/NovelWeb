@@ -447,11 +447,11 @@ export default function AdminPage() {
           </h1>
         </div>
 
-        {/* Tab Navigation Controls */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-neutral-900/90 p-1.5 rounded-2xl border border-neutral-800 text-xs font-semibold shadow-inner">
+        {/* Tab Navigation Controls — Horizontal momentum scroll on mobile & tablet */}
+        <div className="w-full sm:w-auto flex items-center overflow-x-auto no-scrollbar gap-1.5 bg-neutral-900/90 p-1.5 rounded-2xl border border-neutral-800 text-xs font-semibold shadow-inner">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === "overview" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
             }`}
           >
@@ -461,7 +461,7 @@ export default function AdminPage() {
           {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("users")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "users" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -472,7 +472,7 @@ export default function AdminPage() {
           {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("content")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "content" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -483,7 +483,7 @@ export default function AdminPage() {
           {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("reports")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "reports" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -499,7 +499,7 @@ export default function AdminPage() {
           {["SUPER_ADMIN", "FINANCE_ADMIN"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("payouts")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "payouts" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -515,7 +515,7 @@ export default function AdminPage() {
           {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("applications")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "applications" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -531,7 +531,7 @@ export default function AdminPage() {
           {["SUPER_ADMIN", "FINANCE_ADMIN"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("packages")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "packages" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -542,7 +542,7 @@ export default function AdminPage() {
           {user.role === "SUPER_ADMIN" && (
             <button
               onClick={() => setActiveTab("broadcast")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "broadcast" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -554,7 +554,7 @@ export default function AdminPage() {
           {user.role === "SUPER_ADMIN" && (
             <button
               onClick={() => setActiveTab("auditLogs")}
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                 activeTab === "auditLogs" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >

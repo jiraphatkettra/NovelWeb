@@ -41,8 +41,8 @@ export default function CheckinModal({ isOpen, onClose }: { isOpen: boolean; onC
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-md rounded-3xl bg-[#161617] border border-white/[0.15] p-6 sm:p-8 shadow-2xl text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
+      <div className="relative w-full max-w-md rounded-3xl bg-[#161617] border border-white/[0.15] p-5 sm:p-8 shadow-2xl text-white max-h-[88vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-white/60 hover:text-white"

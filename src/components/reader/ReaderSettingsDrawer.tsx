@@ -58,8 +58,11 @@ export function ReaderSettingsDrawer({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-[#121215] h-full shadow-2xl border-l border-white/[0.08] flex flex-col animate-in slide-in-from-right duration-300 text-white">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full sm:max-w-md bg-[#121215] max-h-[85vh] sm:max-h-none sm:h-full rounded-t-3xl sm:rounded-none shadow-2xl border-t sm:border-t-0 sm:border-l border-white/[0.1] flex flex-col animate-in slide-in-from-bottom sm:slide-in-from-right duration-300 text-white overflow-hidden">
+        {/* Mobile Pull Handle Indicator */}
+        <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2.5 sm:hidden" />
+
         {/* Header */}
         <div className="p-4 border-b border-white/[0.08] flex items-center justify-between">
           <div className="flex items-center gap-2">

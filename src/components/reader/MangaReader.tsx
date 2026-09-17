@@ -53,6 +53,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
   const [chapter, setChapter] = useState<MangaChapterData>(initialChapter);
   const [unlocking, setUnlocking] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showControls, setShowControls] = useState(true);
 
   // Monitor scroll for Scroll-to-Top Floating Button
   useEffect(() => {
@@ -167,40 +168,51 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
       className="min-h-screen bg-black text-white select-none"
       onContextMenu={handleContextMenu}
     >
-      {/* Top Header Navigation */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-black/80 border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      {/* Top Header Navigation — Immersive animated hide/show */}
+      <header
+        className={`sticky top-0 z-40 backdrop-blur-md bg-black/85 border-b border-zinc-800/80 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between transition-all duration-300 ${
+          showControls ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href={`/stories/${chapter.story.slug}`}
-            className="p-2 rounded-xl hover:bg-zinc-800 transition"
+            className="p-1.5 sm:p-2 rounded-xl hover:bg-zinc-800 transition shrink-0"
             title="กลับไปหน้ารายละเอียดเรื่อง"
           >
             <ArrowLeft className="w-5 h-5 text-zinc-300" />
           </Link>
-          <div>
-            <h1 className="text-sm font-bold truncate max-w-[200px] sm:max-w-md font-prompt text-zinc-100">
+          <div className="min-w-0">
+            <h1 className="text-xs sm:text-sm font-bold truncate max-w-[170px] sm:max-w-md font-prompt text-zinc-100">
               {chapter.story.title}
             </h1>
-            <p className="text-xs text-zinc-400 truncate max-w-[200px] sm:max-w-md">
+            <p className="text-[11px] sm:text-xs text-zinc-400 truncate max-w-[170px] sm:max-w-md">
               {chapter.title}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400">
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
             <span>Anti-Piracy Protected</span>
           </div>
 
-          <Link href="/" className="p-2 rounded-xl hover:bg-zinc-800 transition">
+          <Link href="/" className="p-1.5 sm:p-2 rounded-xl hover:bg-zinc-800 transition">
             <Home className="w-4 h-4 text-zinc-400" />
           </Link>
         </div>
       </header>
 
       {/* Manga Panels Container */}
-      <main className="max-w-3xl mx-auto min-h-[80vh] flex flex-col items-center">
+      <main
+        onClick={() => {
+          if (chapter.isUnlocked) {
+            setShowControls((prev) => !prev);
+          }
+        }}
+        className="max-w-3xl mx-auto min-h-[80vh] flex flex-col items-center cursor-pointer"
+      >
         {!chapter.isUnlocked ? (
           /* LOCKED CHAPTER KAKAO WEBTOON STYLE */
           <div className="my-16 max-w-lg w-full mx-4 p-6 sm:p-8 rounded-2xl bg-[#121215] border border-white/10 shadow-2xl text-center text-white">
@@ -293,22 +305,23 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
         )}
 
         {/* Chapter Navigation Footer */}
-        <div className="w-full max-w-3xl my-10 px-4 flex items-center justify-between gap-4">
+        <div className="w-full max-w-3xl my-8 sm:my-10 px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-4">
           {chapter.prevChapter ? (
             <Link
               href={`/reader/manga/${chapter.prevChapter.id}`}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium transition"
+              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium transition shrink-0 active:scale-95"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>ตอนก่อนหน้า</span>
+              <span className="hidden min-[380px]:inline">ตอนก่อนหน้า</span>
+              <span className="min-[380px]:hidden">ก่อนหน้า</span>
             </Link>
           ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-3.5 py-2">ตอนแรกสุด</div>
+            <div className="text-xs opacity-30 cursor-not-allowed px-2 sm:px-3.5 py-2 shrink-0">ตอนแรกสุด</div>
           )}
 
           <Link
             href={`/stories/${chapter.story.slug}`}
-            className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 text-xs font-medium transition"
+            className="px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 text-xs font-medium transition text-center truncate active:scale-95"
           >
             สารบัญตอน
           </Link>
@@ -316,13 +329,14 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           {chapter.nextChapter ? (
             <Link
               href={`/reader/manga/${chapter.nextChapter.id}`}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
+              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition shrink-0 active:scale-95 shadow-md shadow-[#FFE600]/20"
             >
-              <span>ตอนถัดไป</span>
+              <span className="hidden min-[380px]:inline">ตอนถัดไป</span>
+              <span className="min-[380px]:hidden">ถัดไป</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-3.5 py-2">ตอนล่าสุด</div>
+            <div className="text-xs opacity-30 cursor-not-allowed px-2 sm:px-3.5 py-2 shrink-0">ตอนล่าสุด</div>
           )}
         </div>
 
@@ -340,7 +354,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-6 sm:bottom-10 sm:right-10 z-50 flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-[#121215]/90 hover:bg-[#FFE600] border border-white/20 hover:border-[#FFE600] text-neutral-300 hover:text-black font-prompt text-xs font-bold shadow-2xl backdrop-blur-md transition-all duration-300 active:scale-95 group hover:shadow-[0_0_20px_rgba(255,230,0,0.3)] animate-in fade-in slide-in-from-bottom-3"
+          className="fixed bottom-6 right-4 sm:bottom-10 sm:right-10 z-40 flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-[#121215]/90 hover:bg-[#FFE600] border border-white/20 hover:border-[#FFE600] text-neutral-300 hover:text-black font-prompt text-xs font-bold shadow-2xl backdrop-blur-md transition-all duration-300 active:scale-95 group hover:shadow-[0_0_20px_rgba(255,230,0,0.3)] animate-in fade-in slide-in-from-bottom-3"
           title="เลื่อนขึ้นบนสุด"
         >
           <ArrowUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />

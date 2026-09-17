@@ -435,10 +435,10 @@ export default function AuthorStudioPage() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
             onClick={() => setShowPayoutModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-bold transition border border-white/[0.08]"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-bold transition border border-white/[0.08]"
           >
             <DollarSign className="w-4 h-4 text-emerald-400" />
             <span>ขอถอนเงิน</span>
@@ -446,7 +446,7 @@ export default function AuthorStudioPage() {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition active:scale-[0.99]"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition active:scale-[0.99]"
           >
             <Plus className="w-4 h-4" />
             <span>สร้างเรื่องใหม่</span>
@@ -617,7 +617,7 @@ export default function AuthorStudioPage() {
       {/* Modal: Create Story */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-lg bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#121215] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
             <button
               onClick={() => setShowCreateModal(false)}
               className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/[0.06]"
@@ -794,7 +794,7 @@ export default function AuthorStudioPage() {
       {/* Modal: Request Payout */}
       {showPayoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <div className="relative w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
             <button
               onClick={() => setShowPayoutModal(false)}
               className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition"

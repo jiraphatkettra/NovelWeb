@@ -49,7 +49,7 @@ export function MobileBottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-md border-t border-kakao-border px-1 py-1.5 safe-area-inset-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-md border-t border-kakao-border px-1 pt-1 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))]">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -57,7 +57,7 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg transition ${
+              className={`flex flex-col items-center justify-center py-1.5 px-3 min-w-[56px] min-h-[44px] rounded-xl transition active:scale-95 ${
                 item.isActive
                   ? "text-kakao-yellow"
                   : "text-neutral-500 hover:text-neutral-300"
@@ -68,7 +68,9 @@ export function MobileBottomNav() {
                   item.isActive ? "stroke-[2.5]" : "stroke-[1.5]"
                 }`}
               />
-              <span className="text-[10px] mt-0.5 font-prompt">{item.label}</span>
+              <span className={`text-[10px] mt-0.5 font-prompt ${item.isActive ? "font-bold" : "font-normal"}`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}

@@ -97,11 +97,11 @@ export function LoginModal() {
   };
 
   // Google Sign-In Initialization
+  const DEFAULT_GOOGLE_CLIENT_ID = "175750601040-6mu2snpdi2taks4vdq7gh7cf3q8gqh2f.apps.googleusercontent.com";
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+
   useEffect(() => {
     if (!isOpen) return;
-
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) return;
 
     const handleCredentialResponse = async (response: any) => {
       if (response?.credential) {
@@ -128,16 +128,19 @@ export function LoginModal() {
           (window as any).google.accounts.id.initialize({
             client_id: clientId,
             callback: handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true,
           });
 
           const container = document.getElementById("google-signin-btn-container");
           if (container) {
             container.innerHTML = "";
+            const btnWidth = Math.min(360, Math.max(240, window.innerWidth - 64));
             (window as any).google.accounts.id.renderButton(container, {
               theme: "outline",
               size: "large",
               shape: "pill",
-              width: 360,
+              width: btnWidth,
               text: tab === "LOGIN" ? "continue_with" : "signup_with",
               locale: "th",
               logo_alignment: "left",
@@ -162,6 +165,9 @@ export function LoginModal() {
         script.onload = () => {
           renderGoogleBtn();
         };
+        script.onerror = () => {
+          console.warn("Failed to load Google Identity Services SDK");
+        };
         document.head.appendChild(script);
       } else {
         existingScript.onload = () => {
@@ -169,7 +175,7 @@ export function LoginModal() {
         };
       }
     }
-  }, [isOpen, tab]);
+  }, [isOpen, tab, clientId]);
 
   if (!isOpen) return null;
 
@@ -239,7 +245,17 @@ export function LoginModal() {
                 type="button"
                 onClick={() => {
                   if (typeof window !== "undefined" && (window as any).google?.accounts?.id) {
-                    (window as any).google.accounts.id.prompt();
+                    (window as any).google.accounts.id.prompt((notification: any) => {
+                      if (notification?.isNotDisplayed?.()) {
+                        console.warn("Google prompt not displayed:", notification.getNotDisplayedReason());
+                        toast.warning(
+                          "ไม่สามารถเปิด Google Sign-In ได้",
+                          "หากไม่ขึ้นป๊อปอัป กรุณาตรวจสอบว่าได้ตั้งค่า Authorized JavaScript Origins ใน Google Cloud Console เรียบร้อยแล้ว"
+                        );
+                      }
+                    });
+                  } else {
+                    toast.warning("กำลังเตรียมระบบ Google Sign-In", "กรุณารอสักครู่แล้วลองใหม่อีกครั้ง หรือเข้าสู่ระบบด้วยอีเมล");
                   }
                 }}
                 className="w-full max-w-[360px] h-[44px] px-4 rounded-full bg-white text-[#3c4043] border border-[#dadce0] hover:bg-[#f8f9fa] transition flex items-center justify-center gap-3 text-sm font-medium shadow-sm active:scale-[0.99]"

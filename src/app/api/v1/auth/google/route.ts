@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
       return apiError("VALIDATION_ERROR", "ไม่พบข้อมูลยืนยันตัวตนจาก Google (Missing credential)", null, 400);
     }
 
-    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const DEFAULT_GOOGLE_CLIENT_ID = "175750601040-6mu2snpdi2taks4vdq7gh7cf3q8gqh2f.apps.googleusercontent.com";
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
     if (!GOOGLE_CLIENT_ID) {
       return apiError("INTERNAL_SERVER_ERROR", "ระบบยังไม่ได้ตั้งค่า Google Client ID ในเซิร์ฟเวอร์", null, 500);
     }

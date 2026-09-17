@@ -31,6 +31,7 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  loginWithGoogle: (credential: string) => Promise<{ success: boolean; message?: string }>;
   register: (data: { email: string; password: string; name: string; penName?: string; role?: string; birthdate?: string }) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -83,6 +84,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (credential: string) => {
+    try {
+      const res = await fetch("/api/v1/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      });
+      const json = await res.json();
+      if (json.success && json.data?.user) {
+        setUser(json.data.user);
+        return { success: true };
+      }
+      return { success: false, message: json.error?.message || "เข้าสู่ระบบด้วย Google ไม่สำเร็จ" };
+    } catch {
+      return { success: false, message: "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้" };
+    }
+  };
+
   const register = async (data: { email: string; password: string; name: string; penName?: string; role?: string; birthdate?: string }) => {
     try {
       const res = await fetch("/api/v1/auth/register", {
@@ -128,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser, switchDemoRole }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, refreshUser, switchDemoRole }}>
       {children}
     </AuthContext.Provider>
   );

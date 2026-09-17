@@ -94,6 +94,7 @@ export default function AuthorStudioPage() {
   const [newType, setNewType] = useState<"NOVEL" | "MANGA">("NOVEL");
   const [newCategory, setNewCategory] = useState("แฟนตาซี");
   const [newRating, setNewRating] = useState<"ALL_AGES" | "TEEN_13" | "MATURE_18">("ALL_AGES");
+  const [newReleaseDay, setNewReleaseDay] = useState("MON");
   const [selectedTags, setSelectedTags] = useState<string[]>(["แฟนตาซี"]);
   const [creating, setCreating] = useState(false);
 
@@ -159,6 +160,7 @@ export default function AuthorStudioPage() {
           type: newType,
           category: newCategory,
           contentRating: newRating,
+          releaseDay: newReleaseDay,
           tags: selectedTags,
         }),
       });
@@ -259,13 +261,13 @@ export default function AuthorStudioPage() {
     setOnboardingError("");
 
     try {
-      const res = await fetch("/api/v1/author/apply", {
+      const res = await fetch("/api/v1/author/become", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          penName: onboardingPenName || user?.penName || user?.name,
-          bio: onboardingBio,
-          acceptedTerms: true,
+          penName: (onboardingPenName || user?.penName || user?.name || "").trim(),
+          bio: onboardingBio.trim(),
+          agreementAccepted: onboardingAgreement,
         }),
       });
 
@@ -674,8 +676,8 @@ export default function AuthorStudioPage() {
                 />
               </div>
 
-              {/* หมวดหมู่ & เรตอายุ */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* หมวดหมู่ & เรตอายุ & วันลงประจำสัปดาห์ */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-neutral-300 font-medium block mb-1">หมวดหมู่หลัก</label>
                   <select
@@ -701,6 +703,24 @@ export default function AuthorStudioPage() {
                     <option value="ALL_AGES">ทั่วไป (All Ages)</option>
                     <option value="TEEN_13">13+ (วัยรุ่น)</option>
                     <option value="MATURE_18">18+ (ผู้ใหญ่)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-neutral-300 font-medium block mb-1">วันลงผลงาน</label>
+                  <select
+                    value={newReleaseDay}
+                    onChange={(e) => setNewReleaseDay(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                  >
+                    <option value="MON">วันจันทร์ (MON)</option>
+                    <option value="TUE">วันอังคาร (TUE)</option>
+                    <option value="WED">วันพุธ (WED)</option>
+                    <option value="THU">วันพฤหัสฯ (THU)</option>
+                    <option value="FRI">วันศุกร์ (FRI)</option>
+                    <option value="SAT">วันเสาร์ (SAT)</option>
+                    <option value="SUN">วันอาทิตย์ (SUN)</option>
+                    <option value="COMPLETED">จบแล้ว (END)</option>
                   </select>
                 </div>
               </div>

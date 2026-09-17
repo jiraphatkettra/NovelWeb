@@ -11,7 +11,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, synopsis, coverUrl, bannerUrl, type = "NOVEL", category = "Fantasy", tags = [], contentRating = "ALL_AGES" } = body;
+    const {
+      title,
+      synopsis,
+      coverUrl,
+      bannerUrl,
+      type = "NOVEL",
+      category = "Fantasy",
+      tags = [],
+      contentRating = "ALL_AGES",
+      releaseDay = "MON",
+    } = body;
 
     if (!title || !synopsis || !coverUrl) {
       return apiError("VALIDATION_ERROR", "กรุณากรอกชื่อเรื่อง เรื่องย่อ และรูปภาพหน้าปกให้ครบถ้วน");
@@ -36,6 +46,7 @@ export async function POST(req: NextRequest) {
         category,
         tags: JSON.stringify(tags),
         contentRating,
+        releaseDay,
         status: "PUBLISHED", // Or PENDING_REVIEW if strict moderation
       },
     });

@@ -3,8 +3,20 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useAuthModal } from "@/context/AuthModalContext";
 import { useToast } from "@/context/ToastContext";
-import { Feather, ShieldCheck, FileText, CheckCircle2, Clock, ArrowRight, X } from "lucide-react";
+import {
+  Feather,
+  ShieldCheck,
+  FileText,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  X,
+  User,
+  CreditCard,
+} from "lucide-react";
 
 const THAI_BANKS = [
   "ธนาคารกสิกรไทย (KBANK)",
@@ -19,19 +31,28 @@ const THAI_BANKS = [
 
 export default function AuthorApplyPage() {
   const { user, refreshUser } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const { toast } = useToast();
+
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
+  // Step 1: Pen Name & Bio
   const [penName, setPenName] = useState("");
   const [bio, setBio] = useState("");
+
+  // Step 2: KYC & Bank
   const [idCardNumber, setIdCardNumber] = useState("");
   const [bankName, setBankName] = useState(THAI_BANKS[0]);
   const [bankAccountNo, setBankAccountNo] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
+
+  // Step 3: Agreement
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [showAgreementModal, setShowAgreementModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check if user already applied
+  // Existing status
   const [existingStatus, setExistingStatus] = useState<{
     hasApplied: boolean;
     kycStatus?: string;
@@ -41,7 +62,7 @@ export default function AuthorApplyPage() {
   useEffect(() => {
     async function checkStatus() {
       try {
-        const res = await fetch("/api/v1/author/apply/status");
+        const res = await fetch("/api/v1/author/apply");
         const json = await res.json();
         if (json.success) {
           setExistingStatus(json.data);
@@ -53,19 +74,48 @@ export default function AuthorApplyPage() {
         setLoading(false);
       }
     }
-    if (user) checkStatus();
-    else setLoading(false);
+    if (user) {
+      if (!penName && (user.penName || user.name)) {
+        setPenName(user.penName || user.name);
+      }
+      if (!bankAccountName && user.name) {
+        setBankAccountName(user.name);
+      }
+      checkStatus();
+    } else {
+      setLoading(false);
+    }
   }, [user]);
+
+  const handleNextStep = () => {
+    if (currentStep === 1) {
+      if (!penName.trim()) {
+        toast.warning("กรุณาระบุนามปากกา", "นามปากกาเป็นข้อมูลจำเป็นสำหรับแสดงบนผลงาน");
+        return;
+      }
+      setCurrentStep(2);
+    } else if (currentStep === 2) {
+      const cleanId = idCardNumber.replace(/\D/g, "");
+      if (cleanId.length !== 13) {
+        toast.warning("เลขบัตรประชาชนไม่ถูกต้อง", "เลขประจำตัวประชาชนต้องมีความยาว 13 หลัก");
+        return;
+      }
+      if (!bankAccountNo.trim()) {
+        toast.warning("กรุณาระบุเลขที่บัญชี", "เลขที่บัญชีจำเป็นสำหรับการโอนเงินส่วนแบ่งรายได้");
+        return;
+      }
+      if (!bankAccountName.trim()) {
+        toast.warning("กรุณาระบุชื่อบัญชี", "ชื่อเจ้าของบัญชีต้องตรงกับบัตรประชาชน");
+        return;
+      }
+      setCurrentStep(3);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreementAccepted) {
       toast.warning("กรุณายอมรับข้อตกลง", "กรุณาอ่านและยอมรับสัญญาข้อตกลงนักเขียนก่อนส่งใบสมัคร");
-      return;
-    }
-
-    if (idCardNumber.replace(/\D/g, "").length !== 13) {
-      toast.warning("เลขบัตรประชาชนไม่ถูกต้อง", "เลขประจำตัวประชาชนต้องมีความยาว 13 หลัก");
       return;
     }
 
@@ -75,24 +125,24 @@ export default function AuthorApplyPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          penName,
-          bio,
-          idCardNumber,
+          penName: penName.trim(),
+          bio: bio.trim(),
+          idCardNumber: idCardNumber.replace(/\D/g, ""),
           bankName,
-          bankAccountNo,
-          bankAccountName,
+          bankAccountNo: bankAccountNo.trim(),
+          bankAccountName: bankAccountName.trim(),
           agreementAccepted,
         }),
       });
 
       const json = await res.json();
       if (json.success) {
-        toast.success("ยื่นใบสมัครสำเร็จ!", json.data.message);
-        refreshUser();
+        toast.success("ยื่นใบสมัครสำเร็จ!", json.data.message || "เปิดใช้งานบัญชีนักเขียนเรียบร้อยแล้ว");
+        await refreshUser();
         setExistingStatus({
           hasApplied: true,
-          kycStatus: "PENDING",
-          isAuthor: false,
+          kycStatus: "APPROVED",
+          isAuthor: true,
         });
       } else {
         toast.error("ยื่นใบสมัครไม่สำเร็จ", json.error?.message);
@@ -106,13 +156,30 @@ export default function AuthorApplyPage() {
 
   if (!user) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
-        <Feather className="w-12 h-12 text-neutral-600 mb-4" />
-        <h1 className="text-xl font-bold text-white font-prompt mb-2">สมัครเป็นนักเขียน</h1>
-        <p className="text-xs text-neutral-400 max-w-sm mb-6">กรุณาเข้าสู่ระบบก่อนยื่นใบสมัครเป็นนักเขียน</p>
-        <Link href="/auth/login" className="px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition">
-          เข้าสู่ระบบ
-        </Link>
+      <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mb-4">
+          <Feather className="w-7 h-7" />
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-white font-prompt mb-2">
+          สมัครเป็นนักเขียน (Creator Studio)
+        </h1>
+        <p className="text-xs sm:text-sm text-neutral-400 max-w-sm mb-6 leading-relaxed">
+          กรุณาเข้าสู่ระบบก่อนยื่นใบสมัครเพื่อเปิดใช้งานสตูดิโอนักเขียนและสร้างรายได้ 70%
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => openAuthModal("LOGIN")}
+            className="px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.98]"
+          >
+            เข้าสู่ระบบ
+          </button>
+          <Link
+            href="/"
+            className="px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium text-xs transition border border-white/10"
+          >
+            กลับหน้าหลัก
+          </Link>
+        </div>
       </div>
     );
   }
@@ -134,166 +201,299 @@ export default function AuthorApplyPage() {
 
       {/* Existing Status Banner */}
       {existingStatus?.isAuthor ? (
-        <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-3">
-          <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+        <div className="p-6 rounded-2xl bg-[#121215] border border-emerald-500/30 text-center space-y-3 shadow-lg">
+          <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
           <h2 className="text-base font-bold text-white font-prompt">คุณเป็นนักเขียนเรียบร้อยแล้ว!</h2>
-          <p className="text-xs text-emerald-300">
-            คุณสามารถเข้าสู่ Author Studio เพื่อสร้างเรื่องใหม่และเขียนตอนได้ทันที
+          <p className="text-xs text-emerald-300/90 leading-relaxed max-w-sm mx-auto">
+            บัญชีของคุณได้รับการเปิดสิทธิ์สตูดิโอนักเขียนแล้ว สามารถสร้างผลงานและจัดการตอนได้ทันที
           </p>
           <div className="pt-2">
             <Link
               href="/author"
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
             >
-              <span>ไปที่ Author Studio</span>
+              <span>ไปที่ Creator Studio</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       ) : existingStatus?.hasApplied && existingStatus?.kycStatus === "PENDING" ? (
-        <div className="p-5 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20 text-center space-y-2">
-          <Clock className="w-8 h-8 text-[#FFE600] mx-auto" />
+        <div className="p-6 rounded-2xl bg-[#121215] border border-[#FFE600]/30 text-center space-y-2 shadow-lg">
+          <Clock className="w-10 h-10 text-[#FFE600] mx-auto" />
           <h2 className="text-base font-bold text-white font-prompt">ใบสมัครของคุณอยู่ระหว่างการตรวจสอบ</h2>
           <p className="text-xs text-neutral-300 max-w-md mx-auto leading-relaxed">
             ทีมงานกำลังตรวจสอบข้อมูลและรายละเอียดบัญชีของคุณ โดยจะแจ้งผลให้ทราบโดยเร็ว
           </p>
         </div>
       ) : (
-        /* Application Form */
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Section 1: Writer Profile */}
-          <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-3.5">
-            <h2 className="text-xs font-bold text-white font-prompt flex items-center gap-2">
-              <Feather className="w-4 h-4 text-[#FFE600]" />
-              <span>1. ข้อมูลนักเขียนและงานสร้างสรรค์</span>
-            </h2>
-
-            <div>
-              <label className="block text-neutral-400 mb-1">นามปากกา (Pen Name) *</label>
-              <input
-                type="text"
-                required
-                value={penName}
-                onChange={(e) => setPenName(e.target.value)}
-                placeholder="เช่น จอมยุทธนิรนาม"
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-neutral-400 mb-1">เกี่ยวกับตัวเอง / สไตล์งานเขียนที่ถนัด</label>
-              <textarea
-                rows={3}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="บอกเล่าประสบการณ์ หรือแนวเรื่องที่ตั้งใจจะเขียน เช่น แฟนตาซี, เกิดใหม่, โรแมนติก..."
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600] resize-none leading-relaxed"
-              />
-            </div>
+        /* Multi-Step Wizard */
+        <div className="space-y-6">
+          {/* Stepper Indicator */}
+          <div className="flex items-center justify-between px-2">
+            {[
+              { step: 1, label: "ข้อมูลนักเขียน", icon: User },
+              { step: 2, label: "บัญชีรับเงิน", icon: CreditCard },
+              { step: 3, label: "ยืนยันและสัญญา", icon: FileText },
+            ].map((s, idx) => {
+              const Icon = s.icon;
+              const isCurrent = currentStep === s.step;
+              const isDone = currentStep > s.step;
+              return (
+                <div key={s.step} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition ${
+                        isCurrent
+                          ? "bg-[#FFE600] text-black"
+                          : isDone
+                          ? "bg-emerald-500 text-black font-bold"
+                          : "bg-white/[0.08] text-neutral-500"
+                      }`}
+                    >
+                      {isDone ? "✓" : s.step}
+                    </div>
+                    <span
+                      className={`text-xs font-prompt hidden sm:inline ${
+                        isCurrent ? "text-white font-bold" : isDone ? "text-neutral-300" : "text-neutral-600"
+                      }`}
+                    >
+                      {s.label}
+                    </span>
+                  </div>
+                  {idx < 2 && (
+                    <div
+                      className={`flex-1 h-0.5 mx-3 transition-colors ${
+                        currentStep > s.step ? "bg-emerald-500/50" : "bg-white/[0.08]"
+                      }`}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Section 2: KYC & Payout Details */}
-          <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-3.5">
-            <h2 className="text-xs font-bold text-white font-prompt flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#FFE600]" />
-              <span>2. ข้อมูลยืนยันตัวตนและรับเงินส่วนแบ่ง (KYC & Payout)</span>
-            </h2>
-            <p className="text-[11px] text-neutral-400">
-              ข้อมูลนี้จำเป็นสำหรับการยืนยันตัวตนและใช้โอนเงินส่วนแบ่งรายได้ 70% เข้าบัญชีของคุณ
-            </p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Step 1: Writer Profile */}
+            {currentStep === 1 && (
+              <div className="p-5 sm:p-6 rounded-2xl bg-[#121215] border border-white/[0.08] space-y-4 animate-in fade-in">
+                <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold font-prompt">
+                  <Feather className="w-4 h-4" />
+                  <span>ขั้นตอนที่ 1: ข้อมูลนักเขียนและนามปากกา</span>
+                </div>
 
-            <div>
-              <label className="block text-neutral-400 mb-1">เลขประจำตัวประชาชน (13 หลัก) *</label>
-              <input
-                type="text"
-                required
-                maxLength={13}
-                value={idCardNumber}
-                onChange={(e) => setIdCardNumber(e.target.value.replace(/\D/g, ""))}
-                placeholder="1234567890123"
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600] font-mono text-xs"
-              />
-            </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                    นามปากกา (Pen Name) <span className="text-[#FFE600]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={penName}
+                    onChange={(e) => setPenName(e.target.value)}
+                    placeholder="เช่น หมื่นลี้, ShadowWriter, จอมยุทธ์น้อย"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                  />
+                  <p className="text-[11px] text-neutral-500 mt-1">
+                    ชื่อนี้จะแสดงเป็นชื่อผู้แต่งบนหน้าผลงานของคุณ สามารถปรับเปลี่ยนได้ภายหลัง
+                  </p>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-neutral-400 mb-1">ธนาคารที่รับเงิน *</label>
-                <select
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
-                >
-                  {THAI_BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                    เกี่ยวกับตัวเอง / สไตล์งานเขียนที่ถนัด (Bio)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="บอกเล่าประสบการณ์ สไตล์เรื่องที่สนใจเขียน หรือแรงบันดาลใจ เช่น นิยายแฟนตาซีเกิดใหม่, มังงะแอ็กชันไซไฟ..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.06] flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                  >
+                    <span>ถัดไป: บัญชีรับเงิน</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
+            )}
 
-              <div>
-                <label className="block text-neutral-400 mb-1">เลขที่บัญชีธนาคาร *</label>
-                <input
-                  type="text"
-                  required
-                  value={bankAccountNo}
-                  onChange={(e) => setBankAccountNo(e.target.value)}
-                  placeholder="เช่น 123-4-56789-0"
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600] font-mono text-xs"
-                />
+            {/* Step 2: KYC & Payout Details */}
+            {currentStep === 2 && (
+              <div className="p-5 sm:p-6 rounded-2xl bg-[#121215] border border-white/[0.08] space-y-4 animate-in fade-in">
+                <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold font-prompt">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>ขั้นตอนที่ 2: ข้อมูลยืนยันตัวตนและรับเงินส่วนแบ่ง 70%</span>
+                </div>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  ข้อมูลนี้จำเป็นสำหรับการยืนยันตัวตนทางกฎหมาย และใช้สำหรับโอนเงินส่วนแบ่งรายได้เข้าบัญชีของคุณ
+                </p>
+
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                    เลขประจำตัวประชาชน (13 หลัก) <span className="text-[#FFE600]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={13}
+                    value={idCardNumber}
+                    onChange={(e) => setIdCardNumber(e.target.value.replace(/\D/g, ""))}
+                    placeholder="1234567890123"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                      ธนาคารที่รับเงิน <span className="text-[#FFE600]">*</span>
+                    </label>
+                    <select
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#FFE600]"
+                    >
+                      {THAI_BANKS.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                      เลขที่บัญชีธนาคาร <span className="text-[#FFE600]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankAccountNo}
+                      onChange={(e) => setBankAccountNo(e.target.value)}
+                      placeholder="เช่น 123-4-56789-0"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                    ชื่อ-นามสกุลเจ้าของบัญชี (ตรงกับบัตรประชาชน) <span className="text-[#FFE600]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={bankAccountName}
+                    onChange={(e) => setBankAccountName(e.target.value)}
+                    placeholder="เช่น นายสมชาย รักการเขียน"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                  />
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-neutral-300 text-xs font-medium transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>ย้อนกลับ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                  >
+                    <span>ถัดไป: สัญญาข้อตกลง</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="block text-neutral-400 mb-1">ชื่อ-นามสกุลเจ้าของบัญชี (ตรงกับบัตรประชาชน) *</label>
-              <input
-                type="text"
-                required
-                value={bankAccountName}
-                onChange={(e) => setBankAccountName(e.target.value)}
-                placeholder="เช่น นายสมศักดิ์ รักการเขียน"
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
-              />
-            </div>
-          </div>
+            {/* Step 3: Author Agreement & Confirmation */}
+            {currentStep === 3 && (
+              <div className="p-5 sm:p-6 rounded-2xl bg-[#121215] border border-white/[0.08] space-y-4 animate-in fade-in">
+                <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold font-prompt">
+                  <FileText className="w-4 h-4" />
+                  <span>ขั้นตอนที่ 3: สรุปข้อมูลและสัญญาข้อตกลงนักเขียน</span>
+                </div>
 
-          {/* Section 3: Author Agreement */}
-          <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-3">
-            <h2 className="text-xs font-bold text-white font-prompt flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#FFE600]" />
-              <span>3. สัญญาข้อตกลงนักเขียน (Author Agreement)</span>
-            </h2>
+                {/* Summary Card */}
+                <div className="p-3.5 rounded-xl bg-black/50 border border-white/[0.06] space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">นามปากกา:</span>
+                    <span className="font-bold text-white">{penName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">บัญชีรับเงิน:</span>
+                    <span className="text-white">{bankName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">เลขที่บัญชี:</span>
+                    <span className="font-mono text-white">{bankAccountNo}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">ชื่อบัญชี:</span>
+                    <span className="text-white">{bankAccountName}</span>
+                  </div>
+                </div>
 
-            <div className="flex items-start gap-2.5 pt-1">
-              <input
-                type="checkbox"
-                id="authorAgreement"
-                checked={agreementAccepted}
-                onChange={(e) => setAgreementAccepted(e.target.checked)}
-                className="mt-0.5 rounded accent-[#FFE600]"
-              />
-              <label htmlFor="authorAgreement" className="text-neutral-300 text-[11px] leading-relaxed cursor-pointer">
-                ข้าพเจ้าได้อ่าน เข้าใจ และยอมรับ{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowAgreementModal(true)}
-                  className="text-[#FFE600] underline underline-offset-2 font-bold"
-                >
-                  สัญญาข้อตกลงนักเขียนและนโยบายส่วนแบ่งรายได้ 70%
-                </button>{" "}
-                ของแพลตฟอร์ม และยืนยันว่าเป็นเจ้าของลิขสิทธิ์ผลงาน ไม่ละเมิดลิขสิทธิ์ของผู้อื่น
-              </label>
-            </div>
-          </div>
+                {/* Terms Agreement Checkbox */}
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2.5">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="authorAgreement"
+                      checked={agreementAccepted}
+                      onChange={(e) => setAgreementAccepted(e.target.checked)}
+                      className="mt-0.5 rounded accent-[#FFE600] w-4 h-4"
+                    />
+                    <span className="text-neutral-300 text-xs leading-relaxed">
+                      ข้าพเจ้าได้อ่าน เข้าใจ และยอมรับ{" "}
+                      <button
+                        type="button"
+                        onClick={() => setShowAgreementModal(true)}
+                        className="text-[#FFE600] underline underline-offset-2 font-bold"
+                      >
+                        สัญญาข้อตกลงนักเขียนและนโยบายส่วนแบ่งรายได้ 70%
+                      </button>{" "}
+                      ของแพลตฟอร์ม และยืนยันว่าเป็นเจ้าของลิขสิทธิ์ผลงานที่นำมาลงอย่างแท้จริง
+                    </span>
+                  </label>
+                </div>
 
-          <button
-            type="submit"
-            disabled={submitting || !agreementAccepted}
-            className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 active:scale-[0.99]"
-          >
-            {submitting ? "กำลังส่งใบสมัคร..." : "ส่งใบสมัครเป็นนักเขียน"}
-          </button>
-        </form>
+                <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-neutral-300 text-xs font-medium transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>ย้อนกลับ</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={submitting || !agreementAccepted}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] disabled:bg-white/5 disabled:text-neutral-500 text-black font-bold text-xs transition active:scale-[0.98]"
+                  >
+                    <span>{submitting ? "กำลังส่งใบสมัคร..." : "ยืนยันและเปิดบัญชีนักเขียน"}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
       )}
 
       {/* Modal: Author Agreement Viewer */}
@@ -307,9 +507,9 @@ export default function AuthorApplyPage() {
               <button
                 type="button"
                 onClick={() => setShowAgreementModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 

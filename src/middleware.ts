@@ -52,8 +52,14 @@ export function middleware(req: NextRequest) {
       const allowedRoles = ["AUTHOR", "SUPER_ADMIN"];
       if (!user || !user.role || !allowedRoles.includes(user.role)) {
         const url = req.nextUrl.clone();
-        url.pathname = "/";
-        url.searchParams.set("auth_error", "unauthorized_author");
+        if (!user) {
+          url.pathname = "/";
+          url.searchParams.set("auth_modal", "LOGIN");
+          url.searchParams.set("auth_error", "unauthorized_author");
+        } else {
+          // Authenticated reader -> redirect directly to the author application form
+          url.pathname = "/author/apply";
+        }
         return NextResponse.redirect(url);
       }
     }

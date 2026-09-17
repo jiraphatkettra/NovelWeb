@@ -1,32 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import {
+  X,
+  Lock,
+  Mail,
+  User,
+  BookOpen,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  PenTool,
+  Sparkles,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAuthModal } from "@/context/AuthModalContext";
 import { useToast } from "@/context/ToastContext";
-import { X, BookOpen, Mail, Lock, User, ArrowRight } from "lucide-react";
 
 export function LoginModal() {
-  const { isOpen, closeAuthModal, tab: modalTab, setTab: setModalTab } = useAuthModal();
-  const { login, register, switchDemoRole } = useAuth();
+  const { isOpen, tab, setTab, closeAuthModal } = useAuthModal();
+  const { login, loginWithGoogle, register, switchDemoRole } = useAuth();
   const { toast } = useToast();
 
-  const [tab, setTab] = useState<"LOGIN" | "REGISTER">(modalTab);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [penName, setPenName] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Sync state if opened from external context
-  React.useEffect(() => {
-    setTab(modalTab);
-  }, [modalTab]);
-
-  if (!isOpen) return null;
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.warning("กรุณากรอกข้อมูลให้ครบถ้วน", "ใส่อีเมลและรหัสผ่าน");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await login(email, password);
@@ -45,16 +56,22 @@ export function LoginModal() {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password || !name) {
+      toast.warning("กรุณากรอกข้อมูลให้ครบถ้วน", "ชื่อ อีเมล และรหัสผ่านจำเป็นต้องระบุ");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await register({
         email,
         password,
         name,
-        penName: penName.trim() || undefined,
+        penName: penName || undefined,
+        role: "READER",
       });
       if (res.success) {
-        toast.success("สมัครสมาชิกสำเร็จ!", "บัญชีของคุณพร้อมใช้งานแล้ว");
+        toast.success("สมัครสมาชิกสำเร็จ!", "ยินดีต้อนรับสมาชิกใหม่สู่ ReadVerse");
         closeAuthModal();
       } else {
         toast.error("สมัครสมาชิกไม่สำเร็จ", res.message);
@@ -66,55 +83,133 @@ export function LoginModal() {
     }
   };
 
-  const handleQuickDemo = async (role: "READER" | "AUTHOR" | "SUPER_ADMIN") => {
+  const handleQuickDemo = async (role: string) => {
     setLoading(true);
     try {
       await switchDemoRole(role);
-      toast.success("เข้าสู่ระบบด้วยบัญชีทดสอบ", `เปลี่ยนบทบาทเป็น ${role} เรียบร้อยแล้ว`);
+      toast.success("สลับบัญชีทดสอบเรียบร้อย", `เข้าใช้งานในบทบาท ${role}`);
       closeAuthModal();
     } catch {
-      toast.error("เกิดข้อผิดพลาด");
+      toast.error("เกิดข้อผิดพลาดในการสลับบัญชี");
     } finally {
       setLoading(false);
     }
   };
 
+  // Google Sign-In Initialization
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) return;
+
+    const handleCredentialResponse = async (response: any) => {
+      if (response?.credential) {
+        setLoading(true);
+        try {
+          const res = await loginWithGoogle(response.credential);
+          if (res.success) {
+            toast.success("เข้าสู่ระบบด้วย Google สำเร็จ!", "ยินดีต้อนรับสู่ ReadVerse");
+            closeAuthModal();
+          } else {
+            toast.error("เข้าสู่ระบบด้วย Google ไม่สำเร็จ", res.message);
+          }
+        } catch {
+          toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อกับ Google");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    const renderGoogleBtn = () => {
+      if (typeof window !== "undefined" && (window as any).google?.accounts?.id) {
+        try {
+          (window as any).google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleCredentialResponse,
+          });
+
+          const container = document.getElementById("google-signin-btn-container");
+          if (container) {
+            container.innerHTML = "";
+            (window as any).google.accounts.id.renderButton(container, {
+              theme: "outline",
+              size: "large",
+              shape: "pill",
+              width: 360,
+              text: tab === "LOGIN" ? "continue_with" : "signup_with",
+              locale: "th",
+              logo_alignment: "left",
+            });
+          }
+        } catch (e) {
+          console.error("Error rendering Google button:", e);
+        }
+      }
+    };
+
+    if (typeof window !== "undefined" && (window as any).google?.accounts?.id) {
+      renderGoogleBtn();
+    } else {
+      const existingScript = document.getElementById("google-gsi-client");
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.id = "google-gsi-client";
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          renderGoogleBtn();
+        };
+        document.head.appendChild(script);
+      } else {
+        existingScript.onload = () => {
+          renderGoogleBtn();
+        };
+      }
+    }
+  }, [isOpen, tab]);
+
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md rounded-2xl bg-[#121215] border border-white/[0.1] shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md rounded-3xl bg-[#131317] border border-white/[0.1] shadow-2xl overflow-hidden p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-150">
         {/* Close Button */}
         <button
           type="button"
           onClick={closeAuthModal}
-          className="absolute top-5 right-5 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition"
+          className="absolute top-4 right-4 p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.08] transition"
+          aria-label="ปิดหน้าต่าง"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
 
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="w-10 h-10 rounded-xl bg-zinc-100 text-zinc-950 flex items-center justify-center mx-auto shadow-md">
-            <BookOpen className="w-5 h-5 text-zinc-950" />
+        <div className="text-center space-y-1.5 pt-1">
+          <div className="w-12 h-12 rounded-2xl bg-[#FFE600] text-black flex items-center justify-center mx-auto shadow-lg shadow-[#FFE600]/20 font-bold">
+            <BookOpen className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-zinc-100 font-prompt tracking-tight">
+          <h3 className="text-xl font-bold text-white font-prompt tracking-tight">
             ReadVerse
           </h3>
-          <p className="text-xs text-zinc-400 font-sarabun">
+          <p className="text-xs text-neutral-400 font-sarabun">
             {tab === "LOGIN"
               ? "เข้าสู่ระบบเพื่ออ่าน ปลดล็อกตอน และติดตามเรื่องโปรด"
               : "สร้างบัญชีใหม่เพื่อร่วมสนุกในคอมมูนิตี้นิยายและมังงะ"}
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-white/[0.08]">
+        {/* Segmented Tab Switcher */}
+        <div className="p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] flex gap-1">
           <button
             type="button"
             onClick={() => setTab("LOGIN")}
-            className={`flex-1 pb-2.5 text-xs font-semibold transition border-b-2 font-prompt ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
               tab === "LOGIN"
-                ? "border-zinc-100 text-zinc-100"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
+                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
             เข้าสู่ระบบ
@@ -122,141 +217,224 @@ export function LoginModal() {
           <button
             type="button"
             onClick={() => setTab("REGISTER")}
-            className={`flex-1 pb-2.5 text-xs font-semibold transition border-b-2 font-prompt ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
               tab === "REGISTER"
-                ? "border-zinc-100 text-zinc-100"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
+                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
             สมัครสมาชิก
           </button>
         </div>
 
+        {/* 1-Click Google Sign-In (Prominent at top) */}
+        <div className="space-y-2">
+          <div className="w-full flex justify-center">
+            <div
+              id="google-signin-btn-container"
+              className="w-full max-w-[360px] min-h-[44px] flex justify-center items-center overflow-hidden rounded-full shadow-md transition hover:opacity-95"
+            >
+              {/* Clean Google button placeholder & fallback */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined" && (window as any).google?.accounts?.id) {
+                    (window as any).google.accounts.id.prompt();
+                  }
+                }}
+                className="w-full max-w-[360px] h-[44px] px-4 rounded-full bg-white text-[#3c4043] border border-[#dadce0] hover:bg-[#f8f9fa] transition flex items-center justify-center gap-3 text-sm font-medium shadow-sm active:scale-[0.99]"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+                <span className="text-[13px] font-medium text-[#3c4043]">
+                  {tab === "LOGIN" ? "ดำเนินการต่อด้วย Google" : "ลงทะเบียนด้วย Google"}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="relative flex items-center justify-center pt-2">
+            <div className="border-t border-white/[0.08] w-full" />
+            <span className="bg-[#131317] px-3 text-[11px] text-neutral-400 font-sarabun absolute">
+              หรือใช้อีเมล
+            </span>
+          </div>
+        </div>
+
         {/* Form Body */}
         {tab === "LOGIN" ? (
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
+          <form onSubmit={handleLoginSubmit} className="space-y-3.5">
             <div>
-              <label className="text-[11px] font-medium text-zinc-400 block mb-1">
+              <label className="text-xs font-medium text-neutral-300 block mb-1.5">
                 อีเมล
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-white/30 transition"
+                  placeholder="example@novelweb.com"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-zinc-400 block mb-1">
-                รหัสผ่าน
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-neutral-300">
+                  รหัสผ่าน
+                </label>
+                <Link
+                  href="/auth/forgot-password"
+                  onClick={closeAuthModal}
+                  className="text-[11px] text-neutral-400 hover:text-[#FFE600] transition"
+                >
+                  ลืมรหัสผ่าน?
+                </Link>
+              </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-white/30 transition"
+                  className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 rounded transition"
+                  aria-label="แสดงหรือซ่อนรหัสผ่าน"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 font-prompt shadow-sm"
+              className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F2DA00] text-black text-sm font-bold shadow-md shadow-[#FFE600]/15 hover:shadow-[#FFE600]/25 transition duration-150 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group"
             >
               {loading ? (
-                <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <span>เข้าสู่ระบบ</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </>
               )}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+          <form onSubmit={handleRegisterSubmit} className="space-y-3">
             <div>
-              <label className="text-[11px] font-medium text-zinc-400 block mb-1">
+              <label className="text-xs font-medium text-neutral-300 block mb-1">
                 ชื่อที่แสดง
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="เช่น นักอ่านสายชิล"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-white/30 transition"
+                  placeholder="เช่น มังกรทมิฬ"
+                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-zinc-400 block mb-1">
-                นามปากกา (ถ้าต้องการเป็นนักเขียน)
+              <label className="text-xs font-medium text-neutral-300 block mb-1">
+                นามปากกา (สำหรับนักเขียน)
               </label>
               <input
                 type="text"
                 value={penName}
                 onChange={(e) => setPenName(e.target.value)}
                 placeholder="เช่น DarkDragon (ไม่บังคับ)"
-                className="w-full px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-white/30 transition"
+                className="w-full px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
               />
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-zinc-400 block mb-1">
+              <label className="text-xs font-medium text-neutral-300 block mb-1">
                 อีเมล
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-white/30 transition"
+                  placeholder="example@novelweb.com"
+                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-zinc-400 block mb-1">
+              <label className="text-xs font-medium text-neutral-300 block mb-1">
                 รหัสผ่าน
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="ขั้นต่ำ 6 ตัวอักษร"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-white/30 transition"
+                  className="w-full pl-10 pr-11 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 rounded transition"
+                  aria-label="แสดงหรือซ่อนรหัสผ่าน"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 font-prompt shadow-sm"
+              className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F2DA00] text-black text-sm font-bold shadow-md shadow-[#FFE600]/15 hover:shadow-[#FFE600]/25 transition duration-150 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
-                <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
               ) : (
                 <span>สร้างบัญชีและเริ่มต้นใช้งาน</span>
               )}
@@ -264,32 +442,51 @@ export function LoginModal() {
           </form>
         )}
 
-        {/* Quick Demo Test Accounts */}
-        <div className="pt-3 border-t border-white/[0.08]">
-          <span className="text-[10px] text-zinc-500 block mb-2 text-center uppercase tracking-wider font-mono">
-            หรือทดสอบด้วยบทบาทจำลอง (DEMO LOGIN)
-          </span>
+        {/* Quick Demo Test Section */}
+        <div className="pt-2 border-t border-white/[0.08] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium text-neutral-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#FFE600]" />
+              ทดลองใช้งานด่วน (คลิกเดียว)
+            </span>
+            <span className="text-[10px] text-neutral-500">ไม่ต้องพิมพ์รหัส</span>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => handleQuickDemo("READER")}
-              className="py-1.5 px-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[11px] text-zinc-300 hover:text-white transition font-medium text-center"
+              className="p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/20 transition-all text-left flex flex-col items-center justify-center gap-1 group active:scale-[0.97]"
             >
-              ผู้อ่าน
+              <div className="w-7 h-7 rounded-lg bg-neutral-800 text-neutral-300 group-hover:text-white flex items-center justify-center transition">
+                <User className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-semibold text-neutral-200">ผู้อ่าน</span>
+              <span className="text-[9px] text-neutral-500">มี 280 เหรียญ</span>
             </button>
+
             <button
               type="button"
               onClick={() => handleQuickDemo("AUTHOR")}
-              className="py-1.5 px-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[11px] text-amber-300 transition font-medium text-center"
+              className="p-2.5 rounded-xl bg-[#FFE600]/[0.06] hover:bg-[#FFE600]/[0.12] border border-[#FFE600]/25 hover:border-[#FFE600]/50 transition-all text-left flex flex-col items-center justify-center gap-1 group active:scale-[0.97]"
             >
-              นักเขียน
+              <div className="w-7 h-7 rounded-lg bg-[#FFE600]/20 text-[#FFE600] flex items-center justify-center transition">
+                <PenTool className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-semibold text-[#FFE600]">นักเขียน</span>
+              <span className="text-[9px] text-neutral-400">สตูดิโอแต่ง</span>
             </button>
+
             <button
               type="button"
               onClick={() => handleQuickDemo("SUPER_ADMIN")}
-              className="py-1.5 px-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-[11px] text-purple-300 hover:text-white transition font-medium text-center"
+              className="p-2.5 rounded-xl bg-purple-500/[0.06] hover:bg-purple-500/[0.12] border border-purple-500/25 hover:border-purple-500/50 transition-all text-left flex flex-col items-center justify-center gap-1 group active:scale-[0.97]"
             >
-              แอดมิน
+              <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center transition">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-semibold text-purple-300">แอดมิน</span>
+              <span className="text-[9px] text-neutral-400">จัดการระบบ</span>
             </button>
           </div>
         </div>

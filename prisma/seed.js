@@ -198,6 +198,7 @@ async function main() {
       tags: JSON.stringify(["แฟนตาซี", "เกิดใหม่", "เวทมนตร์", "แก้แค้น", "พระเอกเก่ง"]),
       contentRating: "ALL_AGES",
       status: "PUBLISHED",
+      releaseDay: "MON",
       isFeatured: true,
       viewsCount: 14250,
       ratingAverage: 4.9,
@@ -349,6 +350,7 @@ async function main() {
       tags: JSON.stringify(["มังงะ", "เว็บตูน", "แอคชั่น", "ดันเจี้ยน", "ฮันเตอร์", "ระบบ"]),
       contentRating: "ALL_AGES",
       status: "PUBLISHED",
+      releaseDay: "WED",
       isFeatured: true,
       viewsCount: 28400,
       ratingAverage: 4.95,
@@ -411,6 +413,7 @@ async function main() {
       tags: JSON.stringify(["โรแมนติก", "แฟนตาซี", "คุณชายปีศาจ", "สัญญาแต่งงาน", "ดราม่า"]),
       contentRating: "TEEN_13",
       status: "PUBLISHED",
+      releaseDay: "FRI",
       isFeatured: false,
       viewsCount: 9800,
       ratingAverage: 4.88,
@@ -457,6 +460,7 @@ async function main() {
       tags: JSON.stringify(["18+", "โรแมนติกผู้ใหญ่", "มาเฟีย", "ความลับ", "ดราม่า"]),
       contentRating: "MATURE_18",
       status: "PUBLISHED",
+      releaseDay: "SAT",
       isFeatured: false,
       viewsCount: 16500,
       ratingAverage: 4.92,
@@ -478,6 +482,170 @@ async function main() {
 "คุณรู้ไหมว่าคุณกำลังเล่นกับไฟ..." เสียงทุ้มต่ำกระซิบที่ข้างใบหู พร้อมลมหายใจอุ่นจัดที่ทำให้หัวใจของเธอเต้นระรัว
 
 วิคเตอร์ปลดเนกไทสีดำออกอย่างช้าๆ สายตาคมกริบจ้องลึกเข้าไปในดวงตาของหญิงสาวตรงหน้า`,
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // Story 5: Cyberpunk / Sci-Fi for TUE
+  await prisma.story.create({
+    data: {
+      authorId: author2.id,
+      title: "ไซเบอร์เนติกส์ 2099: ปริศนาโค้ดมรณะ (Cybernetics 2099)",
+      slug: "cybernetics-2099",
+      synopsis: "ในมหานครนีออนที่ผู้คนติดตั้งชิ้นส่วนจักรกล 'ไค' แฮกเกอร์ใต้ดินได้บังเอิญค้นพบชิปความจำของซีอีโอบริษัทยายักษ์ใหญ่ที่ซ่อนความลับเกี่ยวกับการกลายพันธุ์ของมนุษยชาติ",
+      coverUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+      type: "MANGA",
+      category: "Sci-Fi",
+      tags: JSON.stringify(["ไซไฟ", "มังงะ", "ไซเบอร์พังก์", "แอ็กชัน", "แฮกเกอร์"]),
+      contentRating: "ALL_AGES",
+      status: "PUBLISHED",
+      releaseDay: "TUE",
+      isFeatured: false,
+      viewsCount: 11200,
+      ratingAverage: 4.85,
+      ratingsCount: 52,
+      chapters: {
+        create: [
+          {
+            chapterNumber: 1,
+            title: "ตอนที่ 1: ตรอกนีออนและข้อมูลต้องห้าม",
+            coinPrice: 0,
+            isFree: true,
+            status: "PUBLISHED",
+            viewsCount: 4500,
+            content: {
+              create: {
+                previewText: "สายฝนกรดโปรยปรายลงบนหลังคาสังกะสี แสงสะท้อนสีฟ้าจากหน้าจอดิจิทัลสว่างวาบในความมืด...",
+                imageUrls: JSON.stringify([
+                  "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop&q=80",
+                  "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=900&auto=format&fit=crop&q=80",
+                ]),
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // Story 6: Slice of Life / Comedy for THU
+  await prisma.story.create({
+    data: {
+      authorId: author1.id,
+      title: "คาเฟ่ลับหลังสถานีรถไฟ (Midnight Station Cafe)",
+      slug: "midnight-station-cafe",
+      synopsis: "คาเฟ่ที่เปิดให้บริการเฉพาะช่วงเที่ยงคืนถึงรุ่งเช้า เจ้าของร้านหนุ่มใจดีและแมวดำพูดได้พร้อมเสิร์ฟกาแฟรสเลิศที่จะช่วยเยียวยาหัวใจของผู้สัญจรที่หลงทาง",
+      coverUrl: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80",
+      type: "NOVEL",
+      category: "Slice of Life",
+      tags: JSON.stringify(["ชีวิตประจำวัน", "อบอุ่นหัวใจ", "คาเฟ่", "แฟนตาซีเบาๆ"]),
+      contentRating: "ALL_AGES",
+      status: "PUBLISHED",
+      releaseDay: "THU",
+      isFeatured: false,
+      viewsCount: 8900,
+      ratingAverage: 4.93,
+      ratingsCount: 48,
+      chapters: {
+        create: [
+          {
+            chapterNumber: 1,
+            title: "บทที่ 1: กาแฟดริปยามเที่ยงคืน",
+            coinPrice: 0,
+            isFree: true,
+            status: "PUBLISHED",
+            viewsCount: 3100,
+            content: {
+              create: {
+                previewText: "กลิ่นหอมกรุ่นของเมล็ดกาแฟคั่วบดลอยอบอวล เสียงกระดิ่งลมหน้าประตูดังกรุ๊งกริ๊ง...",
+                textContent: `กลิ่นหอมกรุ่นของเมล็ดกาแฟคั่วบดลอยอบอวล เสียงกระดิ่งลมหน้าประตูดังกรุ๊งกริ๊งต้อนรับชายหนุ่มในชุดสูททำงานที่เปียกปอน
+
+"ยินดีต้อนรับสู่คาเฟ่เที่ยงคืนครับ" บาริสต้าหนุ่มส่งยิ้มอ่อนโยนให้พลางยื่นผ้าขนหนูสะอาดผืนหนึ่งให้เขา`,
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // Story 7: Mystery / Fantasy for SUN
+  await prisma.story.create({
+    data: {
+      authorId: author2.id,
+      title: "บันทึกคดีคฤหาสน์กระจกเงา (The Mirror Manor Murders)",
+      slug: "mirror-manor-murders",
+      synopsis: "นักสืบเอกชนผู้มีดวงตาที่มองเห็นความทรงจำของสิ่งของ ถูกว่าจ้างให้ไปไขปริศนาการหายตัวไปของมหาเศรษฐีในคฤหาสน์โบราณที่กระจกทุกบานไม่ได้สะท้อนความจริง",
+      coverUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80",
+      type: "MANGA",
+      category: "Mystery",
+      tags: JSON.stringify(["สืบสวน", "มังงะ", "ลึกลับ", "เวทมนตร์", "หักมุม"]),
+      contentRating: "TEEN_13",
+      status: "PUBLISHED",
+      releaseDay: "SUN",
+      isFeatured: false,
+      viewsCount: 13400,
+      ratingAverage: 4.96,
+      ratingsCount: 88,
+      chapters: {
+        create: [
+          {
+            chapterNumber: 1,
+            title: "ตอนที่ 1: กระจกที่ไม่สะท้อนเงา",
+            coinPrice: 0,
+            isFree: true,
+            status: "PUBLISHED",
+            viewsCount: 5100,
+            content: {
+              create: {
+                previewText: "เงาสะท้อนในกระจกโบราณขยับตัวช้ากว่าคนที่ยืนอยู่เบื้องหน้าหนึ่งวินาที...",
+                imageUrls: JSON.stringify([
+                  "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop&q=80",
+                  "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop&q=80",
+                ]),
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // Story 8: Completed legendary story for COMPLETED
+  await prisma.story.create({
+    data: {
+      authorId: author1.id,
+      title: "มหากาพย์วีรบุรุษไร้นาม (Epic of the Nameless Hero) [จบแล้ว]",
+      slug: "epic-of-nameless-hero-end",
+      synopsis: "การเดินทางอันยาวนานสามร้อยปีของอัศวินอมตะผู้กอบกู้แผ่นดินทั้งเจ็ด บทสรุปแห่งมหากาพย์สงครามที่ประทับใจผู้อ่านนับล้านคน ครบจบสมบูรณ์ทุกบท",
+      coverUrl: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=600&auto=format&fit=crop&q=80",
+      type: "NOVEL",
+      category: "Fantasy",
+      tags: JSON.stringify(["แฟนตาซี", "จบแล้ว", "มหากาพย์", "อัศวิน", "การผจญภัย"]),
+      contentRating: "ALL_AGES",
+      status: "PUBLISHED",
+      releaseDay: "COMPLETED",
+      isFeatured: true,
+      viewsCount: 45000,
+      ratingAverage: 4.98,
+      ratingsCount: 320,
+      chapters: {
+        create: [
+          {
+            chapterNumber: 1,
+            title: "บทที่ 1: ดาบหักและประกายไฟสุดท้าย",
+            coinPrice: 0,
+            isFree: true,
+            status: "PUBLISHED",
+            viewsCount: 15000,
+            content: {
+              create: {
+                previewText: "แสงสนธยาอาบทับสมรภูมิที่เงียบสงบลงในที่สุด...",
+                textContent: `แสงสนธยาอาบทับสมรภูมิที่เงียบสงบลงในที่สุด ชายชราในเกราะเหล็กขึ้นสนิมปักดาบลงบนเนินเขา มองดูอาทิตย์อัสดงเป็นครั้งสุดท้าย`,
               },
             },
           },

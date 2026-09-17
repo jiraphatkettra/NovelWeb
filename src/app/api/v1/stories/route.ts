@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
+import { getCategoryMatchValues } from "@/lib/categories";
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,7 +23,8 @@ export async function GET(req: NextRequest) {
       where.type = type.toUpperCase();
     }
     if (category && category !== "ALL") {
-      where.category = category;
+      const matchValues = getCategoryMatchValues(category);
+      where.category = { in: matchValues };
     }
     if (isFeatured) {
       where.isFeatured = true;
@@ -36,7 +38,9 @@ export async function GET(req: NextRequest) {
     }
 
     let orderBy: Record<string, "asc" | "desc"> = { viewsCount: "desc" };
-    if (sort === "newest") {
+    if (isFeatured) {
+      orderBy = { updatedAt: "desc" };
+    } else if (sort === "newest") {
       orderBy = { createdAt: "desc" };
     } else if (sort === "rating") {
       orderBy = { ratingAverage: "desc" };

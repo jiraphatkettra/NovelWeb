@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface UseRevealOnScrollOptions {
   threshold?: number;
@@ -9,31 +9,64 @@ interface UseRevealOnScrollOptions {
 }
 
 export function useRevealOnScroll(options: UseRevealOnScrollOptions = {}) {
-  const { threshold = 0.15, rootMargin = "0px 0px -50px 0px", once = true } = options;
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const { threshold = 0.02, rootMargin = "120px 0px", once = true } = options;
+  const [isVisible, setIsVisible] = useState(true);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const nodeRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
+  const ref = useCallback(
+    (element: HTMLElement | null) => {
+      // Disconnect previous observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      nodeRef.current = element;
+      if (!element) return;
+
+      // Immediate check if element is already within viewport
+      if (typeof window !== "undefined") {
+        const rect = element.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 150 && rect.bottom > -150) {
           setIsVisible(true);
-          if (once) {
-            observer.unobserve(element);
-          }
-        } else if (!once) {
-          setIsVisible(false);
+          if (once) return;
         }
-      },
-      { threshold, rootMargin }
-    );
+      }
 
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [threshold, rootMargin, once]);
+      // Check if IntersectionObserver is supported
+      if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+        setIsVisible(true);
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            if (once && observerRef.current) {
+              observerRef.current.disconnect();
+            }
+          } else if (!once) {
+            setIsVisible(false);
+          }
+        },
+        { threshold, rootMargin }
+      );
+
+      observer.observe(element);
+      observerRef.current = observer;
+    },
+    [threshold, rootMargin, once]
+  );
+
+  // Safety fallback: Ensure content is revealed within 350ms even if observer didn't trigger
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, []);
 
   return { ref, isVisible };
 }
@@ -46,7 +79,8 @@ export function useStaggerReveal(options: UseRevealOnScrollOptions = {}) {
 
   const className = isVisible
     ? "animate-stagger-scroll revealed"
-    : "animate-stagger-scroll";
+    : "animate-stagger-scroll revealed"; // Always keep revealed so cards are never opacity: 0
 
   return { ref, className, isVisible };
 }
+

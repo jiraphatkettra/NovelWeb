@@ -1,28 +1,25 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   BookOpen,
   Star,
+  Search,
+  ChevronRight,
   Play,
   Clock,
-  Sparkles,
-  LayoutGrid,
-  List,
   Eye,
-  X,
-  Search,
-  SlidersHorizontal,
-  ChevronRight,
-  BookmarkCheck,
-  Compass,
+  PenTool,
 } from "lucide-react";
-
 import { useAuth } from "@/context/AuthContext";
+import { useAuthModal } from "@/context/AuthModalContext";
+import { useToast } from "@/context/ToastContext";
+import { TiltCard } from "@/components/effects/TiltCard";
 import { AnimatedNumber } from "@/components/effects/AnimatedNumber";
-import { SkeletonHero } from "@/components/effects/SkeletonCard";
+import { SkeletonGrid, SkeletonHero, SkeletonRanking } from "@/components/effects/SkeletonCard";
+import { useRevealOnScroll, useStaggerReveal } from "@/lib/useRevealOnScroll";
 
 interface StoryItem {
   id: string;
@@ -69,7 +66,7 @@ interface BookmarkResume {
 }
 
 const GENRES = [
-  { id: "ALL", label: "ทุกหมวดหมู่" },
+  { id: "ALL", label: "ทั้งหมด" },
   { id: "Fantasy", label: "แฟนตาซี" },
   { id: "Romance", label: "โรแมนติก" },
   { id: "Action", label: "แอคชั่น" },
@@ -81,42 +78,59 @@ const GENRES = [
 
 function HomePageContent() {
   const { user } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const urlType = searchParams?.get("type");
+  const authError = searchParams?.get("auth_error");
+  const authModalParam = searchParams?.get("auth_modal");
 
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [typeFilter, setTypeFilter] = useState<string>(() => {
+    return urlType ? urlType.toUpperCase() : "ALL";
+  });
   const [genreFilter, setGenreFilter] = useState<string>("ALL");
   const [sortOrder, setSortOrder] = useState<string>("popular");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"showcase" | "ledger">("showcase");
+
+  useEffect(() => {
+    if (urlType) {
+      setTypeFilter(urlType.toUpperCase());
+    }
+  }, [urlType]);
+
+  useEffect(() => {
+    if (authModalParam === "LOGIN") {
+      openAuthModal("LOGIN");
+    }
+  }, [authModalParam, openAuthModal]);
+
+  useEffect(() => {
+    if (authError === "unauthorized_author") {
+      toast.warning(
+        "เฉพาะนักเขียนเท่านั้น",
+        "กรุณาเปิดโหมดนักเขียนหรือสมัครเป็นนักเขียนเพื่อเข้าถึงสตูดิโอจัดการผลงาน"
+      );
+    } else if (authError === "unauthorized_admin") {
+      toast.error(
+        "ไม่มีสิทธิ์เข้าถึง",
+        "หน้านี้สงวนไว้เฉพาะสำหรับทีมงานและผู้ดูแลระบบเท่านั้น"
+      );
+    }
+  }, [authError, toast]);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [isHeroPaused, setIsHeroPaused] = useState(false);
   const [lastBookmark, setLastBookmark] = useState<BookmarkResume | null>(null);
-  const [dockDismissed, setDockDismissed] = useState(false);
+  const [heroKey, setHeroKey] = useState(0); // For re-triggering Ken Burns
 
-  // Sync state with URL search parameters (?type=MANGA or ?type=NOVEL)
-  useEffect(() => {
-    const typeFromQuery = searchParams?.get("type");
-    if (typeFromQuery === "MANGA" || typeFromQuery === "NOVEL") {
-      setTypeFilter(typeFromQuery);
-    } else if (!typeFromQuery || typeFromQuery === "ALL") {
-      setTypeFilter("ALL");
-    }
-  }, [searchParams]);
-
-  const handleTypeFilterChange = (newType: string) => {
-    setTypeFilter(newType);
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    if (newType === "ALL") {
-      params.delete("type");
-    } else {
-      params.set("type", newType);
-    }
-    const query = params.toString();
-    router.replace(query ? `/?${query}` : "/", { scroll: false });
-  };
+  // Scroll reveal hooks
+  const continueReadingReveal = useRevealOnScroll();
+  const filtersReveal = useRevealOnScroll();
+  const rankingReveal = useRevealOnScroll();
+  const rankingStagger = useStaggerReveal();
+  const gridReveal = useRevealOnScroll();
+  const gridStagger = useStaggerReveal();
 
   const fetchStories = async () => {
     setLoading(true);
@@ -146,7 +160,7 @@ function HomePageContent() {
     return () => clearTimeout(timer);
   }, [typeFilter, genreFilter, sortOrder, searchQuery]);
 
-  // Fetch recent bookmark for Floating Zen Reading Dock
+  // Fetch recent bookmark for "Continue Reading" banner
   useEffect(() => {
     async function fetchRecentBookmark() {
       if (!user) {
@@ -167,557 +181,535 @@ function HomePageContent() {
     fetchRecentBookmark();
   }, [user]);
 
-  const featuredStories = stories.length > 0 ? stories.slice(0, 5) : [];
+  // Dedicated Featured Stories for Hero Section (Curated by Admin via "ดันแนะนำ")
+  const [heroStories, setHeroStories] = useState<StoryItem[]>([]);
+  const [heroLoading, setHeroLoading] = useState(true);
+
+  const fetchHeroStories = useCallback(async () => {
+    setHeroLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("featured", "true");
+      params.set("limit", "10");
+      if (typeFilter !== "ALL") {
+        params.set("type", typeFilter);
+      }
+
+      const res = await fetch(`/api/v1/stories?${params.toString()}`);
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        setHeroStories(json.data);
+      } else {
+        // If typeFilter has no featured stories, fallback to all featured stories
+        if (typeFilter !== "ALL") {
+          const allFeaturedRes = await fetch("/api/v1/stories?featured=true&limit=10");
+          const allFeaturedJson = await allFeaturedRes.json();
+          if (allFeaturedJson.success && Array.isArray(allFeaturedJson.data) && allFeaturedJson.data.length > 0) {
+            setHeroStories(allFeaturedJson.data);
+            return;
+          }
+        }
+        setHeroStories([]);
+      }
+    } catch (err) {
+      console.error("Hero stories fetch error:", err);
+    } finally {
+      setHeroLoading(false);
+    }
+  }, [typeFilter]);
+
+  useEffect(() => {
+    fetchHeroStories();
+  }, [fetchHeroStories]);
+
+  // Featured stories for the Hero
+  // If admin has pushed any story, ONLY show pushed stories (heroStories).
+  // If no stories are pushed yet, fallback to top 3 published stories so hero is not empty.
+  const featuredStories =
+    heroStories.length > 0
+      ? heroStories
+      : stories.slice(0, 3);
+
   const currentHero = featuredStories[activeHeroIndex] || featuredStories[0];
 
-  // Auto-advance cover story
+  // Reset index if out of bounds
+  useEffect(() => {
+    if (activeHeroIndex >= featuredStories.length && featuredStories.length > 0) {
+      setActiveHeroIndex(0);
+    }
+  }, [featuredStories.length, activeHeroIndex]);
+
+  // Top rankings
+  const rankingStories = [...stories]
+    .sort((a, b) => ((b.viewsCount ?? 0) * (b.ratingAverage ?? 5)) - ((a.viewsCount ?? 0) * (a.ratingAverage ?? 5)))
+    .slice(0, 10);
+
+  // Hero auto-advance with Ken Burns key reset
   useEffect(() => {
     if (isHeroPaused || featuredStories.length <= 1) return;
     const interval = setInterval(() => {
       setActiveHeroIndex((prev) => (prev + 1) % featuredStories.length);
-    }, 7000);
+      setHeroKey((k) => k + 1);
+    }, 6000);
     return () => clearInterval(interval);
   }, [isHeroPaused, featuredStories.length]);
 
-  return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-amber-400/30 selection:text-amber-200">
-      
-      {/* ─────────────────────────────────────────────────────────────
-          1. THE EDITORIAL MASTHEAD & VOLUME INDEX
-      ───────────────────────────────────────────────────────────── */}
-      <section className="border-b border-white/[0.06] bg-[#09090b]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-3 font-mono text-zinc-400">
-              <span className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] text-zinc-300 text-[11px] font-semibold">
-                ISSUE № 24
-              </span>
-              <span className="text-zinc-600">|</span>
-              <span className="tracking-wide">BANGKOK ARCHIVE</span>
-              <span className="text-zinc-600 hidden md:inline">·</span>
-              <span className="text-zinc-500 hidden md:inline">วรรณกรรมดิจิทัล & คอมมิกลำดับที่คัดสรร</span>
-            </div>
-            
-            <div className="flex items-center gap-4 text-zinc-500 font-mono text-[11px]">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-zinc-300 font-medium">เปิดบริการ</span>
-              </span>
-              <span className="text-zinc-700">/</span>
-              <span>{stories.length} เรื่องในสารบบ</span>
-              <span className="text-zinc-700">/</span>
-              <span>อัปเดตเรียลไทม์</span>
-            </div>
-          </div>
-        </div>
-      </section>
+  const touchStartX = React.useRef<number | null>(null);
 
-      {/* ─────────────────────────────────────────────────────────────
-          2. THE DAILY FEATURE SPREAD (ASYMMETRIC MAGAZINE COVER STORY)
-      ───────────────────────────────────────────────────────────── */}
-      {loading && stories.length === 0 ? (
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || featuredStories.length <= 1) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        // Swiped Left -> Next Story
+        setActiveHeroIndex((prev) => (prev + 1) % featuredStories.length);
+      } else {
+        // Swiped Right -> Previous Story
+        setActiveHeroIndex((prev) => (prev - 1 + featuredStories.length) % featuredStories.length);
+      }
+      setHeroKey((k) => k + 1);
+    }
+    touchStartX.current = null;
+  };
+
+  const handleHeroClick = (idx: number) => {
+    setActiveHeroIndex(idx);
+    setHeroKey((k) => k + 1);
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white relative z-10">
+      {/* ═══════════════ HERO BANNER — Cinematic ═══════════════ */}
+      {(heroLoading || loading) && featuredStories.length === 0 ? (
         <SkeletonHero />
       ) : currentHero ? (
         <section
           onMouseEnter={() => setIsHeroPaused(true)}
           onMouseLeave={() => setIsHeroPaused(false)}
-          className="relative border-b border-white/[0.06] bg-gradient-to-b from-zinc-950 via-[#0c0c0e] to-[#09090b] overflow-hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="relative w-full h-[420px] sm:h-[480px] lg:h-[520px] overflow-hidden select-none"
         >
-          {/* Subtle Ambient Vignette */}
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+          {/* Background Image — Ken Burns + Crossfade */}
+          <div key={`hero-bg-${heroKey}`} className="absolute inset-0 animate-crossfade">
+            <img
+              src={currentHero.bannerUrl || currentHero.coverUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80"}
+              alt={currentHero.title}
+              className="absolute inset-0 w-full h-full object-cover object-center animate-ken-burns"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.onerror = null;
+                target.src = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80";
+              }}
+            />
+          </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-              
-              {/* Left Spread: Typographic Dossier */}
-              <div className="lg:col-span-7 space-y-6">
-                
-                {/* Micro Category Tag */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-mono tracking-wider uppercase font-semibold bg-amber-400/10 text-amber-300 border border-amber-400/20">
-                    <Sparkles className="w-3 h-3" />
-                    ฉบับคัดสรรประจำวัน
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-mono text-zinc-400 bg-white/[0.04] border border-white/[0.08]">
-                    {currentHero.type === "MANGA" ? "การ์ตูนเรื่องยาว · MANGA" : "นวนิยายขนาดเรื่องยาว · NOVEL"}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-mono text-zinc-400 bg-white/[0.04] border border-white/[0.08]">
-                    {currentHero.category}
-                  </span>
-                </div>
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
 
-                {/* Main Headline */}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-zinc-50 leading-[1.1] font-prompt tracking-tight">
-                  {currentHero.title}
-                </h1>
+          {/* Aurora shimmer at bottom */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-32 animate-aurora"
+            style={{
+              background: "linear-gradient(90deg, rgba(139,92,246,0.1), rgba(255,230,0,0.08), rgba(244,63,94,0.06), transparent)",
+            }}
+          />
 
-                {/* Pull-Quote Literary Excerpt */}
-                <div className="border-l-2 border-amber-400/40 pl-4 py-1">
-                  <p className="text-sm sm:text-base text-zinc-300 leading-relaxed font-normal italic line-clamp-3">
-                    “{currentHero.synopsis}”
-                  </p>
-                </div>
-
-                {/* Editorial Metadata Specifications */}
-                <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-xs text-zinc-400 font-mono py-1 border-t border-b border-white/[0.05]">
-                  <div>
-                    <span className="text-zinc-500">ผู้ประพันธ์: </span>
-                    <strong className="text-zinc-200 font-sans font-medium">
-                      {currentHero.author.penName || currentHero.author.name}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">จำนวนบท: </span>
-                    <span className="text-zinc-200 font-medium">{currentHero._count.chapters} ตอน</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">ผู้อ่านสะสม: </span>
-                    <span className="text-zinc-200 font-medium">{currentHero.viewsCount.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span className="font-semibold text-zinc-100">{currentHero.ratingAverage.toFixed(1)}</span>
-                    <span className="text-zinc-500">({currentHero.ratingsCount})</span>
-                  </div>
-                </div>
-
-                {/* Primary Action Suite */}
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <Link
-                    href={`/stories/${currentHero.slug}`}
-                    className="px-6 py-3 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs tracking-wide transition active:scale-[0.98] flex items-center gap-2 shadow-lg shadow-black/40 font-prompt"
-                  >
-                    <BookOpen className="w-4 h-4 text-zinc-950" />
-                    เริ่มอ่านปฐมบท
-                  </Link>
-
-                  <Link
-                    href={`/stories/${currentHero.slug}`}
-                    className="px-5 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.1] text-xs font-medium transition active:scale-[0.98] font-prompt"
-                  >
-                    สารบัญ & รายละเอียดเรื่อง
-                  </Link>
-                </div>
-
-                {/* Issue Rotation Strip (Click to flick stories) */}
-                {featuredStories.length > 1 && (
-                  <div className="pt-6">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
-                        ดัชนีผลงานแนะนำ ({activeHeroIndex + 1}/{featuredStories.length}):
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2 overflow-x-auto no-scrollbar pb-1">
-                      {featuredStories.map((feat, idx) => (
-                        <button
-                          key={feat.id}
-                          onClick={() => setActiveHeroIndex(idx)}
-                          className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-lg border text-xs font-mono transition-all text-left shrink-0 ${
-                            activeHeroIndex === idx
-                              ? "bg-white/[0.1] border-amber-400/40 text-white shadow-sm"
-                              : "bg-white/[0.02] border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/15"
-                          }`}
-                        >
-                          <span className={`font-bold ${activeHeroIndex === idx ? "text-amber-400" : "text-zinc-600"}`}>
-                            0{idx + 1}
-                          </span>
-                          <span className="max-w-[120px] truncate text-[11px] font-sans">
-                            {feat.title}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+          {/* Content overlay — bottom-left with stagger reveal */}
+          <div
+            key={`hero-content-${heroKey}`}
+            className="absolute bottom-0 left-0 right-0 z-10 px-4 sm:px-6 lg:px-8 pb-10 max-w-7xl mx-auto"
+          >
+            <div className="max-w-lg space-y-3">
+              {/* Category chip */}
+              <div className="flex items-center gap-2 animate-text-reveal animate-text-reveal-d1">
+                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-kakao-yellow text-black">
+                  {currentHero.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                </span>
+                <span className="text-xs text-neutral-400">{currentHero.category}</span>
               </div>
 
-              {/* Right Spread: Architectural Physical Sleeve */}
-              <div className="lg:col-span-5 flex justify-center lg:justify-end">
+              {/* Title */}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight font-prompt animate-text-reveal animate-text-reveal-d2">
+                {currentHero.title}
+              </h1>
+
+              {/* Synopsis */}
+              <p className="text-sm text-neutral-300 line-clamp-2 leading-relaxed animate-text-reveal animate-text-reveal-d3">
+                {currentHero.synopsis}
+              </p>
+
+              {/* Meta */}
+              <div className="flex items-center gap-3 text-xs text-neutral-400 animate-text-reveal animate-text-reveal-d3">
+                <span className="flex items-center gap-1 text-white font-medium">
+                  <Star className="w-3.5 h-3.5 fill-kakao-yellow text-kakao-yellow" />
+                  {currentHero.ratingAverage.toFixed(1)}
+                </span>
+                <span>•</span>
+                <span>{currentHero.author.penName || currentHero.author.name}</span>
+                <span>•</span>
+                <span>{currentHero._count.chapters} ตอน</span>
+              </div>
+
+              {/* CTA */}
+              <div className="flex items-center gap-3 pt-1 animate-text-reveal animate-text-reveal-d4">
                 <Link
                   href={`/stories/${currentHero.slug}`}
-                  className="group relative block w-64 sm:w-72 md:w-80 aspect-[3/4] rounded-2xl overflow-hidden bg-zinc-900 border border-white/[0.12] shadow-2xl shadow-black/90 transition-all duration-500 hover:scale-[1.02] hover:border-white/25"
+                  className="px-6 py-2.5 rounded-lg bg-kakao-yellow hover:bg-kakao-yellow-hover text-black font-bold text-sm transition active:scale-95 flex items-center gap-2 shadow-lg shadow-kakao-yellow/20 hover:shadow-kakao-yellow/30"
                 >
-                  <img
-                    src={currentHero.coverUrl}
-                    alt={currentHero.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  {/* Subtle Book Spine Depth Emulation */}
-                  <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-black/40 to-transparent pointer-events-none" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-5">
-                    <span className="text-xs text-zinc-200 font-prompt font-semibold flex items-center gap-1.5">
-                      เปิดดูเล่มนี้ <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
+                  <BookOpen className="w-4 h-4" />
+                  อ่านเลย
+                </Link>
+                <Link
+                  href={`/stories/${currentHero.slug}`}
+                  className="px-5 py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-medium text-sm transition active:scale-95 backdrop-blur-sm"
+                >
+                  รายละเอียด
                 </Link>
               </div>
-
             </div>
+
+            {/* Hero indicator dots */}
+            {featuredStories.length > 1 && (
+              <div className="flex items-center gap-1.5 mt-6">
+                {featuredStories.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleHeroClick(idx)}
+                    className={`h-0.5 rounded-full transition-all duration-500 ${
+                      activeHeroIndex === idx
+                        ? "w-8 bg-kakao-yellow shadow-[0_0_8px_rgba(255,230,0,0.4)]"
+                        : "w-3 bg-white/25 hover:bg-white/40"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       ) : null}
 
-      {/* ─────────────────────────────────────────────────────────────
-          3. DUAL-MODE ARCHIVE & CATALOG
-      ───────────────────────────────────────────────────────────── */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        
-        {/* Editorial Filter & Mode Switcher Bar */}
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-sm space-y-4">
-          
-          {/* Top Bar: Search + View Switcher */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ค้นหาชื่อเรื่อง, ผู้แต่ง, หรือคีย์เวิร์ด..."
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] focus:border-amber-400/40 focus:outline-none text-xs text-zinc-200 placeholder-zinc-500 font-sans transition"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+      {/* ═══════════════ MAIN CONTENT ═══════════════ */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 relative z-10">
 
-            {/* View Mode Switcher (Showcase vs Directory Ledger) */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[11px] font-mono text-zinc-500 uppercase mr-1 hidden md:inline">
-                มุมมอง:
-              </span>
-              <div className="flex items-center p-0.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
-                <button
-                  onClick={() => setViewMode("showcase")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    viewMode === "showcase"
-                      ? "bg-zinc-100 text-zinc-950 font-semibold shadow-xs"
-                      : "text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>นิทรรศการ (Showcase)</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("ledger")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    viewMode === "ledger"
-                      ? "bg-zinc-100 text-zinc-950 font-semibold shadow-xs"
-                      : "text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  <List className="w-3.5 h-3.5" />
-                  <span>สารบบรวม (Ledger)</span>
-                </button>
+        {/* ——— Author Studio Auth Alert Banner (If redirected from /author) ——— */}
+        {authError === "unauthorized_author" && (
+          <div className="p-4 rounded-xl bg-[#121215] border border-[#FFE600]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#FFE600]/15 flex items-center justify-center text-[#FFE600] shrink-0">
+                <PenTool className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white font-prompt">
+                  ต้องการเข้าใช้งานสตูดิโอนักเขียน (Creator Studio)?
+                </p>
+                <p className="text-[11px] text-neutral-400 mt-0.5">
+                  บัญชีของคุณยังไม่ได้ลงทะเบียนเป็นนักเขียน คุณสามารถสมัครเพื่อเริ่มสร้างผลงานและรับรายได้ 70%
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Bottom Bar: Categorical & Sorting Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/[0.04]">
-            {/* Format Segments */}
-            <div className="flex items-center gap-1.5">
-              {[
-                { id: "ALL", label: "ทั้งหมด" },
-                { id: "MANGA", label: "มังงะ (Manga)" },
-                { id: "NOVEL", label: "นิยาย (Novel)" },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => handleTypeFilterChange(f.id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition border ${
-                    typeFilter === f.id
-                      ? "bg-amber-400/10 border-amber-400/30 text-amber-300 font-semibold"
-                      : "bg-transparent border-white/[0.06] text-zinc-400 hover:text-zinc-200 hover:border-white/15"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Genre Pills */}
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full">
-              {GENRES.map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => setGenreFilter(g.id)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] whitespace-nowrap transition ${
-                    genreFilter === g.id
-                      ? "bg-white/[0.12] text-white font-medium"
-                      : "text-zinc-500 hover:text-zinc-300"
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Sort Order */}
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 shrink-0">
-              <span className="text-[11px] font-mono text-zinc-500">เรียงตาม:</span>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className="bg-white/[0.04] border border-white/[0.08] text-zinc-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none"
-              >
-                <option value="popular" className="bg-zinc-900">ยอดนิยมสูงสุด</option>
-                <option value="newest" className="bg-zinc-900">อัปเดตล่าสุด</option>
-              </select>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Content Render: Empty State */}
-        {loading ? (
-          <div className="py-24 text-center">
-            <div className="w-8 h-8 border-2 border-amber-400/20 border-t-amber-400 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-xs font-mono text-zinc-500 tracking-wider uppercase">กำลังเปิดสารบบข้อมูล...</p>
-          </div>
-        ) : stories.length === 0 ? (
-          <div className="py-24 text-center rounded-2xl border border-white/[0.06] bg-white/[0.01]">
-            <Compass className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-zinc-300 font-prompt">ไม่พบผลงานที่ตรงตามเงื่อนไข</h3>
-            <p className="text-xs text-zinc-500 mt-1">ลองเปลี่ยนคำค้นหา หรือรีเซ็ตตัวกรองหมวดหมู่</p>
-            <button
-              onClick={() => {
-                setTypeFilter("ALL");
-                setGenreFilter("ALL");
-                setSearchQuery("");
-              }}
-              className="mt-4 px-4 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs text-zinc-200 font-medium transition"
+            <Link
+              href="/author/apply"
+              className="px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs shrink-0 transition"
             >
-              ล้างตัวกรองทั้งหมด
-            </button>
-          </div>
-        ) : viewMode === "showcase" ? (
-          
-          /* ═════════════════════════════════════════════════════════
-             VIEW MODE A: ART SHOWCASE (SPACIOUS 3-COLUMN EDITORIAL)
-          ═════════════════════════════════════════════════════════ */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {stories.map((story, idx) => (
-              <article
-                key={story.id}
-                className="group flex flex-col p-4 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] hover:border-white/15 transition-all duration-300"
-              >
-                {/* Book Sleeve Art Header */}
-                <Link href={`/stories/${story.slug}`} className="block relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-zinc-900 mb-4 border border-white/[0.06]">
-                  <img
-                    src={story.bannerUrl || story.coverUrl}
-                    alt={story.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  
-                  {/* Floating Micro Meta */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-black/80 text-zinc-200 backdrop-blur-md border border-white/10">
-                      {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
-                    </span>
-                    {story.contentRating === "MATURE_18" && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-950/90 text-rose-300 border border-rose-800/50">
-                        18+
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-zinc-300 font-mono">
-                    <span className="text-[11px] text-zinc-400">{story.category}</span>
-                    <span className="flex items-center gap-1 text-amber-400">
-                      <Star className="w-3 h-3 fill-current" />
-                      <span className="font-semibold text-zinc-200">{story.ratingAverage.toFixed(1)}</span>
-                    </span>
-                  </div>
-                </Link>
-
-                {/* Editorial Body */}
-                <div className="flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <div className="text-[11px] font-mono text-zinc-500 mb-1">
-                      โดย <strong className="text-zinc-300 font-sans font-medium">{story.author.penName || story.author.name}</strong>
-                    </div>
-                    <h3 className="text-base font-bold text-zinc-100 group-hover:text-amber-300 transition font-prompt line-clamp-1">
-                      <Link href={`/stories/${story.slug}`}>
-                        {story.title}
-                      </Link>
-                    </h3>
-                    <p className="text-xs text-zinc-400 line-clamp-2 mt-2 leading-relaxed font-normal">
-                      {story.synopsis}
-                    </p>
-                  </div>
-
-                  {/* Footer Row */}
-                  <div className="pt-3 border-t border-white/[0.04] flex items-center justify-between text-xs font-mono text-zinc-500">
-                    <span>{story._count.chapters} ตอน · {story.viewsCount.toLocaleString()} อ่าน</span>
-                    <Link
-                      href={`/stories/${story.slug}`}
-                      className="text-amber-400/90 group-hover:text-amber-300 font-sans font-medium text-xs flex items-center gap-1 hover:underline"
-                    >
-                      เปิดดูเล่มนี้ <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-
-        ) : (
-
-          /* ═════════════════════════════════════════════════════════
-             VIEW MODE B: DIRECTORY LEDGER (LINEAR-STYLE ARCHIVE TABLE)
-          ═════════════════════════════════════════════════════════ */
-          <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.01]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-white/[0.03] border-b border-white/[0.06] text-zinc-400 font-mono text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th className="py-3 px-4 w-16">ลำดับ</th>
-                    <th className="py-3 px-4">ชื่อผลงาน & ผู้ประพันธ์</th>
-                    <th className="py-3 px-4 w-28">ประเภท</th>
-                    <th className="py-3 px-4 w-32">หมวดหมู่</th>
-                    <th className="py-3 px-4 w-28 text-center">จำนวนตอน</th>
-                    <th className="py-3 px-4 w-36 text-right">คะแนน / ผู้อ่าน</th>
-                    <th className="py-3 px-4 w-28 text-right">ดำเนินการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {stories.map((story, idx) => (
-                    <tr
-                      key={story.id}
-                      className="hover:bg-white/[0.03] transition-colors group"
-                    >
-                      <td className="py-3.5 px-4 font-mono text-zinc-500 text-[11px]">
-                        {String(idx + 1).padStart(3, "0")}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <Link href={`/stories/${story.slug}`} className="flex items-center gap-3">
-                          <img
-                            src={story.coverUrl}
-                            alt=""
-                            className="w-8 h-11 rounded-md object-cover shrink-0 border border-white/[0.08]"
-                          />
-                          <div className="min-w-0">
-                            <div className="font-semibold text-zinc-200 group-hover:text-amber-300 font-prompt truncate max-w-xs sm:max-w-md">
-                              {story.title}
-                            </div>
-                            <div className="text-[11px] text-zinc-500 font-mono truncate">
-                              {story.author.penName || story.author.name}
-                            </div>
-                          </div>
-                        </Link>
-                      </td>
-
-                      <td className="py-3.5 px-4 font-mono">
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.05] border border-white/[0.08] text-zinc-300">
-                          {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-zinc-400 font-mono text-[11px]">
-                        {story.category}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-mono text-zinc-300">
-                        {story._count.chapters}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right font-mono text-zinc-400">
-                        <span className="text-amber-400 font-semibold mr-1.5">★ {story.ratingAverage.toFixed(1)}</span>
-                        <span className="text-zinc-600">({story.viewsCount.toLocaleString()})</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/stories/${story.slug}`}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] text-zinc-200 hover:text-white border border-white/[0.08] text-[11px] font-medium transition"
-                        >
-                          เปิดดู
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              สมัครเป็นนักเขียน
+            </Link>
           </div>
         )}
 
-      </main>
-
-      {/* ─────────────────────────────────────────────────────────────
-          4. FLOATING ZEN READING DOCK (BOTTOM CAPSULE FOR INSTANT RESUME)
-      ───────────────────────────────────────────────────────────── */}
-      {lastBookmark && !dockDismissed && (
-        <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 pointer-events-none animate-fadeIn">
-          <div className="pointer-events-auto max-w-md w-full p-2.5 rounded-2xl bg-zinc-950/90 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/80 flex items-center justify-between gap-3">
-            
+        {/* ——— Continue Reading ——— */}
+        {lastBookmark && (
+          <div
+            ref={continueReadingReveal.ref}
+            className={continueReadingReveal.isVisible ? "reveal-visible" : "reveal-hidden"}
+          >
             <Link
               href={`/reader/${lastBookmark.story.type === "MANGA" ? "manga" : "novel"}/${lastBookmark.lastChapterId}`}
-              className="flex items-center gap-3 min-w-0 flex-1 group"
+              className="flex items-center gap-4 p-4 rounded-xl glass-card hover:border-kakao-yellow/30 transition group"
             >
               <img
                 src={lastBookmark.story.coverUrl}
-                alt=""
-                className="w-9 h-12 rounded-lg object-cover shrink-0 border border-white/[0.08]"
+                alt={lastBookmark.story.title}
+                className="w-12 h-16 rounded-lg object-cover shrink-0"
               />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono">
-                  <span className="text-amber-400 font-semibold">อ่านต่อ</span>
-                  <span>·</span>
-                  <span>{lastBookmark.progressPercent}% สำเร็จ</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-3 h-3 text-kakao-yellow" />
+                  <span className="text-[11px] text-kakao-yellow font-semibold">อ่านต่อ</span>
                 </div>
-                <p className="text-xs font-semibold text-zinc-200 group-hover:text-white truncate font-prompt">
+                <p className="text-sm font-semibold text-white truncate font-prompt">
                   {lastBookmark.story.title}
                 </p>
-                <div className="w-full h-1 bg-white/[0.06] rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full h-1 rounded-full bg-kakao-border mt-2 overflow-hidden">
                   <div
-                    className="h-full bg-amber-400 rounded-full"
-                    style={{ width: `${Math.max(5, lastBookmark.progressPercent)}%` }}
+                    className="h-full bg-gradient-to-r from-kakao-yellow to-amber-400 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.max(5, Math.min(100, lastBookmark.progressPercent))}%` }}
                   />
                 </div>
               </div>
+              <div className="flex items-center gap-1 text-neutral-400 group-hover:text-kakao-yellow transition shrink-0">
+                <Play className="w-4 h-4 fill-current" />
+              </div>
             </Link>
+          </div>
+        )}
 
-            <div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-white/[0.06]">
-              <Link
-                href={`/reader/${lastBookmark.story.type === "MANGA" ? "manga" : "novel"}/${lastBookmark.lastChapterId}`}
-                className="p-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 transition active:scale-95 shadow-sm"
-                title="เปิดอ่านทันที"
-              >
-                <Play className="w-3.5 h-3.5 fill-current" />
-              </Link>
-              <button
-                onClick={() => setDockDismissed(true)}
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06] transition"
-                title="ปิดแถบนี้"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+        {/* ——— Filters: Type + Genre + Sort + Search ——— */}
+        <div
+          ref={filtersReveal.ref}
+          className={`space-y-3 ${filtersReveal.isVisible ? "reveal-visible" : "reveal-hidden"}`}
+        >
+          {/* Type tabs + Search */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Type Segmented Control */}
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              {[
+                { id: "ALL", label: "ทั้งหมด" },
+                { id: "MANGA", label: "มังงะ" },
+                { id: "NOVEL", label: "นิยาย" },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTypeFilter(t.id)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
+                    typeFilter === t.id
+                      ? "bg-white text-black shadow-lg shadow-white/10"
+                      : "text-neutral-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
 
+            {/* Sort + Search */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center rounded-lg border border-kakao-border overflow-hidden">
+                <button
+                  onClick={() => setSortOrder("popular")}
+                  className={`px-3 py-1.5 text-[11px] font-medium transition ${
+                    sortOrder === "popular"
+                      ? "bg-white/10 text-white"
+                      : "text-neutral-500 hover:text-white"
+                  }`}
+                >
+                  ยอดนิยม
+                </button>
+                <button
+                  onClick={() => setSortOrder("newest")}
+                  className={`px-3 py-1.5 text-[11px] font-medium transition ${
+                    sortOrder === "newest"
+                      ? "bg-white/10 text-white"
+                      : "text-neutral-500 hover:text-white"
+                  }`}
+                >
+                  มาใหม่
+                </button>
+              </div>
+
+              <div className="relative hidden sm:block">
+                <Search className="w-3.5 h-3.5 text-neutral-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="ค้นหา..."
+                  className="w-40 pl-8 pr-3 py-1.5 rounded-lg bg-kakao-card border border-kakao-border text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500 focus:shadow-[0_0_0_2px_rgba(255,230,0,0.1)] transition"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Genre chips — horizontal scroll */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {GENRES.map((genre) => (
+              <button
+                key={genre.id}
+                onClick={() => setGenreFilter(genre.id)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium shrink-0 transition ${
+                  genreFilter === genre.id
+                    ? "bg-kakao-yellow text-black font-bold shadow-md shadow-kakao-yellow/20"
+                    : "bg-kakao-card text-neutral-400 hover:text-white border border-kakao-border hover:border-neutral-600"
+                }`}
+              >
+                {genre.label}
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
+        {/* ——— TOP RANKINGS ——— */}
+        {(loading && stories.length === 0) || rankingStories.length > 0 ? (
+          <section
+            ref={rankingReveal.ref}
+            className={rankingReveal.isVisible ? "reveal-visible" : "reveal-hidden"}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white font-prompt">
+                <span className="section-title-underline">อันดับยอดนิยม</span>
+              </h2>
+              <span className="text-[11px] text-neutral-600">ผลงานที่มีผู้อ่านสูงสุด</span>
+            </div>
+
+            {loading && stories.length === 0 ? (
+              <SkeletonRanking />
+            ) : (
+
+            <div
+              ref={rankingStagger.ref}
+              className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 ${rankingStagger.className}`}
+            >
+              {rankingStories.slice(0, 5).map((story, idx) => (
+                <TiltCard key={story.id} className="rounded-xl" tiltAmount={5}>
+                  <Link
+                    href={`/stories/${story.slug}`}
+                    className="flex items-center gap-3 p-3 rounded-xl glass-card group"
+                  >
+                    {/* Rank Number */}
+                    <span className={`text-2xl font-black font-prompt shrink-0 w-7 text-center ${
+                      idx < 3 ? "rank-number-gold" : "text-neutral-600"
+                    }`}>
+                      {idx + 1}
+                    </span>
+
+                    {/* Cover */}
+                    <div className="w-11 h-14 rounded-lg overflow-hidden shrink-0 bg-neutral-900 border border-white/[0.06]">
+                      <img
+                        src={story.coverUrl || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80"}
+                        alt={story.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80";
+                        }}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-semibold text-white truncate font-prompt group-hover:text-kakao-yellow transition-colors">
+                        {story.title}
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 truncate mt-0.5">
+                        {story.author?.penName || story.author?.name || "ไม่ระบุนามปากกา"}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-neutral-500">
+                        <Star className="w-2.5 h-2.5 fill-kakao-yellow text-kakao-yellow" />
+                        <AnimatedNumber value={story.ratingAverage ?? 5} decimals={1} className="text-white" />
+                      </div>
+                    </div>
+                  </Link>
+                </TiltCard>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
+        {/* ——— ALL STORIES GRID ——— */}
+        <section
+          ref={gridReveal.ref}
+          className={gridReveal.isVisible ? "reveal-visible" : "reveal-hidden"}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white font-prompt">
+              <span className="section-title-underline">ผลงานทั้งหมด</span>
+              <span className="text-sm font-normal text-neutral-600 ml-2">
+                {!loading && <AnimatedNumber value={stories.length} />}
+              </span>
+            </h2>
+          </div>
+
+          {loading ? (
+            <SkeletonGrid count={12} />
+          ) : stories.length === 0 ? (
+            <div className="py-16 text-center">
+              <BookOpen className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
+              <p className="text-sm text-neutral-500 font-prompt">ไม่พบผลงานที่ค้นหา</p>
+              <p className="text-xs text-neutral-600 mt-1">ลองเปลี่ยนคำค้นหาหรือเลือกประเภทอื่น</p>
+            </div>
+          ) : (
+            <div
+              ref={gridStagger.ref}
+              className={`grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-3.5 md:gap-4 ${gridStagger.className}`}
+            >
+              {stories.map((story) => (
+                <TiltCard key={story.id} className="rounded-lg" tiltAmount={6}>
+                  <Link
+                    href={`/stories/${story.slug}`}
+                    className="block group"
+                  >
+                    {/* Cover */}
+                    <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-neutral-900 border border-white/[0.06]">
+                      <img
+                        src={story.coverUrl || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80"}
+                        alt={story.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80";
+                        }}
+                      />
+                      {/* Hover overlay glow */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {/* Badge — Priority: Featured > MATURE_18 > Type */}
+                      {story.isFeatured ? (
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#FFE600] text-black shadow-sm flex items-center gap-0.5">
+                          <Star className="w-2.5 h-2.5 fill-black text-black" />
+                          <span>แนะนำ</span>
+                        </span>
+                      ) : story.contentRating === "MATURE_18" ? (
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-600/90 text-white backdrop-blur-sm">
+                          18+
+                        </span>
+                      ) : (
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 text-neutral-300 backdrop-blur-sm border border-white/10">
+                          {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Info below cover */}
+                    <div className="mt-2 space-y-0.5 relative z-10">
+                      <h4 className="text-xs font-semibold text-white line-clamp-1 font-prompt group-hover:text-kakao-yellow transition-colors duration-300">
+                        {story.title}
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 truncate">
+                        {story.author?.penName || story.author?.name || "ไม่ระบุนามปากกา"}
+                      </p>
+                      <div className="flex items-center gap-2 text-[10px] text-neutral-600">
+                        <span className="flex items-center gap-0.5">
+                          <Star className="w-2.5 h-2.5 fill-kakao-yellow text-kakao-yellow" />
+                          <span className="text-neutral-400">{(story.ratingAverage ?? 5).toFixed(1)}</span>
+                        </span>
+                        <span>{story._count?.chapters ?? 0} ตอน</span>
+                      </div>
+                    </div>
+                  </Link>
+                </TiltCard>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#09090b]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
       <HomePageContent />
     </Suspense>
   );
 }
+

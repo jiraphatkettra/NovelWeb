@@ -9,14 +9,17 @@ import {
   Eye,
   Star,
   Bookmark,
+  Calendar,
+  Lock,
   CheckCircle,
   Coins,
   ShieldAlert,
+  ArrowRight,
+  Sparkles,
   Ticket,
+  Clock,
   Gift,
   X,
-  ChevronRight,
-  Sparkles,
 } from "lucide-react";
 import { AuthorFollowButton } from "@/components/author/AuthorFollowButton";
 import { CommentSection } from "@/components/story/CommentSection";
@@ -114,68 +117,58 @@ export function StoryDetailClient({ slug }: { slug: string }) {
         const targetId = unlockModalChapter.id;
         setUnlockModalChapter(null);
         await fetchStory();
-        router.push(`/reader/${story?.type === "MANGA" ? "manga" : "novel"}/${targetId}`);
+        await fetchTickets();
+        const readerPath = `/reader/${story?.type === "MANGA" ? "manga" : "novel"}/${targetId}`;
+        router.push(readerPath);
       } else {
-        toast.error("ไม่สามารถปลดล็อกได้", json.message);
-        if (json.message?.includes("เหรียญไม่พอ")) {
-          setTimeout(() => router.push("/coin-shop"), 1000);
-        }
+        toast.error("ไม่สามารถปลดล็อกได้", json.error?.message);
       }
     } catch {
-      toast.error("เกิดข้อผิดพลาด", "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setUnlocking(false);
     }
   };
 
   const fetchStory = async () => {
-    setLoading(true);
     try {
       const res = await fetch(`/api/v1/stories/${slug}`);
       const json = await res.json();
-      if (json.success) {
+      if (json.success && json.data) {
         setStory(json.data);
-        setIsBookmarked(json.data.isBookmarked || false);
-        if (json.data.userRating) {
-          setUserRating(json.data.userRating);
-          setRatingSubmitted(true);
-        }
+        setIsBookmarked(json.data.isBookmarked);
+        if (json.data.userRating) setUserRating(json.data.userRating);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      console.error("Failed to load story");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (slug) fetchStory();
+    fetchStory();
   }, [slug]);
 
   const handleBookmarkToggle = async () => {
     if (!user) {
-      toast.info("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบเพื่อบันทึกผลงานลงชั้นหนังสือ");
+      toast.info("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบเพื่อบันทึกเรื่องเข้าชั้นหนังสือ");
       openAuthModal("LOGIN");
       return;
     }
     if (!story) return;
-
     try {
       const res = await fetch("/api/v1/bookmarks", {
-        method: isBookmarked ? "DELETE" : "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storyId: story.id }),
       });
       const json = await res.json();
       if (json.success) {
-        setIsBookmarked(!isBookmarked);
-        toast.success(
-          isBookmarked ? "นำออกจากชั้นหนังสือแล้ว" : "เพิ่มเข้าชั้นหนังสือแล้ว"
-        );
+        setIsBookmarked(json.data.isBookmarked);
+        toast.success(json.data.isBookmarked ? "เพิ่มเข้าชั้นหนังสือแล้ว" : "นำออกจากชั้นหนังสือแล้ว");
       }
-    } catch {
-      toast.error("เกิดข้อผิดพลาด", "โปรดลองใหม่อีกครั้ง");
-    }
+    } catch {}
   };
 
   const handleRate = async (score: number) => {
@@ -185,7 +178,6 @@ export function StoryDetailClient({ slug }: { slug: string }) {
       return;
     }
     if (!story) return;
-
     setUserRating(score);
     try {
       const res = await fetch("/api/v1/ratings", {
@@ -196,12 +188,10 @@ export function StoryDetailClient({ slug }: { slug: string }) {
       const json = await res.json();
       if (json.success) {
         setRatingSubmitted(true);
-        toast.success("บันทึกคะแนนเรียบร้อยแล้ว", `คุณให้ ${score} ดาว`);
+        toast.success(`ให้คะแนน ${score} ดาวสำเร็จ!`, "ขอบคุณที่ร่วมสนับสนุนนักเขียน");
         fetchStory();
       }
-    } catch {
-      toast.error("เกิดข้อผิดพลาด", "ไม่สามารถบันทึกคะแนนได้");
-    }
+    } catch {}
   };
 
   const handleChapterClick = (
@@ -228,19 +218,18 @@ export function StoryDetailClient({ slug }: { slug: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-2 border-amber-400/20 border-t-amber-400 rounded-full animate-spin mb-3" />
-        <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">กำลังเปิดสารบบแฟ้มข้อมูล...</span>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-kakao-yellow/30 border-t-kakao-yellow rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!story) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
-        <h1 className="text-lg font-bold text-zinc-100 mb-2 font-prompt">ไม่พบเนื้อหาในสารบบ</h1>
-        <Link href="/" className="text-amber-400 hover:underline text-xs font-mono">
-          ← กลับสู่หน้าหลัก
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+        <h1 className="text-xl font-bold text-white mb-2 font-prompt">ไม่พบเนื้อหา</h1>
+        <Link href="/" className="text-kakao-yellow hover:underline text-sm">
+          กลับหน้าหลัก
         </Link>
       </div>
     );
@@ -257,305 +246,241 @@ export function StoryDetailClient({ slug }: { slug: string }) {
     : "#";
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 pb-28">
-      
-      {/* ─────────────────────────────────────────────────────────────
-          1. EDITORIAL BREADCRUMB & DOSSIER MASTHEAD
-      ───────────────────────────────────────────────────────────── */}
-      <section className="border-b border-white/[0.06] bg-[#0c0c0e]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-            <nav className="flex items-center gap-2 text-zinc-500">
-              <Link href="/" className="hover:text-zinc-300 transition">สารบบคลัง</Link>
-              <span>/</span>
-              <span className="text-zinc-400">{story.type === "MANGA" ? "มังงะ" : "นิยาย"}</span>
-              <span>/</span>
-              <span className="text-zinc-400">{story.category}</span>
-              <span>/</span>
-              <span className="text-zinc-200 truncate max-w-[200px]">{story.title}</span>
-            </nav>
-            <div className="text-zinc-500 text-[11px] hidden sm:block">
-              รหัสแฟ้ม: <span className="text-zinc-400">{story.slug}</span>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen pb-20">
+      {/* Banner */}
+      <div className="relative w-full h-[280px] sm:h-[340px] overflow-hidden">
+        <img
+          src={story.bannerUrl || story.coverUrl}
+          alt={story.title}
+          className="w-full h-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/30" />
+      </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          2. THE BOOK SLEEVE & VOLUME DOSSIER ARCHITECTURE
-      ───────────────────────────────────────────────────────────── */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-          
-          {/* ═══════════ LEFT COLUMN: STICKY PHYSICAL SLEEVE & CREATOR CARD ═══════════ */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* Physical Book Sleeve Mockup */}
-            <div className="relative mx-auto lg:mx-0 w-60 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden bg-zinc-900 border border-white/[0.12] shadow-2xl shadow-black/90">
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-40 relative z-10">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+          {/* Cover + Actions */}
+          <div className="flex flex-col items-center md:items-start shrink-0">
+            <div className="w-48 sm:w-56 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/80 border border-kakao-border bg-neutral-900">
               <img
                 src={story.coverUrl}
                 alt={story.title}
                 className="w-full h-full object-cover"
               />
-              {/* Spine edge highlight */}
-              <div className="absolute inset-y-0 left-0 w-3.5 bg-gradient-to-r from-black/50 via-black/20 to-transparent pointer-events-none" />
-
-              {/* Badges */}
-              <div className="absolute top-3 left-4 flex items-center gap-1.5">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-black/85 text-zinc-200 backdrop-blur-md border border-white/10">
-                  {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
-                </span>
-                {story.contentRating === "MATURE_18" && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-950/90 text-rose-300 border border-rose-800/50">
-                    18+
-                  </span>
-                )}
-              </div>
             </div>
 
-            {/* Primary Action Suite */}
-            <div className="space-y-2.5 max-w-72 mx-auto lg:mx-0">
+            <div className="w-full max-w-[224px] mt-4 space-y-2">
               {firstChapter ? (
                 <Link
                   href={firstChapterUrl}
                   onClick={(e) => handleChapterClick(e, firstChapter, firstChapterUrl)}
-                  className="w-full py-3 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs text-center flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-lg shadow-black/30 font-prompt"
+                  className="w-full py-3 rounded-xl bg-kakao-yellow hover:bg-kakao-yellow-hover text-black font-bold text-sm text-center flex items-center justify-center gap-2 transition active:scale-[0.98]"
                 >
-                  <BookOpen className="w-4 h-4 text-zinc-950" />
-                  เริ่มอ่านบทแรก
+                  <BookOpen className="w-4 h-4" />
+                  อ่านตอนแรก
                 </Link>
               ) : (
-                <button disabled className="w-full py-3 rounded-xl bg-white/[0.04] text-zinc-600 font-semibold text-xs cursor-not-allowed">
-                  ยังไม่มีตอนเปิดอ่าน
+                <button disabled className="w-full py-3 rounded-xl bg-neutral-800 text-neutral-500 font-bold text-sm cursor-not-allowed">
+                  ยังไม่มีตอน
                 </button>
               )}
 
-              {/* Bookmark Toggle */}
               <button
                 onClick={handleBookmarkToggle}
-                className={`w-full py-2.5 rounded-xl border flex items-center justify-center gap-2 text-xs font-medium transition active:scale-[0.98] ${
+                className={`w-full py-2.5 rounded-xl border flex items-center justify-center gap-2 text-sm font-medium transition ${
                   isBookmarked
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
-                    : "bg-white/[0.03] border-white/[0.08] text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                    ? "bg-kakao-yellow/10 border-kakao-yellow/40 text-kakao-yellow"
+                    : "bg-kakao-card border-kakao-border text-neutral-300 hover:border-neutral-600"
                 }`}
               >
-                <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? "fill-current" : ""}`} />
-                <span>{isBookmarked ? "อยู่ในชั้นหนังสือแล้ว" : "เพิ่มเข้าชั้นหนังสือ"}</span>
+                <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-kakao-yellow" : ""}`} />
+                {isBookmarked ? "อยู่ในชั้นหนังสือ" : "เพิ่มเข้าชั้นหนังสือ"}
               </button>
 
-              {/* Ticket & Gift Trigger */}
-              <button
-                onClick={() => setShowGiftModal(true)}
-                className="w-full py-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] text-zinc-300 hover:text-amber-300 flex items-center justify-center gap-2 text-xs transition"
-              >
-                <Ticket className="w-3.5 h-3.5 text-amber-400" />
-                <span>ตั๋วฟรีของคุณ ({ticketCount} ใบ) · รับเพิ่ม</span>
-              </button>
-            </div>
-
-            {/* Author Profile Card */}
-            <div className="max-w-72 mx-auto lg:mx-0 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
-              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">
-                ผู้สร้างสรรค์ผลงาน
-              </span>
-              <div className="flex items-center gap-3">
-                <Link href={`/author/${story.author.id}`} className="shrink-0">
-                  <img
-                    src={story.author.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&auto=format&fit=crop&q=80"}
-                    alt={story.author.name}
-                    className="w-10 h-10 rounded-full object-cover ring-1 ring-white/10"
-                  />
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <Link
-                    href={`/author/${story.author.id}`}
-                    className="text-xs font-semibold text-zinc-200 hover:text-white truncate block font-prompt"
-                  >
-                    {story.author.penName || story.author.name}
-                  </Link>
-                  <span className="text-[10px] text-zinc-500 font-mono">นักประพันธ์ทางการ</span>
-                </div>
-              </div>
-              <div className="pt-1">
-                <AuthorFollowButton authorId={story.author.id} authorName={story.author.penName || story.author.name} />
-              </div>
-            </div>
-
-            {/* Report link */}
-            <div className="max-w-72 mx-auto lg:mx-0 pt-1">
               <button
                 onClick={() => setShowReportModal(true)}
-                className="text-zinc-500 hover:text-rose-400 text-[11px] flex items-center gap-1.5 transition"
+                className="w-full py-2 rounded-xl border border-kakao-border hover:border-red-500/30 text-neutral-500 hover:text-red-400 flex items-center justify-center gap-1.5 text-xs transition"
               >
-                <ShieldAlert className="w-3.5 h-3.5" />
-                <span>รายงานข้อผิดพลาดเกี่ยวกับเรื่องนี้</span>
+                <ShieldAlert className="w-3 h-3" />
+                รายงาน
               </button>
             </div>
-
           </div>
 
-          {/* ═══════════ RIGHT COLUMN: MANUSCRIPT DOSSIER & TABLE OF CONTENTS ═══════════ */}
-          <div className="lg:col-span-8 space-y-8">
-            
-            {/* Title & Acclaim Header */}
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500">
-                <span className="text-amber-400 font-semibold">{story.category}</span>
-                <span>·</span>
-                <span>{story.chapters.length} ตอนในสารบบ</span>
-                <span>·</span>
-                <span>{story.viewsCount.toLocaleString()} ยอดอ่าน</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-50 font-prompt leading-[1.15] tracking-tight">
-                {story.title}
-              </h1>
-
-              {/* Star Rating Widget */}
-              <div className="flex flex-wrap items-center gap-4 pt-1">
-                <div className="flex items-center gap-1 text-amber-400">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => handleRate(star)}
-                      aria-label={`ให้ ${star} ดาว`}
-                      className="p-0.5 hover:scale-110 transition"
-                    >
-                      <Star
-                        className={`w-4 h-4 ${
-                          star <= userRating
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-zinc-700"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  <span className="text-xs font-bold text-zinc-200 font-mono ml-1.5">
-                    {story.ratingAverage.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-zinc-500 font-mono">({story.ratingsCount} รีวิว)</span>
-                </div>
-                {ratingSubmitted && (
-                  <span className="text-xs text-emerald-400 font-mono">✓ บันทึกคะแนนของคุณแล้ว</span>
+          {/* Details */}
+          <div className="flex-1 space-y-6 min-w-0">
+            {/* Title & Meta */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-kakao-yellow text-black">
+                  {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                </span>
+                <span className="text-xs text-neutral-500">{story.category}</span>
+                {story.contentRating === "MATURE_18" && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white">18+</span>
                 )}
               </div>
 
-              {/* Tags */}
-              {tagsArray.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {tagsArray.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2.5 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] text-xs font-mono text-zinc-400"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <h1 className="text-2xl sm:text-3xl font-bold text-white font-prompt leading-tight">
+                {story.title}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-neutral-400">
+                <Link
+                  href={`/author/${story.author.id}`}
+                  className="flex items-center gap-2 hover:text-white transition"
+                >
+                  <img
+                    src={story.author.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&auto=format&fit=crop&q=80"}
+                    alt={story.author.name}
+                    className="w-5 h-5 rounded-full object-cover ring-1 ring-kakao-border"
+                  />
+                  <span className="font-medium">{story.author.penName || story.author.name}</span>
+                </Link>
+                <AuthorFollowButton authorId={story.author.id} authorName={story.author.penName || story.author.name} />
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3.5 h-3.5" />
+                  {story.viewsCount.toLocaleString()}
+                </span>
+                <span className="flex items-center gap-1 text-kakao-yellow font-semibold">
+                  <Star className="w-3.5 h-3.5 fill-kakao-yellow" />
+                  {story.ratingAverage.toFixed(1)}
+                  <span className="text-neutral-500 font-normal">({story.ratingsCount})</span>
+                </span>
+              </div>
             </div>
 
-            {/* Editorial Synopsis Block */}
-            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-3">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-semibold block">
-                เรื่องย่อบทบรรณาธิการ / SYNOPSIS
-              </span>
-              <p className="text-sm sm:text-base text-zinc-300 leading-relaxed whitespace-pre-line font-sarabun font-normal">
+            {/* Tags */}
+            {tagsArray.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {tagsArray.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-1 rounded-lg bg-kakao-card border border-kakao-border text-xs text-neutral-400"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Synopsis */}
+            <div className="p-4 rounded-xl bg-kakao-card border border-kakao-border">
+              <h2 className="text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wider">เรื่องย่อ</h2>
+              <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-line font-sarabun">
                 {story.synopsis}
               </p>
             </div>
 
-            {/* Table of Contents (Hardcover Volume Style) */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-                <h2 className="text-sm font-bold text-zinc-100 font-prompt tracking-wide">
-                  สารบัญตอนทั้งหมด
-                </h2>
-                <span className="text-xs font-mono text-zinc-500">
-                  {story.chapters.length} ตอน
-                </span>
-              </div>
-
-              <div className="divide-y divide-white/[0.04] rounded-2xl border border-white/[0.06] bg-white/[0.01] overflow-hidden">
-                {story.chapters.length === 0 ? (
-                  <div className="p-10 text-center text-xs font-mono text-zinc-500">
-                    ยังไม่มีตอนที่เผยแพร่ในสารบบ
-                  </div>
-                ) : (
-                  story.chapters.map((ch, idx) => {
-                    const chapterUrl = `/reader/${story.type === "MANGA" ? "manga" : "novel"}/${ch.id}`;
-                    return (
-                      <Link
-                        key={ch.id}
-                        href={chapterUrl}
-                        onClick={(e) => handleChapterClick(e, ch, chapterUrl)}
-                        className="group flex items-center justify-between p-4 hover:bg-white/[0.03] transition-colors"
-                      >
-                        <div className="flex items-center gap-4 min-w-0">
-                          {/* Padded 3-Digit Chapter Index */}
-                          <span className="font-mono text-xs text-zinc-500 group-hover:text-amber-400 transition font-bold shrink-0">
-                            CH {String(ch.chapterNumber).padStart(3, "0")}
-                          </span>
-
-                          <div className="min-w-0">
-                            <h3 className="text-xs sm:text-sm font-medium text-zinc-200 group-hover:text-white transition truncate font-prompt">
-                              {ch.title}
-                            </h3>
-                            <span className="text-[10px] text-zinc-500 font-mono">
-                              {ch.viewsCount.toLocaleString()} ยอดอ่าน
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Status Badge */}
-                        <div className="flex items-center gap-3 shrink-0 ml-3">
-                          {ch.isFree ? (
-                            <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              ฟรี
-                            </span>
-                          ) : ch.isUnlocked ? (
-                            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-mono font-medium text-zinc-400 bg-white/[0.04]">
-                              <CheckCircle className="w-3 h-3 text-emerald-400" />
-                              ปลดล็อกแล้ว
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                              <Coins className="w-3 h-3" />
-                              {ch.coinPrice} เหรียญ
-                            </span>
-                          )}
-                          <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-200 transition" />
-                        </div>
-                      </Link>
-                    );
-                  })
-                )}
+            {/* Rating */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-kakao-card border border-kakao-border">
+              <span className="text-xs text-neutral-400">ให้คะแนน</span>
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button key={star} onClick={() => handleRate(star)} className="p-0.5 hover:scale-110 transition">
+                    <Star className={`w-5 h-5 ${star <= userRating ? "fill-kakao-yellow text-kakao-yellow" : "text-neutral-700"}`} />
+                  </button>
+                ))}
+                {ratingSubmitted && <span className="text-[11px] text-green-400 ml-2">✓</span>}
               </div>
             </div>
 
-            {/* Critique & Reader Dialogue Section */}
-            <div className="pt-8 border-t border-white/[0.06]">
+            {/* Wait-Until-Free info */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-kakao-card border border-kakao-border">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-kakao-yellow" />
+                <div>
+                  <span className="text-xs font-semibold text-white">ระบบรออ่านฟรี</span>
+                  <span className="text-[11px] text-neutral-500 ml-2">ตั๋ว: {ticketCount} ใบ</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGiftModal(true)}
+                className="px-3 py-1.5 rounded-lg bg-kakao-yellow text-black text-[11px] font-bold hover:bg-kakao-yellow-hover transition"
+              >
+                <Gift className="w-3 h-3 inline mr-1" />
+                รับตั๋วฟรี
+              </button>
+            </div>
+
+            {/* Chapters List */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold text-white font-prompt">
+                  ตอนทั้งหมด <span className="text-sm font-normal text-neutral-500">{story.chapters.length}</span>
+                </h3>
+              </div>
+
+              <div className="space-y-1.5">
+                {story.chapters.map((ch) => {
+                  const chapterUrl = `/reader/${story.type === "MANGA" ? "manga" : "novel"}/${ch.id}`;
+                  return (
+                    <Link
+                      key={ch.id}
+                      href={chapterUrl}
+                      onClick={(e) => handleChapterClick(e, ch, chapterUrl)}
+                      className="group flex items-center justify-between p-3 rounded-xl bg-kakao-card border border-kakao-border hover:border-neutral-700 transition"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-7 h-7 rounded-lg bg-neutral-800 text-neutral-400 group-hover:bg-kakao-yellow group-hover:text-black font-bold text-xs flex items-center justify-center transition shrink-0 font-prompt">
+                          {ch.chapterNumber}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-white group-hover:text-neutral-200 transition truncate">
+                            {ch.title}
+                          </p>
+                          <span className="text-[10px] text-neutral-600">
+                            {ch.viewsCount.toLocaleString()} วิว
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        {ch.isFree ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-500/10 text-green-400 border border-green-500/20">
+                            ฟรี
+                          </span>
+                        ) : ch.isUnlocked ? (
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-neutral-400">
+                            <CheckCircle className="w-3 h-3 text-green-400" />
+                            ปลดล็อก
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-kakao-yellow/10 text-kakao-yellow border border-kakao-yellow/20">
+                            <Coins className="w-3 h-3" />
+                            {ch.coinPrice}
+                          </span>
+                        )}
+                        <ArrowRight className="w-3.5 h-3.5 text-neutral-600 group-hover:text-kakao-yellow transition" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Comments */}
+            <div className="pt-4">
               <CommentSection storyId={story.id} authorId={story.author.id} />
             </div>
-
           </div>
-
         </div>
-      </main>
+      </div>
 
       {/* Age Verification Modal */}
       {showAgeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#121215] border border-rose-500/30 rounded-2xl p-6 text-center shadow-2xl">
-            <ShieldAlert className="w-10 h-10 text-rose-400 mx-auto mb-3" />
-            <h2 className="text-base font-bold text-zinc-100 font-prompt">ยืนยันอายุ (18+)</h2>
-            <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-              ผลงานนี้มีเนื้อหาสำหรับผู้ใหญ่ คุณต้องมีอายุตั้งแต่ 18 ปีขึ้นไปจึงจะสามารถเข้าอ่านได้
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-kakao-card border border-red-500/30 rounded-2xl p-6 text-center">
+            <ShieldAlert className="w-10 h-10 text-red-400 mx-auto mb-3" />
+            <h2 className="text-lg font-bold text-white font-prompt">ยืนยันอายุ (18+)</h2>
+            <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+              ผลงานนี้มีเนื้อหาสำหรับผู้ใหญ่ คุณต้องอายุ 18 ปีขึ้นไป
             </p>
-            <div className="flex gap-2.5 mt-6">
+            <div className="flex gap-2 mt-6">
               <button
                 onClick={() => setShowAgeModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-white/[0.06] text-zinc-300 text-xs font-semibold hover:bg-white/[0.1] transition"
+                className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-neutral-300 text-xs font-semibold hover:bg-neutral-700 transition"
               >
                 ยกเลิก
               </button>
@@ -564,9 +489,9 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                   setShowAgeModal(false);
                   if (targetChapterUrl) router.push(targetChapterUrl);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-500 transition shadow-sm"
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-500 transition"
               >
-                ฉันอายุ 18+ ปี
+                ฉันอายุ 18+
               </button>
             </div>
           </div>
@@ -584,43 +509,41 @@ export function StoryDetailClient({ slug }: { slug: string }) {
 
       {/* Unlock Chapter Modal */}
       {unlockModalChapter && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#121215] border border-white/[0.1] rounded-2xl p-6 text-center shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-kakao-card border border-kakao-border rounded-2xl p-6 text-center">
             <button
               onClick={() => setUnlockModalChapter(null)}
-              className="absolute top-4 right-4 p-1.5 text-zinc-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition"
+              className="absolute top-4 right-4 p-1.5 text-neutral-500 hover:text-white rounded-lg hover:bg-white/5 transition"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto mb-3">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-bold text-zinc-100 font-prompt">ปลดล็อกตอน</h3>
-            <p className="text-xs text-amber-400 mt-1 font-medium font-prompt">{unlockModalChapter.title}</p>
+            <BookOpen className="w-8 h-8 text-kakao-yellow mx-auto mb-3" />
+            <h3 className="text-lg font-bold text-white font-prompt">ปลดล็อกตอน</h3>
+            <p className="text-sm text-kakao-yellow mt-1 font-medium">{unlockModalChapter.title}</p>
 
-            <div className="mt-5 space-y-2.5">
+            <div className="mt-5 space-y-2">
               {/* Ticket option */}
               <button
                 onClick={() => handleUnlockWithMethod("TICKET")}
                 disabled={ticketCount <= 0 || unlocking}
                 className={`w-full p-3.5 rounded-xl border text-left flex items-center justify-between transition ${
                   ticketCount > 0
-                    ? "bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10"
-                    : "bg-white/[0.02] border-white/[0.06] opacity-50 cursor-not-allowed"
+                    ? "bg-kakao-yellow/5 border-kakao-yellow/30 hover:bg-kakao-yellow/10"
+                    : "bg-neutral-900 border-kakao-border opacity-50 cursor-not-allowed"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Ticket className={`w-5 h-5 ${ticketCount > 0 ? "text-amber-400" : "text-zinc-600"}`} />
+                  <Ticket className={`w-5 h-5 ${ticketCount > 0 ? "text-kakao-yellow" : "text-neutral-600"}`} />
                   <div>
-                    <p className="text-xs font-bold text-zinc-200">ใช้ตั๋วอ่านฟรี</p>
-                    <p className="text-[11px] text-zinc-500">
-                      {ticketCount > 0 ? `มี ${ticketCount} ใบ` : "ไม่มีตั๋วคงเหลือ"}
+                    <p className="text-xs font-bold text-white">ใช้ตั๋วอ่านฟรี</p>
+                    <p className="text-[11px] text-neutral-500">
+                      {ticketCount > 0 ? `มี ${ticketCount} ใบ` : "ไม่มีตั๋ว"}
                     </p>
                   </div>
                 </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                  ticketCount > 0 ? "bg-amber-400 text-zinc-950" : "bg-white/[0.06] text-zinc-600"
+                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                  ticketCount > 0 ? "bg-kakao-yellow text-black" : "bg-neutral-800 text-neutral-600"
                 }`}>
                   ฟรี
                 </span>
@@ -630,16 +553,16 @@ export function StoryDetailClient({ slug }: { slug: string }) {
               <button
                 onClick={() => handleUnlockWithMethod("COIN")}
                 disabled={unlocking}
-                className="w-full p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/20 text-left flex items-center justify-between transition"
+                className="w-full p-3.5 rounded-xl bg-neutral-900 border border-kakao-border hover:border-neutral-600 text-left flex items-center justify-between transition"
               >
                 <div className="flex items-center gap-3">
-                  <Coins className="w-5 h-5 text-amber-400" />
+                  <Coins className="w-5 h-5 text-kakao-yellow" />
                   <div>
-                    <p className="text-xs font-bold text-zinc-200">ปลดล็อกด้วยเหรียญ</p>
-                    <p className="text-[11px] text-zinc-500">ปลดล็อกถาวรตลอดชีพ</p>
+                    <p className="text-xs font-bold text-white">ปลดล็อกด้วยเหรียญ</p>
+                    <p className="text-[11px] text-neutral-500">ปลดล็อกถาวร</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/20 font-mono">
+                <span className="text-xs font-bold px-2 py-1 rounded-lg bg-kakao-yellow/10 text-kakao-yellow border border-kakao-yellow/20">
                   {unlockModalChapter.coinPrice} เหรียญ
                 </span>
               </button>
@@ -651,7 +574,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                   setUnlockModalChapter(null);
                   setShowGiftModal(true);
                 }}
-                className="mt-4 text-xs text-amber-400 hover:underline flex items-center justify-center gap-1.5 mx-auto font-medium"
+                className="mt-3 text-xs text-kakao-yellow hover:underline flex items-center justify-center gap-1 mx-auto"
               >
                 <Gift className="w-3.5 h-3.5" />
                 รับตั๋วฟรีจากกล่องของขวัญ
@@ -667,7 +590,6 @@ export function StoryDetailClient({ slug }: { slug: string }) {
         onClose={() => setShowGiftModal(false)}
         onClaimed={() => fetchTickets()}
       />
-
     </div>
   );
 }

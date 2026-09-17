@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Bookmark, Trash2, ArrowRight, BookOpen, Clock } from "lucide-react";
+import { useAuthModal } from "@/context/AuthModalContext";
+import { Bookmark, Trash2, ArrowRight, BookOpen, Clock, Lock, Play, Star } from "lucide-react";
 
 interface BookmarkItem {
   id: string;
@@ -17,43 +18,88 @@ interface BookmarkItem {
     coverUrl: string;
     type: string;
     category: string;
+    ratingAverage?: number;
     author: {
+      id?: string;
       name: string;
       penName?: string;
     };
-    _count: {
+    _count?: {
       chapters: number;
     };
   };
 }
 
+interface PurchasedStoryItem {
+  id: string;
+  unlockedChaptersCount: number;
+  lastUnlockedChapter: {
+    id: string;
+    chapterNumber: number;
+    title: string;
+  };
+  updatedAt: string;
+  story: {
+    id: string;
+    title: string;
+    slug: string;
+    coverUrl: string;
+    type: string;
+    category: string;
+    ratingAverage?: number;
+    author: {
+      id?: string;
+      name: string;
+      penName?: string;
+    };
+    _count?: {
+      chapters: number;
+    };
+  };
+}
+
+type LibraryTab = "READING" | "BOOKMARKS" | "PURCHASED";
+
 export default function LibraryPage() {
   const { user } = useAuth();
+  const { openAuthModal } = useAuthModal();
+
+  const [activeTab, setActiveTab] = useState<LibraryTab>("READING");
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
+  const [purchases, setPurchases] = useState<PurchasedStoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchBookmarks() {
+    async function fetchLibraryData() {
       try {
-        const res = await fetch("/api/v1/bookmarks");
-        const json = await res.json();
-        if (json.success) {
-          setBookmarks(json.data);
+        const [bmRes, purRes] = await Promise.all([
+          fetch("/api/v1/bookmarks"),
+          fetch("/api/v1/library/purchases"),
+        ]);
+        const bmJson = await bmRes.json();
+        const purJson = await purRes.json();
+
+        if (bmJson.success && Array.isArray(bmJson.data)) {
+          setBookmarks(bmJson.data);
+        }
+        if (purJson.success && Array.isArray(purJson.data)) {
+          setPurchases(purJson.data);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load library data:", err);
       } finally {
         setLoading(false);
       }
     }
+
     if (user) {
-      fetchBookmarks();
+      fetchLibraryData();
     } else {
       setLoading(false);
     }
   }, [user]);
 
-  const handleRemove = async (storyId: string) => {
+  const handleRemoveBookmark = async (storyId: string) => {
     try {
       const res = await fetch("/api/v1/bookmarks", {
         method: "POST",
@@ -67,130 +113,299 @@ export default function LibraryPage() {
     } catch {}
   };
 
+  // Filter items
+  const readingList = bookmarks.filter((b) => (b.progressPercent || 0) > 0 || b.lastChapterId);
+
+  // 1-Click Login Empty State if not authenticated
   if (!user) {
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-zinc-500 mb-4">
-          <Bookmark className="w-6 h-6" />
+        <div className="w-14 h-14 rounded-2xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mb-4">
+          <Bookmark className="w-7 h-7" />
         </div>
-        <h1 className="text-lg font-bold text-zinc-100 font-prompt mb-1.5">ชั้นหนังสือส่วนตัว</h1>
-        <p className="text-xs text-zinc-400 max-w-sm mb-6 leading-relaxed">
-          กรุณาเข้าสู่ระบบเพื่อบันทึกและติดตามความคืบหน้าเรื่องโปรดของคุณ
+        <h1 className="text-xl sm:text-2xl font-bold text-white font-prompt mb-2">
+          ชั้นหนังสือส่วนตัว
+        </h1>
+        <p className="text-xs sm:text-sm text-neutral-400 max-w-sm mb-6 leading-relaxed">
+          เข้าสู่ระบบเพื่อบันทึกเรื่องโปรด ติดตามตอนที่กำลังอ่าน และจัดการตอนที่ปลดล็อกไว้ทั้งหมด
         </p>
-        <Link
-          href="/"
-          className="px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition active:scale-95 shadow-sm font-prompt"
-        >
-          กลับหน้าหลัก
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => openAuthModal("LOGIN")}
+            className="px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.98]"
+          >
+            เข้าสู่ระบบ
+          </button>
+          <Link
+            href="/"
+            className="px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium text-xs transition border border-white/10"
+          >
+            กลับหน้าหลัก
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-white/[0.08]">
         <div>
-          <h1 className="text-xl font-bold text-zinc-100 font-prompt">
+          <h1 className="text-2xl font-bold text-white font-prompt tracking-tight">
             ชั้นหนังสือของฉัน
           </h1>
-          <p className="text-xs text-zinc-500 mt-1 font-mono">
-            บันทึกไว้ทั้งหมด {bookmarks.length} เรื่อง
+          <p className="text-xs text-neutral-400 mt-1">
+            คลังเรื่องโปรด ประวัติการอ่าน และผลงานที่คุณเป็นเจ้าของ
           </p>
+        </div>
+
+        {/* Minimal Sub-Tabs */}
+        <div className="flex items-center p-1 rounded-xl bg-[#121215] border border-white/[0.08]">
+          <button
+            onClick={() => setActiveTab("READING")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeTab === "READING"
+                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            กำลังอ่าน ({readingList.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("BOOKMARKS")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeTab === "BOOKMARKS"
+                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            บุ๊คมาร์ค ({bookmarks.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("PURCHASED")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeTab === "PURCHASED"
+                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            ปลดล็อกแล้ว ({purchases.length})
+          </button>
         </div>
       </div>
 
       {loading ? (
         <div className="py-24 flex justify-center">
-          <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : bookmarks.length === 0 ? (
-        <div className="py-20 text-center rounded-2xl border border-white/[0.06] bg-white/[0.01]">
-          <BookOpen className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-zinc-300 font-prompt">ยังไม่มีผลงานในชั้นหนังสือ</p>
-          <p className="text-xs text-zinc-500 mt-1 mb-6">สำรวจนิยายและมังงะ แล้วกดบันทึกเพื่อติดตามความคืบหน้าที่นี่</p>
-          <Link
-            href="/"
-            className="px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition active:scale-95 shadow-sm font-prompt"
-          >
-            สำรวจผลงาน
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-2.5">
-          {bookmarks.map((b) => (
-            <div
-              key={b.id}
-              className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] hover:border-white/15 transition group"
+      ) : activeTab === "READING" ? (
+        /* Tab 1: กำลังอ่าน (Reading) */
+        readingList.length === 0 ? (
+          <div className="py-20 text-center rounded-2xl border border-dashed border-white/10 bg-[#121215]/50">
+            <Clock className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
+            <h3 className="text-sm font-bold text-white font-prompt">ยังไม่มีผลงานที่กำลังอ่านค้างอยู่</h3>
+            <p className="text-xs text-neutral-400 mt-1 mb-5">
+              เมื่อคุณเริ่มอ่านนิยายหรือมังงะ ระบบจะจดจำความคืบหน้าไว้ที่นี่โดยอัตโนมัติ
+            </p>
+            <Link
+              href="/"
+              className="inline-flex px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
             >
-              {/* Cover */}
-              <Link
-                href={`/stories/${b.story.slug}`}
-                className="w-14 sm:w-16 aspect-[3/4] rounded-xl overflow-hidden shrink-0 bg-zinc-900 border border-white/[0.08]"
+              สำรวจผลงาน
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {readingList.map((item) => (
+              <div
+                key={item.id}
+                className="group flex flex-col bg-[#121215] border border-white/[0.08] hover:border-white/20 rounded-xl overflow-hidden transition duration-200"
               >
-                <img
-                  src={b.story.coverUrl}
-                  alt={b.story.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                />
-              </Link>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-zinc-300 font-medium">
-                    {b.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900">
+                  <img
+                    src={item.story.coverUrl}
+                    alt={item.story.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  {/* Maximum 1 Badge */}
+                  <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 backdrop-blur-md text-neutral-300 border border-white/10">
+                    {item.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
                   </span>
-                  <span className="text-[10px] text-zinc-500 font-mono">{b.story.category}</span>
-                </div>
-                <Link href={`/stories/${b.story.slug}`}>
-                  <h3 className="text-xs sm:text-sm font-semibold text-zinc-100 truncate font-prompt group-hover:text-white transition">
-                    {b.story.title}
-                  </h3>
-                </Link>
-                <p className="text-[11px] text-zinc-500 truncate mt-0.5">
-                  {b.story.author.penName || b.story.author.name}
-                </p>
 
-                {/* Progress bar */}
-                <div className="flex items-center gap-3 mt-2 max-w-sm">
-                  <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                  {/* Progress Bar overlay at bottom of cover */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/80">
                     <div
-                      className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.max(5, b.progressPercent)}%` }}
+                      className="h-full bg-[#FFE600]"
+                      style={{ width: `${Math.max(5, Math.min(100, item.progressPercent))}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-zinc-500 font-mono shrink-0">
-                    {Math.round(b.progressPercent)}%
-                  </span>
+                </div>
+
+                <div className="p-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#FFE600] transition line-clamp-1">
+                      {item.story.title}
+                    </h3>
+                    <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                      {item.story.author.penName || item.story.author.name}
+                    </p>
+                    <div className="flex items-center justify-between text-[10px] text-neutral-500 mt-2">
+                      <span>อ่านไปแล้ว {Math.round(item.progressPercent)}%</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-white/[0.06] flex items-center justify-between gap-1">
+                    <Link
+                      href={
+                        item.lastChapterId
+                          ? `/reader/${item.story.type === "MANGA" ? "manga" : "novel"}/${item.lastChapterId}`
+                          : `/stories/${item.story.slug}`
+                      }
+                      className="flex-1 py-1.5 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] text-black text-[11px] font-bold text-center flex items-center justify-center gap-1 transition"
+                    >
+                      <Play className="w-3 h-3 fill-current" />
+                      <span>อ่านต่อ</span>
+                    </Link>
+                    <button
+                      onClick={() => handleRemoveBookmark(item.story.id)}
+                      title="นำออก"
+                      className="p-1.5 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-white/5 transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                <Link
-                  href={
-                    b.lastChapterId
-                      ? `/reader/${b.story.type === "MANGA" ? "manga" : "novel"}/${b.lastChapterId}`
-                      : `/stories/${b.story.slug}`
-                  }
-                  className="px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-sm font-prompt"
-                >
-                  <span>อ่านต่อ</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-zinc-950" />
+            ))}
+          </div>
+        )
+      ) : activeTab === "BOOKMARKS" ? (
+        /* Tab 2: บุ๊คมาร์ค (Bookmarks) */
+        bookmarks.length === 0 ? (
+          <div className="py-20 text-center rounded-2xl border border-dashed border-white/10 bg-[#121215]/50">
+            <Bookmark className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
+            <h3 className="text-sm font-bold text-white font-prompt">ยังไม่มีเรื่องที่บันทึกไว้</h3>
+            <p className="text-xs text-neutral-400 mt-1 mb-5">
+              กดปุ่มบันทึกหรือไอคอนบุ๊คมาร์คบนหน้าเรื่องที่ชอบ เพื่อเก็บไว้ในรายการโปรด
+            </p>
+            <Link
+              href="/"
+              className="inline-flex px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+            >
+              สำรวจผลงาน
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {bookmarks.map((b) => (
+              <div
+                key={b.id}
+                className="group flex flex-col bg-[#121215] border border-white/[0.08] hover:border-white/20 rounded-xl overflow-hidden transition duration-200"
+              >
+                <Link href={`/stories/${b.story.slug}`} className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900 block">
+                  <img
+                    src={b.story.coverUrl}
+                    alt={b.story.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  {/* Maximum 1 Badge */}
+                  <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 backdrop-blur-md text-neutral-300 border border-white/10">
+                    {b.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                  </span>
                 </Link>
-                <button
-                  onClick={() => handleRemove(b.story.id)}
-                  className="p-2 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-white/[0.06] transition"
-                  title="นำออกจากชั้นหนังสือ"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+
+                <div className="p-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <Link href={`/stories/${b.story.slug}`}>
+                      <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#FFE600] transition line-clamp-1">
+                        {b.story.title}
+                      </h3>
+                    </Link>
+                    <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                      {b.story.author.penName || b.story.author.name}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-white/[0.06] flex items-center justify-between gap-1">
+                    <Link
+                      href={`/stories/${b.story.slug}`}
+                      className="flex-1 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-white text-[11px] font-medium text-center transition"
+                    >
+                      ดูรายละเอียด
+                    </Link>
+                    <button
+                      onClick={() => handleRemoveBookmark(b.story.id)}
+                      title="นำออก"
+                      className="p-1.5 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-white/5 transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
+      ) : (
+        /* Tab 3: ปลดล็อกแล้ว (Purchased) */
+        purchases.length === 0 ? (
+          <div className="py-20 text-center rounded-2xl border border-dashed border-white/10 bg-[#121215]/50">
+            <Lock className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
+            <h3 className="text-sm font-bold text-white font-prompt">ยังไม่มีตอนที่ปลดล็อก</h3>
+            <p className="text-xs text-neutral-400 mt-1 mb-5">
+              ตอนที่คุณใช้เหรียญหรือตั๋วปลดล็อกอ่านจะถูกเก็บถาวรไว้ที่นี่
+            </p>
+            <Link
+              href="/"
+              className="inline-flex px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+            >
+              สำรวจผลงาน
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {purchases.map((item) => (
+              <Link
+                key={item.id}
+                href={`/stories/${item.story.slug}`}
+                className="group flex flex-col bg-[#121215] border border-white/[0.08] hover:border-white/20 rounded-xl overflow-hidden transition duration-200"
+              >
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900">
+                  <img
+                    src={item.story.coverUrl}
+                    alt={item.story.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  {/* Maximum 1 Badge */}
+                  <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 backdrop-blur-md text-neutral-300 border border-white/10">
+                    {item.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                  </span>
+                </div>
+
+                <div className="p-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#FFE600] transition line-clamp-1">
+                      {item.story.title}
+                    </h3>
+                    <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                      {item.story.author.penName || item.story.author.name}
+                    </p>
+                    <div className="text-[10px] text-[#FFE600] mt-1.5 font-medium">
+                      ปลดล็อกแล้ว {item.unlockedChaptersCount} ตอน
+                    </div>
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-white/[0.06] text-right">
+                    <span className="text-[11px] text-neutral-300 group-hover:text-white flex items-center justify-end gap-1 font-medium">
+                      อ่านต่อ <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )
       )}
     </div>
   );

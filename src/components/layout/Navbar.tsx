@@ -1,57 +1,39 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useSidePanel } from "@/context/SidePanelContext";
-import { BookOpen, Search, Menu, Coins, Sparkles } from "lucide-react";
-
-function NavbarNavTabs() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentType = searchParams?.get("type") || "ALL";
-
-  const navTabs = [
-    { label: "หน้าแรก", href: "/" },
-    { label: "มังงะ", href: "/?type=MANGA" },
-    { label: "นิยาย", href: "/?type=NOVEL" },
-    { label: "ตารางอัปเดต", href: "/schedule" },
-  ];
-
-  const isTabActive = (href: string) => {
-    if (href === "/") return pathname === "/" && (!currentType || currentType === "ALL");
-    if (href === "/?type=MANGA") return (pathname === "/" && currentType === "MANGA") || pathname === "/manga";
-    if (href === "/?type=NOVEL") return (pathname === "/" && currentType === "NOVEL") || pathname === "/novel";
-    return pathname.startsWith(href);
-  };
-
-  return (
-    <nav className="hidden md:flex items-center gap-1">
-      {navTabs.map((tab) => {
-        const active = isTabActive(tab.href);
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              active
-                ? "text-zinc-100 bg-white/[0.08] font-semibold"
-                : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
+import {
+  BookOpen,
+  Coins,
+  User,
+  LogOut,
+  ChevronDown,
+  Menu,
+  X,
+  PenTool,
+  Shield,
+  Search,
+  Flame,
+  Gift,
+} from "lucide-react";
+import { DailyCheckinModal } from "@/components/gamification/DailyCheckinModal";
+import { GiftBoxModal } from "@/components/kakao/GiftBoxModal";
+import { BecomeAuthorModal } from "@/components/author/BecomeAuthorModal";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
+import { useAuthModal } from "@/context/AuthModalContext";
 
 export function Navbar() {
-  const pathname = usePathname();
-  const { user } = useAuth();
-  const { toggleSidePanel } = useSidePanel();
+  const pathname = usePathname() || "";
+  const searchParams = useSearchParams();
+  const { user, logout, switchDemoRole } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [showBecomeAuthorModal, setShowBecomeAuthorModal] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const totalCoins = (user?.wallet?.paidBalance || 0) + (user?.wallet?.freeBalance || 0);
@@ -59,109 +41,314 @@ export function Navbar() {
   // Scroll-aware navbar opacity
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 50);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const navTabs = [
+    { label: "หน้าแรก", href: "/" },
+    { label: "ตารางรายวัน", href: "/schedule" },
+    { label: "มังงะ", href: "/?type=MANGA" },
+    { label: "นิยาย", href: "/?type=NOVEL" },
+    { label: "ชั้นหนังสือ", href: "/library" },
+    { label: "ฟีด", href: "/feed" },
+  ];
+
+  const isTabActive = (href: string) => {
+    const currentType = searchParams?.get("type");
+    if (href === "/") return pathname === "/" && !currentType;
+    if (href.startsWith("/?type=")) {
+      const type = href.split("=")[1];
+      return pathname === "/" && currentType?.toUpperCase() === type.toUpperCase();
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
-    <header
-      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
-        scrolled
-          ? "bg-[#09090b]/90 backdrop-blur-xl border-b border-white/[0.07] shadow-sm shadow-black/40"
-          : "bg-[#09090b]/40 backdrop-blur-md border-b border-white/[0.04]"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
-        {/* Left: Brand Logo & Desktop Nav */}
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-950 flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-              <BookOpen className="w-4 h-4 text-zinc-950" />
+    <>
+      {/* Main Sticky Navbar — Kakao Style with scroll-aware transparency */}
+      <header
+        className={`sticky top-0 z-40 w-full kakao-nav transition-all duration-500 ${
+          scrolled ? "navbar-solid" : "navbar-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+          {/* Left: Logo with glow */}
+          <Link href="/" className="flex items-center gap-2 shrink-0 group">
+            <div className="w-7 h-7 rounded-lg bg-kakao-yellow flex items-center justify-center animate-logo-glow group-hover:scale-110 transition-transform duration-300">
+              <BookOpen className="w-3.5 h-3.5 text-black" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight text-zinc-100 font-prompt leading-none">
-                ReadVerse
-              </span>
-              <span className="text-[10px] text-zinc-500 tracking-wider uppercase leading-none mt-0.5 font-mono">
-                Editorial
-              </span>
-            </div>
+            <span className="text-base font-bold tracking-tight text-white font-prompt">
+              ReadVerse
+            </span>
           </Link>
 
-          {/* Center: Main Navigation Tabs — Desktop with Suspense */}
-          <Suspense fallback={<div className="hidden md:flex w-48 h-6" />}>
-            <NavbarNavTabs />
-          </Suspense>
-        </div>
+          {/* Center: Navigation Tabs — desktop with glow active indicator */}
+          <nav className="hidden md:flex items-center gap-1 h-full">
+            {navTabs.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`relative px-3 py-2 h-full flex items-center text-[13px] transition-colors ${
+                  isTabActive(tab.href)
+                    ? "tab-glow-active text-white font-bold"
+                    : "text-neutral-400 hover:text-white font-medium"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </nav>
 
-        {/* Center-Right: Quick Search Bar trigger (Minimalist Command Palette look) */}
-        <div className="flex-1 max-w-xs hidden sm:block">
-          <Link
-            href="/search"
-            className="flex items-center justify-between w-full px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/15 text-xs text-zinc-400 hover:text-zinc-200 transition group"
-          >
-            <div className="flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 transition" />
-              <span>ค้นหานิยาย, มังงะ, นักเขียน...</span>
-            </div>
-            <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-zinc-500 bg-white/[0.04] border border-white/[0.08] rounded">
-              ⌘K
-            </kbd>
-          </Link>
-        </div>
+          {/* Right: Action Icons */}
+          <div className="flex items-center gap-1.5">
+            {/* Search */}
+            <Link
+              href="/search"
+              className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition"
+              title="ค้นหา"
+            >
+              <Search className="w-[18px] h-[18px]" />
+            </Link>
 
-        {/* Right: Actions (Search Mobile, Coins, User / SidePanel Trigger) */}
-        <div className="flex items-center gap-2">
-          {/* Search Icon for Mobile */}
-          <Link
-            href="/search"
-            className="sm:hidden p-2 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition"
-            title="ค้นหา"
-          >
-            <Search className="w-4 h-4" />
-          </Link>
+            {/* Notifications */}
+            <NotificationDropdown />
 
-          {/* Compact Minimal Coin display */}
-          {user ? (
+            {/* Coin balance — compact */}
             <Link
               href="/coin-shop"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-200 bg-amber-500/[0.08] hover:bg-amber-500/[0.14] border border-amber-500/20 hover:border-amber-500/40 transition"
-              title="เหรียญของคุณ (คลิกเพื่อเติมเงิน)"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition"
+              title="เหรียญ"
             >
-              <Coins className="w-3.5 h-3.5 text-amber-400" />
-              <span className="font-mono text-xs text-amber-300 font-semibold">
-                {totalCoins.toLocaleString()}
-              </span>
+              <Coins className="w-4 h-4 text-kakao-yellow" />
+              <span className="text-xs font-semibold text-white">{totalCoins}</span>
             </Link>
-          ) : null}
 
-          {/* User Profile / Menu Trigger */}
-          {user ? (
+            {/* User Avatar / Login */}
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-1 p-1 rounded-lg hover:bg-white/5 transition"
+                >
+                  <img
+                    src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
+                    alt={user.name}
+                    className="w-7 h-7 rounded-full object-cover ring-1 ring-white/10 hover:ring-kakao-yellow/30 transition-all duration-300"
+                  />
+                  <ChevronDown className="w-3 h-3 text-neutral-500 hidden sm:block" />
+                </button>
+
+                {showProfileMenu && (
+                  <div
+                    className="absolute right-0 mt-2 w-56 rounded-xl bg-[#111114]/95 backdrop-blur-xl border border-kakao-border shadow-2xl shadow-black/80 p-1.5 z-50 animate-fade-in"
+                    onMouseLeave={() => setShowProfileMenu(false)}
+                  >
+                    {/* User info */}
+                    <div className="px-3 py-2.5 border-b border-kakao-border">
+                      <p className="text-sm font-semibold text-white truncate">{user.name}</p>
+                      <p className="text-xs text-neutral-500 truncate">{user.email}</p>
+                      <span className="inline-block mt-1 text-[10px] font-medium bg-kakao-yellow/10 text-kakao-yellow px-1.5 py-0.5 rounded">
+                        {user.role}
+                      </span>
+                    </div>
+
+                    <div className="py-1">
+                      {/* Profile */}
+                      <Link
+                        href="/profile"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        <User className="w-3.5 h-3.5 text-neutral-500" />
+                        โปรไฟล์
+                      </Link>
+
+                      {/* Library */}
+                      <Link
+                        href="/library"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-neutral-500" />
+                        ชั้นหนังสือ
+                      </Link>
+
+                      {/* Coin Shop */}
+                      <Link
+                        href="/coin-shop"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        <Coins className="w-3.5 h-3.5 text-kakao-yellow" />
+                        เติมเหรียญ ({totalCoins})
+                      </Link>
+
+                      {/* Daily Check-in */}
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          setShowCheckinModal(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition text-left"
+                      >
+                        <Flame className="w-3.5 h-3.5 text-neutral-500" />
+                        เช็คอินรับเหรียญ
+                      </button>
+
+                      {/* Gift Box */}
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          setShowGiftModal(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition text-left"
+                      >
+                        <Gift className="w-3.5 h-3.5 text-neutral-500" />
+                        กล่องของขวัญ
+                      </button>
+
+                      {/* Author Studio */}
+                      {(user.role === "AUTHOR" || user.role === "SUPER_ADMIN") && (
+                        <Link
+                          href="/author"
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition"
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          <PenTool className="w-3.5 h-3.5 text-neutral-500" />
+                          สตูดิโอนักเขียน
+                        </Link>
+                      )}
+
+                      {/* Become Author */}
+                      {user.role === "READER" && (
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            setShowBecomeAuthorModal(true);
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 text-xs text-kakao-yellow hover:bg-kakao-yellow/5 rounded-lg transition text-left"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <PenTool className="w-3.5 h-3.5" />
+                            <span>เปิดโหมดนักเขียน</span>
+                          </div>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-kakao-yellow/10 text-kakao-yellow font-bold">
+                            ฟรี
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Admin */}
+                      {(user.role === "SUPER_ADMIN" || user.role === "MODERATOR" || user.role === "FINANCE_ADMIN") && (
+                        <Link
+                          href="/admin"
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 rounded-lg transition"
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          <Shield className="w-3.5 h-3.5 text-neutral-500" />
+                          แผงควบคุมระบบ
+                        </Link>
+                      )}
+
+                      {/* Demo Role Switcher — inside dropdown */}
+                      <div className="mt-1 pt-1 border-t border-kakao-border">
+                        <p className="px-3 py-1 text-[10px] text-neutral-600 uppercase tracking-wider">สลับบทบาท Demo</p>
+                        <div className="px-2 pb-1 flex flex-wrap gap-1">
+                          {[
+                            { role: "READER", label: "ผู้อ่าน" },
+                            { role: "AUTHOR", label: "นักเขียน" },
+                            { role: "SUPER_ADMIN", label: "Admin" },
+                            { role: "GUEST", label: "Guest" },
+                          ].map((item) => (
+                            <button
+                              key={item.role}
+                              onClick={() => {
+                                switchDemoRole(item.role as any);
+                                setShowProfileMenu(false);
+                              }}
+                              className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
+                                user?.role === item.role
+                                  ? "bg-kakao-yellow text-black font-bold"
+                                  : "bg-white/5 hover:bg-white/10 text-neutral-400"
+                              }`}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Logout */}
+                    <div className="pt-1 border-t border-kakao-border">
+                      <button
+                        onClick={() => {
+                          logout();
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-500 hover:text-white hover:bg-white/5 rounded-lg transition"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        ออกจากระบบ
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => openAuthModal("LOGIN")}
+                className="px-4 py-1.5 rounded-lg bg-kakao-yellow text-black text-xs font-bold hover:bg-kakao-yellow-hover transition active:scale-95 shadow-md shadow-kakao-yellow/20 hover:shadow-kakao-yellow/30"
+              >
+                เข้าสู่ระบบ
+              </button>
+            )}
+
+            {/* Mobile Menu Toggle */}
             <button
-              onClick={toggleSidePanel}
-              className="flex items-center gap-2 p-1 rounded-full hover:ring-1 hover:ring-white/20 transition active:scale-95"
-              title="เมนูโปรไฟล์"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-white md:hidden transition"
             >
-              <img
-                src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
-                alt={user.name}
-                className="w-7 h-7 rounded-full object-cover ring-1 ring-white/10"
-              />
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-          ) : (
-            <button
-              onClick={toggleSidePanel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.12] hover:border-white/30 text-zinc-200 hover:text-white text-xs font-medium hover:bg-white/[0.05] transition active:scale-95"
-            >
-              <Menu className="w-4 h-4 text-zinc-400" />
-              <span className="hidden sm:inline">เข้าสู่ระบบ / เมนู</span>
-            </button>
-          )}
+          </div>
         </div>
-      </div>
-    </header>
+
+        {/* Mobile Navigation Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden px-4 pt-2 pb-4 bg-black/95 backdrop-blur-xl border-b border-kakao-border space-y-1 animate-fade-in">
+            {navTabs.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 transition"
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </header>
+
+      {/* Modals */}
+      {showCheckinModal && (
+        <DailyCheckinModal onClose={() => setShowCheckinModal(false)} />
+      )}
+
+      <GiftBoxModal
+        isOpen={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
+      />
+
+      <BecomeAuthorModal
+        isOpen={showBecomeAuthorModal}
+        onClose={() => setShowBecomeAuthorModal(false)}
+      />
+    </>
   );
 }

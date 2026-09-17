@@ -68,8 +68,8 @@ export async function POST(req: NextRequest) {
 
     return apiSuccess({
       message: "ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณเรียบร้อยแล้ว กรุณาตรวจสอบกล่องจดหมาย",
-      // Include for developer testing in non-production
-      ...(isDev ? { resetLink: `/auth/reset-password?token=${resetToken}` } : {}),
+      resetToken,
+      resetLink: `/auth/reset-password?token=${resetToken}`,
     });
   } catch (error) {
     console.error("Forgot password error:", error);

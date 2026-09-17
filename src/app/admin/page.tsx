@@ -21,34 +21,15 @@ import {
   Settings,
   UserCheck,
   ShoppingBag,
+  Star,
+  Bell,
   Sparkles,
-  LifeBuoy,
-  MessageSquare,
-  CheckCircle2,
-  Clock,
-  Bug,
 } from "lucide-react";
 import { UserManagementModal, AdminUserDetail } from "@/components/admin/UserManagementModal";
-
-export interface SupportTicketItem {
-  id: string;
-  userId: string;
-  title: string;
-  category: string;
-  status: string;
-  priority: string;
-  description: string;
-  adminNotes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    avatar?: string | null;
-  };
-}
+import { StoryModerationModal, StoryModerationDetail } from "@/components/admin/StoryModerationModal";
+import { ReportsManagementTab } from "@/components/admin/ReportsManagementTab";
+import { AuditLogsTab } from "@/components/admin/AuditLogsTab";
+import { BroadcastTab } from "@/components/admin/BroadcastTab";
 
 interface AdminOverviewData {
   adminRole: string;
@@ -83,26 +64,7 @@ interface AdminOverviewData {
 
 type UserItem = AdminUserDetail;
 
-interface StoryItem {
-  id: string;
-  title: string;
-  slug: string;
-  type: string;
-  status: string;
-  category: string;
-  coverUrl: string;
-  updatedAt: string;
-  author: {
-    id: string;
-    name: string;
-    penName?: string;
-    email: string;
-  };
-  _count: {
-    chapters: number;
-    comments: number;
-  };
-}
+type StoryItem = StoryModerationDetail;
 
 interface CoinPackageItem {
   id: string;
@@ -138,18 +100,19 @@ interface AuthorApplicationItem {
 export default function AdminPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "content" | "payouts" | "packages" | "applications" | "tickets">("overview");
+  const [activeTab, setActiveTab] = useState<
+    | "overview"
+    | "users"
+    | "content"
+    | "reports"
+    | "payouts"
+    | "packages"
+    | "applications"
+    | "broadcast"
+    | "auditLogs"
+  >("overview");
   const [overview, setOverview] = useState<AdminOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Support Tickets state
-  const [ticketsList, setTicketsList] = useState<SupportTicketItem[]>([]);
-  const [ticketsLoading, setTicketsLoading] = useState(false);
-  const [ticketStatusFilter, setTicketStatusFilter] = useState("ALL");
-  const [ticketCategoryFilter, setTicketCategoryFilter] = useState("ALL");
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicketItem | null>(null);
-  const [ticketAdminNotes, setTicketAdminNotes] = useState("");
-  const [updatingTicketStatus, setUpdatingTicketStatus] = useState(false);
 
   // Applications state (Section E)
   const [applicationsList, setApplicationsList] = useState<AuthorApplicationItem[]>([]);
@@ -167,6 +130,7 @@ export default function AdminPage() {
   const [storiesList, setStoriesList] = useState<StoryItem[]>([]);
   const [contentFilter, setContentFilter] = useState("ALL");
   const [contentLoading, setContentLoading] = useState(false);
+  const [selectedStoryForModeration, setSelectedStoryForModeration] = useState<StoryModerationDetail | null>(null);
 
   // Packages state
   const [packagesList, setPackagesList] = useState<CoinPackageItem[]>([]);
@@ -268,59 +232,12 @@ export default function AdminPage() {
     }
   };
 
-  // Fetch Support Tickets
-  const fetchTickets = async () => {
-    setTicketsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (ticketStatusFilter !== "ALL") params.set("status", ticketStatusFilter);
-      if (ticketCategoryFilter !== "ALL") params.set("category", ticketCategoryFilter);
-
-      const res = await fetch(`/api/v1/support-tickets?${params.toString()}`);
-      const json = await res.json();
-      if (json.success) {
-        setTicketsList(json.data.tickets || []);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setTicketsLoading(false);
-    }
-  };
-
-  const handleUpdateTicket = async (id: string, newStatus: string) => {
-    setUpdatingTicketStatus(true);
-    try {
-      const res = await fetch(`/api/v1/support-tickets/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: newStatus,
-          adminNotes: ticketAdminNotes,
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        toast.success("อัปเดตสถานะปัญหาเรียบร้อยแล้ว");
-        setSelectedTicket(null);
-        fetchTickets();
-      } else {
-        toast.error("ไม่สามารถอัปเดตสถานะได้", json.error?.message);
-      }
-    } catch {
-      toast.error("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
-    } finally {
-      setUpdatingTicketStatus(false);
-    }
-  };
-
   useEffect(() => {
     if (activeTab === "users") fetchUsers();
     if (activeTab === "content") fetchContent();
     if (activeTab === "packages") fetchPackages();
     if (activeTab === "applications") fetchApplications();
-    if (activeTab === "tickets") fetchTickets();
-  }, [activeTab, contentFilter, userRoleFilter, userStatusFilter, ticketStatusFilter, ticketCategoryFilter]);
+  }, [activeTab, contentFilter, userRoleFilter, userStatusFilter]);
 
   // Section E: Approve/Reject Author Application
   const handleApplicationAction = async (profileId: string, action: "APPROVE" | "REJECT") => {
@@ -389,6 +306,45 @@ export default function AdminPage() {
       }
     } catch {
       toast.error("เกิดข้อผิดพลาดในการตรวจสอบเนื้อหา");
+    }
+  };
+
+  // Quick Toggle Featured Story ⭐ (Controls Hero Section placement)
+  const handleQuickToggleFeatured = async (storyId: string, currentFeatured: boolean) => {
+    const targetStory = storiesList.find((s) => s.id === storyId);
+    const storyTitle = targetStory?.title || "ผลงาน";
+
+    // Optimistic UI update
+    setStoriesList((prev) =>
+      prev.map((s) => (s.id === storyId ? { ...s, isFeatured: !currentFeatured } : s))
+    );
+
+    try {
+      const res = await fetch("/api/v1/admin/content", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storyId, isFeatured: !currentFeatured }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(
+          !currentFeatured
+            ? `ดันเรื่อง "${storyTitle}" ขึ้น Hero Section หน้าแรกเรียบร้อยแล้ว!`
+            : `นำเรื่อง "${storyTitle}" ออกจาก Hero Section เรียบร้อยแล้ว`
+        );
+      } else {
+        // Revert on failure
+        setStoriesList((prev) =>
+          prev.map((s) => (s.id === storyId ? { ...s, isFeatured: currentFeatured } : s))
+        );
+        toast.error("ดำเนินการไม่สำเร็จ", json.error?.message);
+      }
+    } catch {
+      // Revert on failure
+      setStoriesList((prev) =>
+        prev.map((s) => (s.id === storyId ? { ...s, isFeatured: currentFeatured } : s))
+      );
+      toast.error("เกิดข้อผิดพลาดในการปรับสถานะแนะนำ");
     }
   };
 
@@ -492,79 +448,118 @@ export default function AdminPage() {
         </div>
 
         {/* Tab Navigation Controls */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-neutral-900 p-1.5 rounded-2xl border border-neutral-800 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-1.5 bg-neutral-900/90 p-1.5 rounded-2xl border border-neutral-800 text-xs font-semibold shadow-inner">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-3 py-1.5 rounded-xl transition ${
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
               activeTab === "overview" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
             }`}
           >
-            ภาพรวม
+            <span>ภาพรวม</span>
           </button>
 
           {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("users")}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
                 activeTab === "users" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
-              จัดการผู้ใช้ (C.1)
+              <span>ผู้ใช้งาน</span>
             </button>
           )}
 
           {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("content")}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
                 activeTab === "content" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
-              ตรวจเนื้อหา (C.2)
+              <span>ตรวจเนื้อหา</span>
+            </button>
+          )}
+
+          {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
+            <button
+              onClick={() => setActiveTab("reports")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+                activeTab === "reports" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              <span>ข้อร้องเรียน</span>
+              {overview && overview.recentReports && overview.recentReports.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">
+                  {overview.recentReports.length}
+                </span>
+              )}
             </button>
           )}
 
           {["SUPER_ADMIN", "FINANCE_ADMIN"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("payouts")}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
                 activeTab === "payouts" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
-              อนุมัติถอนเงิน ({overview?.metrics.pendingPayoutsCount || 0})
+              <span>อนุมัติถอนเงิน</span>
+              {overview?.metrics.pendingPayoutsCount ? (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">
+                  {overview.metrics.pendingPayoutsCount}
+                </span>
+              ) : null}
             </button>
           )}
 
           {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("applications")}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
                 activeTab === "applications" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
-              ใบสมัครนักเขียน ({applicationsList.length})
+              <span>ใบสมัครนักเขียน</span>
+              {applicationsList.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 font-mono">
+                  {applicationsList.length}
+                </span>
+              )}
             </button>
           )}
 
           {["SUPER_ADMIN", "FINANCE_ADMIN"].includes(user.role) && (
             <button
               onClick={() => setActiveTab("packages")}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
                 activeTab === "packages" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
-              แพ็กเกจเหรียญ (C.3)
+              <span>แพ็กเกจเหรียญ</span>
             </button>
           )}
 
-          {["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
+          {user.role === "SUPER_ADMIN" && (
             <button
-              onClick={() => setActiveTab("tickets")}
-              className={`px-3 py-1.5 rounded-xl transition ${
-                activeTab === "tickets" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
+              onClick={() => setActiveTab("broadcast")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+                activeTab === "broadcast" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
-              ปัญหาที่แจ้ง ({ticketsList.filter((t) => t.status === "OPEN").length})
+              <Bell className="w-3.5 h-3.5 text-[#FFE600]" />
+              <span>ประกาศระบบ</span>
+            </button>
+          )}
+
+          {user.role === "SUPER_ADMIN" && (
+            <button
+              onClick={() => setActiveTab("auditLogs")}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+                activeTab === "auditLogs" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 text-purple-400" />
+              <span>ประวัติแอดมิน</span>
             </button>
           )}
         </div>
@@ -856,53 +851,103 @@ export default function AdminPage() {
                   {storiesList.map((story) => (
                     <div
                       key={story.id}
-                      className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                      className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start sm:items-center gap-3.5">
                         <img
                           src={story.coverUrl}
                           alt={story.title}
-                          className="w-12 aspect-[2/3] object-cover rounded-lg bg-neutral-800 shrink-0"
+                          className="w-14 aspect-[2/3] object-cover rounded-xl bg-neutral-800 shrink-0 border border-white/[0.08]"
                         />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded bg-neutral-800 text-neutral-300">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 font-medium">
                               {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
                             </span>
-                            <span className="font-bold text-white text-sm font-prompt">{story.title}</span>
+                            <span className="font-bold text-white text-sm font-prompt line-clamp-1">{story.title}</span>
                             <span
-                              className={`text-[10px] px-2 py-0.5 rounded ${
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                                 story.status === "PUBLISHED"
-                                  ? "bg-emerald-500/10 text-emerald-400"
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                                   : story.status === "PENDING_REVIEW"
                                   ? "bg-amber-500/10 text-amber-300 border border-amber-500/30"
-                                  : "bg-rose-500/10 text-rose-400"
+                                  : story.status === "DRAFT"
+                                  ? "bg-blue-500/10 text-blue-300 border border-blue-500/30"
+                                  : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                               }`}
                             >
                               {story.status}
                             </span>
+                            {story.isFeatured && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#FFE600]/20 text-[#FFE600] border border-[#FFE600]/40 flex items-center gap-1 shadow-sm">
+                                <Sparkles className="w-2.5 h-2.5 fill-[#FFE600]" />
+                                อยู่บน Hero Section
+                              </span>
+                            )}
+                            {story.contentRating === "MATURE_18" && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600/20 text-rose-400 border border-rose-500/30">
+                                18+ 🔞
+                              </span>
+                            )}
+                            {story.reports && story.reports.length > 0 && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                มีรายงาน ({story.reports.length})
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-neutral-400 mt-0.5">
-                            นักเขียน: {story.author.penName || story.author.name} ({story.author.email}) • {story._count.chapters} ตอน
-                          </p>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
+                            <span>
+                              นักเขียน: <span className="text-neutral-200">{story.author.penName || story.author.name}</span>
+                            </span>
+                            <span className="text-neutral-600">•</span>
+                            <span>หมวด: {story.category}</span>
+                            <span className="text-neutral-600">•</span>
+                            <span>{story.chapters?.length ?? story._count?.chapters ?? 0} ตอน</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      {/* Action buttons */}
+                      <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end pt-2 lg:pt-0 border-t lg:border-t-0 border-neutral-800">
+                        {/* 1-Click Featured Pin for Hero Section */}
+                        <button
+                          onClick={() => handleQuickToggleFeatured(story.id, Boolean(story.isFeatured))}
+                          className={`px-3 py-1.5 rounded-xl border transition text-xs font-semibold flex items-center gap-1.5 shadow-sm ${
+                            story.isFeatured
+                              ? "bg-[#FFE600] text-black font-bold border-[#FFE600] shadow-[#FFE600]/20 hover:bg-[#F5DC00]"
+                              : "bg-white/[0.04] border-white/[0.1] text-neutral-300 hover:text-white hover:bg-white/[0.08] hover:border-[#FFE600]/50"
+                          }`}
+                          title={story.isFeatured ? "คลิกเพื่อนำออกจาก Hero Section หน้าแรก" : "คลิกเพื่อดันเรื่องนี้ขึ้น Hero Section หน้าแรก"}
+                        >
+                          <Star className={`w-3.5 h-3.5 ${story.isFeatured ? "fill-black text-black" : "text-[#FFE600]"}`} />
+                          <span>{story.isFeatured ? "★ แนะนำแล้ว (อยู่บน Hero)" : "☆ ดันแนะนำ"}</span>
+                        </button>
+
+                        {/* Open Comprehensive Moderation Modal */}
+                        <button
+                          onClick={() => setSelectedStoryForModeration(story)}
+                          className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+                          title="ตรวจสอบเชิงลึกและจัดการมาตรการ"
+                        >
+                          <Sliders className="w-3.5 h-3.5" />
+                          <span>จัดการและตรวจ</span>
+                        </button>
+
                         {story.status !== "PUBLISHED" && (
                           <button
                             onClick={() => handleContentAction(story.id, "PUBLISHED")}
                             className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition shadow-sm"
                           >
-                            อนุมัติเผยแพร่
+                            อนุมัติ
                           </button>
                         )}
                         {story.status !== "SUSPENDED" && (
                           <button
                             onClick={() => handleContentAction(story.id, "SUSPENDED")}
-                            className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold transition"
+                            className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold transition"
                           >
-                            ระงับเนื้อหา
+                            ระงับ
                           </button>
                         )}
                       </div>
@@ -1247,273 +1292,20 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* TAB 7: SUPPORT TICKETS & ISSUES */}
-          {activeTab === "tickets" && (
-            <div className="space-y-6">
-              {/* Ticket Metrics Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800">
-                  <span className="text-xs text-neutral-400 block mb-1">ปัญหาทั้งหมดที่แจ้ง</span>
-                  <p className="text-2xl font-bold text-white font-prompt">{ticketsList.length}</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-amber-500/20">
-                  <span className="text-xs text-amber-400 block mb-1">รอดำเนินการ (Open)</span>
-                  <p className="text-2xl font-bold text-amber-400 font-prompt">
-                    {ticketsList.filter((t) => t.status === "OPEN").length}
-                  </p>
-                </div>
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-purple-500/20">
-                  <span className="text-xs text-purple-400 block mb-1">กำลังตรวจสอบ (In Progress)</span>
-                  <p className="text-2xl font-bold text-purple-400 font-prompt">
-                    {ticketsList.filter((t) => t.status === "IN_PROGRESS").length}
-                  </p>
-                </div>
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-emerald-500/20">
-                  <span className="text-xs text-emerald-400 block mb-1">แก้ไขแล้ว (Resolved)</span>
-                  <p className="text-2xl font-bold text-emerald-400 font-prompt">
-                    {ticketsList.filter((t) => t.status === "RESOLVED").length}
-                  </p>
-                </div>
-              </div>
-
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800">
-                <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className="text-neutral-500 mr-1">สถานะ:</span>
-                  {[
-                    { id: "ALL", label: "ทั้งหมด" },
-                    { id: "OPEN", label: "รอดำเนินการ" },
-                    { id: "IN_PROGRESS", label: "กำลังตรวจ" },
-                    { id: "RESOLVED", label: "แก้ไขแล้ว" },
-                    { id: "CLOSED", label: "ปิดเรื่อง" },
-                  ].map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setTicketStatusFilter(s.id)}
-                      className={`px-2.5 py-1 rounded-lg transition ${
-                        ticketStatusFilter === s.id
-                          ? "bg-white text-black font-bold"
-                          : "bg-white/[0.04] text-neutral-400 hover:text-white"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className="text-neutral-500 mr-1">หมวด:</span>
-                  {[
-                    { id: "ALL", label: "ทั้งหมด" },
-                    { id: "BUG", label: "บั๊ก" },
-                    { id: "COIN", label: "เหรียญ" },
-                    { id: "CONTENT", label: "เนื้อหา" },
-                    { id: "ACCOUNT", label: "บัญชี" },
-                    { id: "OTHER", label: "อื่นๆ" },
-                  ].map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => setTicketCategoryFilter(c.id)}
-                      className={`px-2.5 py-1 rounded-lg transition ${
-                        ticketCategoryFilter === c.id
-                          ? "bg-[var(--accent)] text-black font-bold"
-                          : "bg-white/[0.04] text-neutral-400 hover:text-white"
-                      }`}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Ticket List */}
-              {ticketsLoading ? (
-                <div className="py-16 text-center">
-                  <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto" />
-                </div>
-              ) : ticketsList.length === 0 ? (
-                <div className="p-12 text-center rounded-2xl bg-neutral-900/40 border border-neutral-800 text-neutral-500 text-sm">
-                  ไม่มีรายการแจ้งปัญหาในเงื่อนไขที่เลือก
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {ticketsList.map((ticket) => (
-                    <div
-                      key={ticket.id}
-                      onClick={() => {
-                        setSelectedTicket(ticket);
-                        setTicketAdminNotes(ticket.adminNotes || "");
-                      }}
-                      className="p-4 sm:p-5 rounded-2xl bg-neutral-900 hover:bg-neutral-800/80 border border-neutral-800 hover:border-neutral-700 transition cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs group"
-                    >
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {/* Status Badge */}
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              ticket.status === "OPEN"
-                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                : ticket.status === "IN_PROGRESS"
-                                ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                                : ticket.status === "RESOLVED"
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                : "bg-neutral-800 text-neutral-400"
-                            }`}
-                          >
-                            {ticket.status}
-                          </span>
-
-                          {/* Category Badge */}
-                          <span className="px-2 py-0.5 rounded bg-white/[0.05] text-neutral-300 text-[10px]">
-                            {ticket.category}
-                          </span>
-
-                          {/* Priority */}
-                          {ticket.priority === "URGENT" && (
-                            <span className="px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 font-bold text-[10px]">
-                              ด่วนมาก (วิกฤต)
-                            </span>
-                          )}
-
-                          <span className="text-neutral-500 text-[11px]">
-                            {new Date(ticket.createdAt).toLocaleDateString("th-TH", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition truncate">
-                          {ticket.title}
-                        </h3>
-
-                        {/* Description Preview */}
-                        <p className="text-neutral-400 line-clamp-1 text-[11px]">
-                          {ticket.description}
-                        </p>
-
-                        {/* User info */}
-                        <div className="flex items-center gap-2 pt-1 text-[11px] text-neutral-500">
-                          <span>ผู้แจ้ง:</span>
-                          <span className="text-neutral-300 font-medium">{ticket.user?.name || "ไม่ระบุ"}</span>
-                          <span>({ticket.user?.email || "-"})</span>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-2">
-                        <span className="px-3 py-1.5 rounded-xl bg-white/5 group-hover:bg-white text-neutral-300 group-hover:text-black font-semibold transition text-xs">
-                          ดูรายละเอียด
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* TAB: REPORTS CENTER */}
+          {activeTab === "reports" && ["SUPER_ADMIN", "MODERATOR"].includes(user.role) && (
+            <ReportsManagementTab />
           )}
-        </div>
-      )}
 
-      {/* Ticket Detail & Management Modal */}
-      {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div 
-            className="w-full max-w-xl rounded-2xl bg-[#111114] border border-neutral-700 p-6 shadow-2xl max-h-[90vh] overflow-y-auto space-y-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/[0.08]">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      selectedTicket.status === "OPEN"
-                        ? "bg-amber-500/15 text-amber-400"
-                        : selectedTicket.status === "IN_PROGRESS"
-                        ? "bg-purple-500/15 text-purple-400"
-                        : selectedTicket.status === "RESOLVED"
-                        ? "bg-emerald-500/15 text-emerald-400"
-                        : "bg-neutral-800 text-neutral-400"
-                    }`}
-                  >
-                    {selectedTicket.status}
-                  </span>
-                  <span className="text-xs text-neutral-400">หมวดหมู่: {selectedTicket.category}</span>
-                  <span className="text-xs text-neutral-400">ระดับ: {selectedTicket.priority}</span>
-                </div>
-                <h2 className="text-lg font-bold text-white font-prompt">{selectedTicket.title}</h2>
-                <p className="text-xs text-neutral-400 mt-1">
-                  ผู้แจ้ง: {selectedTicket.user?.name} ({selectedTicket.user?.email}) • บทบาท: {selectedTicket.user?.role}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedTicket(null)}
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
+          {/* TAB: BROADCAST ANNOUNCEMENTS */}
+          {activeTab === "broadcast" && user.role === "SUPER_ADMIN" && (
+            <BroadcastTab totalUsers={overview?.metrics.totalUsers} />
+          )}
 
-            {/* Description Body */}
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-              <span className="text-[11px] text-neutral-400 block mb-1">รายละเอียดปัญหาที่แจ้ง:</span>
-              <p className="text-sm text-neutral-200 whitespace-pre-wrap leading-relaxed">
-                {selectedTicket.description}
-              </p>
-            </div>
-
-            {/* Admin Notes */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-300">
-                บันทึกการแก้ไข / หมายเหตุจากทีมงาน (Admin Notes)
-              </label>
-              <textarea
-                value={ticketAdminNotes}
-                onChange={(e) => setTicketAdminNotes(e.target.value)}
-                rows={3}
-                placeholder="ระบุข้อความบันทึก เช่น ได้ตรวจสอบและแก้ไขบั๊กภาพไม่โหลดแล้ว หรืออยู่ระหว่างรอผู้ใช้ตอบกลับ..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.03] border border-neutral-700 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white transition resize-none"
-              />
-            </div>
-
-            {/* Status Change Buttons */}
-            <div className="space-y-2 pt-2 border-t border-white/[0.08]">
-              <span className="text-xs text-neutral-400 block">เปลี่ยนสถานะปัญหา:</span>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  disabled={updatingTicketStatus}
-                  onClick={() => handleUpdateTicket(selectedTicket.id, "IN_PROGRESS")}
-                  className="px-3.5 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-xs font-semibold transition"
-                >
-                  กำลังตรวจสอบ (In Progress)
-                </button>
-                <button
-                  disabled={updatingTicketStatus}
-                  onClick={() => handleUpdateTicket(selectedTicket.id, "RESOLVED")}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition shadow-sm"
-                >
-                  แก้ไขแล้ว (Resolved)
-                </button>
-                <button
-                  disabled={updatingTicketStatus}
-                  onClick={() => handleUpdateTicket(selectedTicket.id, "CLOSED")}
-                  className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 text-xs transition"
-                >
-                  ปิดเรื่อง (Closed)
-                </button>
-                <button
-                  disabled={updatingTicketStatus}
-                  onClick={() => handleUpdateTicket(selectedTicket.id, "OPEN")}
-                  className="px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs transition"
-                >
-                  รอดำเนินการ (Open)
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* TAB: AUDIT LOGS */}
+          {activeTab === "auditLogs" && user.role === "SUPER_ADMIN" && (
+            <AuditLogsTab />
+          )}
         </div>
       )}
 
@@ -1528,6 +1320,26 @@ export default function AdminPage() {
             setUsersList((prev) =>
               prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
             );
+            fetchOverview();
+          }}
+        />
+      )}
+      {/* Story Moderation & Inspection Modal */}
+      {selectedStoryForModeration && (
+        <StoryModerationModal
+          story={selectedStoryForModeration}
+          currentAdminRole={user.role}
+          onClose={() => setSelectedStoryForModeration(null)}
+          onStoryUpdated={(updated) => {
+            setSelectedStoryForModeration((prev) => (prev ? { ...prev, ...updated } : null));
+            setStoriesList((prev) =>
+              prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+            );
+            fetchOverview();
+          }}
+          onStoryDeleted={(deletedId) => {
+            setSelectedStoryForModeration(null);
+            setStoriesList((prev) => prev.filter((item) => item.id !== deletedId));
             fetchOverview();
           }}
         />

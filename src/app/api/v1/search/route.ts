@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
+import { getCategoryMatchValues } from "@/lib/categories";
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,7 +19,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (category && category !== "ALL") {
-      where.category = category;
+      const matchValues = getCategoryMatchValues(category);
+      where.category = { in: matchValues };
     }
 
     if (q) {

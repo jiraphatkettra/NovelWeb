@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -22,13 +22,18 @@ import {
   X,
   Calendar,
   GripVertical,
-  UploadCloud,
-  ListOrdered,
-  ArrowUpDown,
+  FolderArchive,
+  FileArchive,
+  ArrowDownAZ,
+  RotateCcw,
+  Sparkles,
+  ExternalLink,
+  Loader2,
+  HardDrive,
+  DownloadCloud,
 } from "lucide-react";
 import { ImageUploadDropzone } from "@/components/common/ImageUploadDropzone";
 import { RichChapterEditor } from "@/components/author/RichChapterEditor";
-import { GoogleDriveImportModal } from "@/components/author/GoogleDriveImportModal";
 import { useToast } from "@/context/ToastContext";
 
 interface StoryInfo {
@@ -63,15 +68,21 @@ export default function ChapterEditorPage() {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
 
+  // Google Drive & ZIP Import states
+  const [driveUrl, setDriveUrl] = useState("");
+  const [isImportingDrive, setIsImportingDrive] = useState(false);
+  const [isUploadingZip, setIsUploadingZip] = useState(false);
+  const [importMode, setImportMode] = useState<"replace" | "append">("replace");
+  const zipInputRef = useRef<HTMLInputElement>(null);
+
   // Autosave & Recovery states
   const [saving, setSaving] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [recoveredFromLocal, setRecoveredFromLocal] = useState(false);
 
-  // Preview Modal & Google Drive Import state
+  // Preview Modal state
   const [showPreview, setShowPreview] = useState(false);
-  const [showDriveModal, setShowDriveModal] = useState(false);
 
   // Local storage key for disaster recovery
   const storageKey = `novelverse_draft_${storyId}_${chapterId}`;
@@ -266,34 +277,141 @@ export default function ChapterEditorPage() {
     setHasUnsavedChanges(true);
   };
 
-  const handleDriveImport = (newUrls: string[], append: boolean) => {
-    if (append) {
-      setImages((prev) => [...prev, ...newUrls]);
-    } else {
-      setImages(newUrls);
+  // Google Drive Import Handler
+  const handleImportGoogleDrive = async () => {
+    if (!driveUrl.trim()) {
+      toast.warning("กรุณาระบุลิงก์ Google Drive");
+      return;
     }
-    setHasUnsavedChanges(true);
+
+    setIsImportingDrive(true);
+    try {
+      const res = await fetch("/api/v1/author/manga/import-drive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          driveUrl: driveUrl.trim(),
+          storyId,
+          chapterId: isNew ? "temp" : chapterId,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error?.message || json.error || "ดึงข้อมูลจาก Google Drive ไม่สำเร็จ");
+      }
+
+      const importedImages: string[] =
+        json.data?.images || json.data?.pages?.map((p: any) => p.url) || [];
+      if (importedImages.length === 0) {
+        toast.warning("ไม่พบไฟล์ภาพในลิงก์ Google Drive ที่ระบุ");
+        return;
+      }
+
+      if (importMode === "replace" || images.length === 0) {
+        setImages(importedImages);
+      } else {
+        setImages((prev) => [...prev, ...importedImages]);
+      }
+
+      setHasUnsavedChanges(true);
+      setDriveUrl("");
+
+      const isZip = json.data?.extractedFromZip;
+      const fileLabel = json.data?.fileName ? ` (${json.data.fileName})` : "";
+      toast.success(
+        `ดึงภาพสำเร็จ ${importedImages.length} หน้า!${fileLabel}`,
+        isZip
+          ? "แตกไฟล์ ZIP และจัดเรียงหน้าตามลำดับตัวเลขอัตโนมัติเรียบร้อย"
+          : "จัดเรียงหน้าตามลำดับตัวเลขอัตโนมัติเรียบร้อย"
+      );
+    } catch (err: any) {
+      console.error("Google Drive import error:", err);
+      toast.error(
+        "ไม่สามารถดึงภาพจาก Google Drive ได้",
+        err.message || "กรุณาตรวจสอบว่าเปิดสิทธิ์แชร์เป็น 'ทุกคนที่มีลิงก์' (Anyone with the link) แล้วหรือไม่"
+      );
+    } finally {
+      setIsImportingDrive(false);
+    }
   };
 
-  const handleSortImagesNaturally = () => {
-    const sorted = [...images].sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-    );
+  // Direct ZIP File Upload Handler
+  const handleZipFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingZip(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("storyId", storyId);
+      formData.append("chapterId", isNew ? "temp" : chapterId);
+
+      const res = await fetch("/api/v1/author/manga/import-drive", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error?.message || json.error || "แตกไฟล์ ZIP ไม่สำเร็จ");
+      }
+
+      const importedImages: string[] =
+        json.data?.images || json.data?.pages?.map((p: any) => p.url) || [];
+      if (importedImages.length === 0) {
+        toast.warning("ไม่พบไฟล์ภาพในไฟล์ ZIP ที่เลือก");
+        return;
+      }
+
+      if (importMode === "replace" || images.length === 0) {
+        setImages(importedImages);
+      } else {
+        setImages((prev) => [...prev, ...importedImages]);
+      }
+
+      setHasUnsavedChanges(true);
+      toast.success(
+        `แตกไฟล์ ZIP สำเร็จ ${importedImages.length} หน้า! (${file.name})`,
+        "จัดเรียงลำดับหน้าตามตัวเลขอัตโนมัติแล้ว"
+      );
+    } catch (err: any) {
+      console.error("ZIP upload error:", err);
+      toast.error("แตกไฟล์ ZIP ไม่สำเร็จ", err.message || "เกิดข้อผิดพลาดในการประมวลผลไฟล์ ZIP");
+    } finally {
+      setIsUploadingZip(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  // Natural Auto-sort Handler
+  const handleAutoSortImages = () => {
+    if (images.length <= 1) {
+      toast.info("มีรูปภาพเพียง 1 หน้า ไม่จำเป็นต้องจัดเรียงใหม่");
+      return;
+    }
+
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+    const sorted = [...images].sort((a, b) => {
+      const nameA = a.split("/").pop() || a;
+      const nameB = b.split("/").pop() || b;
+      return collator.compare(nameA, nameB);
+    });
+
     setImages(sorted);
     setHasUnsavedChanges(true);
-    toast.success("จัดเรียงหน้าตามลำดับไฟล์เรียบร้อยแล้ว");
+    toast.success("จัดเรียงลำดับหน้าอัตโนมัติแล้ว", `เรียงหน้า 1 ถึง ${sorted.length} ตามตัวเลขในชื่อไฟล์`);
   };
 
-  const handleReverseImages = () => {
-    setImages([...images].reverse());
-    setHasUnsavedChanges(true);
-    toast.info("สลับลำดับหน้าเรียบร้อยแล้ว");
-  };
-
+  // Clear all images handler
   const handleClearAllImages = () => {
-    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างรูปภาพทั้งหมดในตอนนี้?")) return;
-    setImages([]);
-    setHasUnsavedChanges(true);
+    if (images.length === 0) return;
+    if (confirm(`คุณต้องการลบหน้าภาพทั้งหมด ${images.length} หน้าใช่หรือไม่?`)) {
+      setImages([]);
+      setHasUnsavedChanges(true);
+      toast.info("ล้างหน้าภาพทั้งหมดแล้ว");
+    }
   };
 
   if (loading || !story) {
@@ -508,55 +626,144 @@ export default function ChapterEditorPage() {
 
         {/* SECTION: MANGA PAGE UPLOADER */}
         {!isNovel && (
-          <div className="space-y-5">
-            {/* Google Drive Import Banner */}
-            <div className="p-4 rounded-xl bg-amber-400/[0.06] border border-amber-400/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
-                  <UploadCloud className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-zinc-100 font-prompt">
-                      นำเข้าและแตกไฟล์จาก Google Drive อัตโนมัติ (.ZIP / .CBZ / โฟลเดอร์)
-                    </h4>
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-400 text-zinc-950">
-                      แตกไฟล์ให้เอง
-                    </span>
+          <div className="space-y-6">
+            {/* GOOGLE DRIVE & ARCHIVE IMPORT HERO CARD */}
+            <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#18181c] via-[#121215] to-[#0d0d10] border border-white/[0.12] shadow-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 flex items-center justify-center text-[#FFE600] flex-shrink-0">
+                    <FolderArchive className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] text-zinc-400">
-                    วางลิงก์ไฟล์ .ZIP / .CBZ หรือโฟลเดอร์ ระบบจะดาวน์โหลด แตกไฟล์ จัดเรียงหน้าตามลำดับ และใส่ลงตอนให้อัตโนมัติทันที
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-white font-prompt">
+                        นำเข้าภาพมังงะจาก Google Drive หรือไฟล์ ZIP
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full bg-[#FFE600]/20 border border-[#FFE600]/40 text-[#FFE600] text-[10px] font-bold flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Auto-Extract & Auto-Sort
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      ดึงไฟล์จาก Google Drive และแตกไฟล์ .ZIP ให้อัตโนมัติ พร้อมจัดเรียงลำดับหน้า 1, 2, 10... ตามตัวเลขในชื่อไฟล์ทันที
+                    </p>
+                  </div>
+                </div>
+
+                {/* Import Mode: Replace vs Append */}
+                <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/[0.06] text-xs self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setImportMode("replace")}
+                    className={`px-3 py-1.5 rounded-lg font-medium transition ${
+                      importMode === "replace"
+                        ? "bg-[#FFE600] text-black font-bold shadow-sm"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    แทนที่หน้าเดิมทั้งหมด
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImportMode("append")}
+                    className={`px-3 py-1.5 rounded-lg font-medium transition ${
+                      importMode === "append"
+                        ? "bg-[#FFE600] text-black font-bold shadow-sm"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    เพิ่มต่อท้ายหน้าเดิม
+                  </button>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowDriveModal(true)}
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs transition active:scale-95 flex items-center gap-1.5 shrink-0 shadow-sm font-prompt"
-              >
-                <UploadCloud className="w-4 h-4" />
-                <span>นำเข้า & แตกไฟล์ Google Drive</span>
-              </button>
+              {/* Input Area: Google Drive URL & Actions */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="url"
+                      value={driveUrl}
+                      onChange={(e) => setDriveUrl(e.target.value)}
+                      placeholder="วางลิงก์ Google Drive (เช่น https://drive.google.com/file/d/... หรือ drive.google.com/open?id=...)"
+                      disabled={isImportingDrive || isUploadingZip}
+                      className="w-full px-4 py-2.5 pl-10 rounded-xl bg-black/70 border border-white/[0.12] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] disabled:opacity-50 transition"
+                    />
+                    <HardDrive className="w-4 h-4 text-[#FFE600] absolute left-3.5 top-3" />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleImportGoogleDrive}
+                    disabled={isImportingDrive || !driveUrl.trim()}
+                    className="px-5 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] disabled:opacity-50 text-black font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-[#FFE600]/10 flex-shrink-0"
+                  >
+                    {isImportingDrive ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>กำลังดึงและแตกไฟล์...</span>
+                      </>
+                    ) : (
+                      <>
+                        <DownloadCloud className="w-4 h-4" />
+                        <span>ดึงภาพและแตกไฟล์</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => zipInputRef.current?.click()}
+                    disabled={isUploadingZip || isImportingDrive}
+                    className="px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] disabled:opacity-50 text-white font-medium text-xs transition flex items-center justify-center gap-2 flex-shrink-0"
+                  >
+                    {isUploadingZip ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#FFE600]" />
+                        <span>กำลังแตกไฟล์ ZIP...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileArchive className="w-4 h-4 text-[#FFE600]" />
+                        <span>เลือกไฟล์ .ZIP จากเครื่อง</span>
+                      </>
+                    )}
+                  </button>
+                  <input
+                    ref={zipInputRef}
+                    type="file"
+                    accept=".zip,application/zip,application/x-zip-compressed"
+                    onChange={handleZipFileUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-neutral-400 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.05]">
+                  <AlertCircle className="w-3.5 h-3.5 text-[#FFE600] flex-shrink-0" />
+                  <span>
+                    <strong>คำแนะนำ:</strong> สำหรับ Google Drive กรุณาตั้งค่าแชร์ไฟล์เป็น <strong>&quot;ทุกคนที่มีลิงก์ (Anyone with the link)&quot;</strong> เพื่อให้ระบบดึงข้อมูลได้ทันที หากเป็นไฟล์ ZIP ระบบจะคลายซิปและเรียงหน้าให้อัตโนมัติ
+                  </span>
+                </div>
+              </div>
             </div>
 
+            {/* MANUAL UPLOAD SECTION */}
             <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
               <h3 className="text-xs font-bold text-white font-prompt flex items-center gap-2">
-                <Upload className="w-4 h-4 text-amber-400" />
-                <span>อัปโหลดหน้าภาพจากเครื่อง (ลากไฟล์หลายภาพพร้อมกันได้ เรียงตามชื่อไฟล์อัตโนมัติ)</span>
+                <Upload className="w-4 h-4 text-[#FFE600]" />
+                <span>หรืออัปโหลดรูปภาพทีละหลายไฟล์ (Drag & Drop พร้อมเรียงหน้าอัตโนมัติ)</span>
               </h3>
 
               <ImageUploadDropzone
                 multiple={true}
-                maxFiles={500}
-                hidePreview={true}
                 value={images}
                 onChange={(urls) => {
-                  setImages(Array.isArray(urls) ? urls : [urls]);
+                  const newUrls = Array.isArray(urls) ? urls : [urls];
+                  setImages(newUrls);
                   setHasUnsavedChanges(true);
                 }}
                 label=""
-                helperText="ลากไฟล์ภาพหลายไฟล์พร้อมกันมาวาง หรือลากไฟล์ .ZIP / .CBZ มาวาง ระบบจะแตกไฟล์และจัดเรียงหน้าตามลำดับไฟล์ให้อัตโนมัติ"
+                helperText="ลากไฟล์ภาพหลายไฟล์พร้อมกันมาวาง หรือคลิกเลือกไฟล์ (JPG, PNG, WebP) ขนาดไม่เกิน 10MB ต่อรูป ระบบจะเรียงตามตัวเลขอัตโนมัติ"
                 aspectRatio="auto"
               />
 
@@ -568,12 +775,12 @@ export default function ChapterEditorPage() {
                     value={newImageUrl}
                     onChange={(e) => setNewImageUrl(e.target.value)}
                     placeholder="ใส่ URL รูปภาพหน้ามังงะ..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-amber-400"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
                   />
                   <button
                     type="button"
                     onClick={handleAddImage}
-                    className="px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs transition flex items-center gap-1.5 font-prompt"
+                    className="px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>เพิ่มหน้านี้</span>
@@ -584,58 +791,57 @@ export default function ChapterEditorPage() {
 
             {/* Thumbnail Grid & Reorder */}
             <div>
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-bold text-white font-prompt">
                     ลำดับหน้าทั้งหมด ({images.length} หน้า)
                   </h4>
-                  <span className="text-[11px] text-neutral-400 hidden sm:inline">
-                    · ลากการ์ดเพื่อสลับตำแหน่ง
-                  </span>
+                  {images.length > 0 && (
+                    <span className="text-[11px] text-neutral-400 flex items-center gap-1">
+                      <GripVertical className="w-3 h-3 text-[#FFE600]" />
+                      <span>ลากการ์ดสลับลำดับได้ หรือกดปุ่มลูกศร</span>
+                    </span>
+                  )}
                 </div>
 
                 {images.length > 0 && (
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={handleSortImagesNaturally}
-                      className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] text-zinc-300 flex items-center gap-1 transition"
-                      title="จัดเรียงหน้าตามชื่อไฟล์อัตโนมัติ (1, 2, ... 10, 11)"
+                      onClick={handleAutoSortImages}
+                      title="จัดเรียงหน้าตามลำดับตัวเลขอัตโนมัติ (เช่น 1, 2, 10)"
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#FFE600] hover:text-black text-[#FFE600] text-xs font-bold transition flex items-center gap-1.5 border border-[#FFE600]/30"
                     >
-                      <ListOrdered className="w-3 h-3 text-amber-400" />
-                      <span>เรียง 1→10</span>
+                      <ArrowDownAZ className="w-3.5 h-3.5" />
+                      <span>เรียงหน้าตามตัวเลขอัตโนมัติ</span>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={handleReverseImages}
-                      className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] text-zinc-300 flex items-center gap-1 transition"
-                      title="สลับลำดับหน้าย้อนกลับ"
-                    >
-                      <ArrowUpDown className="w-3 h-3" />
-                      <span>สลับกลับด้าน</span>
-                    </button>
-
                     <button
                       type="button"
                       onClick={handleClearAllImages}
-                      className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-rose-950/40 border border-white/[0.08] hover:border-rose-800/40 text-[11px] text-rose-400 flex items-center gap-1 transition"
                       title="ลบหน้าภาพทั้งหมด"
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-neutral-400 hover:text-rose-400 text-xs transition flex items-center gap-1"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>ลบทั้งหมด</span>
+                      <span>ล้างทั้งหมด</span>
                     </button>
                   </div>
                 )}
               </div>
 
               {images.length === 0 ? (
-                <div className="p-10 text-center rounded-xl bg-white/[0.02] border border-dashed border-white/[0.08]">
-                  <Upload className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
-                  <p className="text-xs text-neutral-400">ยังไม่มีหน้าภาพในตอนนี้ สามารถอัปโหลดหรือนำเข้าจาก Google Drive ด้านบน</p>
+                <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-dashed border-white/[0.08] space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-neutral-400 mx-auto">
+                    <Upload className="w-6 h-6 text-[#FFE600]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">ยังไม่มีหน้าภาพในตอนนี้</p>
+                    <p className="text-xs text-neutral-400 mt-1 max-w-md mx-auto">
+                      วางลิงก์ Google Drive ด้านบนเพื่อดึงภาพและแตกไฟล์ ZIP อัตโนมัติ หรือลากไฟล์ภาพหลายไฟล์พร้อมกันมาวางในช่องอัปโหลด
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {images.map((imgUrl, idx) => (
                     <div
                       key={idx}
@@ -664,25 +870,13 @@ export default function ChapterEditorPage() {
                           : "border-white/[0.08] hover:border-white/20"
                       }`}
                     >
-                      <div className="aspect-[3/4] rounded-lg overflow-hidden bg-neutral-900 relative flex items-center justify-center">
+                      <div className="aspect-[3/4] rounded-lg overflow-hidden bg-neutral-900 relative">
                         <img
                           src={imgUrl}
                           alt={`Page ${idx + 1}`}
                           className="w-full h-full object-cover pointer-events-none"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                            const parent = e.currentTarget.parentElement;
-                            if (parent && !parent.querySelector(".img-err-badge")) {
-                              const badge = document.createElement("div");
-                              badge.className =
-                                "img-err-badge absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-rose-950/80 text-rose-300 text-xs";
-                              badge.innerHTML =
-                                '<span class="font-bold">❌ โหลดภาพไม่สำเร็จ</span><span class="text-[10px] text-zinc-400 mt-1">ไฟล์อาจไม่ใช่ภาพหรือลิงก์หมดอายุ</span>';
-                              parent.appendChild(badge);
-                            }
-                          }}
                         />
-                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono font-bold text-white z-10">
+                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono font-bold text-white border border-white/10">
                           หน้า {idx + 1}
                         </span>
                       </div>
@@ -772,14 +966,6 @@ export default function ChapterEditorPage() {
           </div>
         </div>
       )}
-
-      {/* Google Drive Import Modal */}
-      <GoogleDriveImportModal
-        isOpen={showDriveModal}
-        onClose={() => setShowDriveModal(false)}
-        onImport={handleDriveImport}
-        currentCount={images.length}
-      />
     </div>
   );
 }

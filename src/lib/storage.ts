@@ -1,6 +1,6 @@
 import path from "path";
 import { writeFile, mkdir } from "fs/promises";
-import crypto from "crypto";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 export interface UploadResult {
   url: string;
@@ -8,8 +8,25 @@ export interface UploadResult {
   fileName: string;
 }
 
+// Global cached S3Client instance for Cloudflare R2
+let s3Client: S3Client | null = null;
+
+function getS3Client(accountId: string, accessKey: string, secretKey: string): S3Client {
+  if (!s3Client) {
+    s3Client = new S3Client({
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: accessKey,
+        secretAccessKey: secretKey,
+      },
+    });
+  }
+  return s3Client;
+}
+
 /**
- * Uploads a file buffer to Cloudflare R2 / AWS S3 if credentials exist,
+ * Uploads a file buffer to Cloudflare R2 via AWS SDK if credentials exist,
  * or falls back to local disk storage (`public/uploads`) for local development.
  */
 export async function uploadFileToStorage(
@@ -17,74 +34,61 @@ export async function uploadFileToStorage(
   fileName: string,
   mimeType: string
 ): Promise<UploadResult> {
-  const r2AccountId = process.env.R2_ACCOUNT_ID;
-  const r2AccessKey = process.env.R2_ACCESS_KEY_ID;
-  const r2SecretKey = process.env.R2_SECRET_ACCESS_KEY;
-  const r2BucketName = process.env.R2_BUCKET_NAME;
-  const r2PublicUrl = process.env.R2_PUBLIC_URL; // e.g. https://media.readverse.app or pub-xxx.r2.dev
+  // Support all common Cloudflare R2 environment variable naming conventions
+  const r2AccountId =
+    process.env.R2_ACCOUNT_ID ||
+    process.env.CLOUDFLARE_R2_ACCOUNT_ID ||
+    process.env.CLOUDFLARE_ACCOUNT_ID;
+  const r2AccessKey =
+    process.env.R2_ACCESS_KEY_ID || process.env.CLOUDFLARE_R2_ACCESS_KEY_ID;
+  const r2SecretKey =
+    process.env.R2_SECRET_ACCESS_KEY || process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
+  const r2BucketName =
+    process.env.R2_BUCKET_NAME ||
+    process.env.CLOUDFLARE_R2_BUCKET_NAME ||
+    process.env.R2_BUCKET;
+  const r2PublicUrl =
+    process.env.R2_PUBLIC_URL || process.env.CLOUDFLARE_R2_PUBLIC_URL;
 
-  // 1. Cloudflare R2 / S3 Upload (If credentials configured)
+  // 1. Cloudflare R2 Upload via AWS SDK (S3-compatible)
   if (r2AccountId && r2AccessKey && r2SecretKey && r2BucketName) {
     try {
-      const endpoint = `https://${r2AccountId}.r2.cloudflarestorage.com/${r2BucketName}/${fileName}`;
-      const host = `${r2AccountId}.r2.cloudflarestorage.com`;
-      const region = "auto";
-      const service = "s3";
+      const s3 = getS3Client(r2AccountId, r2AccessKey, r2SecretKey);
 
-      // AWS SigV4 Headers
-      const date = new Date();
-      const amzDate = date.toISOString().replace(/[:-]|\.\d{3}/g, "");
-      const dateStamp = amzDate.slice(0, 8);
+      // Clean ASCII key for S3/R2 compatibility
+      const cleanKey = fileName.replace(/[^a-zA-Z0-9_\-\.\/]/g, "_");
 
-      const payloadHash = crypto.createHash("sha256").update(buffer).digest("hex");
-      const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-      const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: r2BucketName,
+          Key: cleanKey,
+          Body: buffer,
+          ContentType: mimeType,
+        })
+      );
 
-      const canonicalRequest = `PUT\n/${r2BucketName}/${fileName}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-      const canonicalRequestHash = crypto.createHash("sha256").update(canonicalRequest).digest("hex");
+      const publicBase = r2PublicUrl
+        ? r2PublicUrl.replace(/\/$/, "")
+        : `https://${r2BucketName}.${r2AccountId}.r2.dev`;
 
-      const algorithm = "AWS4-HMAC-SHA256";
-      const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
-      const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${canonicalRequestHash}`;
-
-      // Calculate Signing Key
-      const kDate = crypto.createHmac("sha256", `AWS4${r2SecretKey}`).update(dateStamp).digest();
-      const kRegion = crypto.createHmac("sha256", kDate).update(region).digest();
-      const kService = crypto.createHmac("sha256", kRegion).update(service).digest();
-      const kSigning = crypto.createHmac("sha256", kService).update("aws4_request").digest();
-      const signature = crypto.createHmac("sha256", kSigning).update(stringToSign).digest("hex");
-
-      const authorizationHeader = `${algorithm} Credential=${r2AccessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-      const res = await fetch(endpoint, {
-        method: "PUT",
-        headers: {
-          "Content-Type": mimeType,
-          "x-amz-date": amzDate,
-          "x-amz-content-sha256": payloadHash,
-          "Authorization": authorizationHeader,
-        },
-        body: new Uint8Array(buffer),
-      });
-
-      if (res.ok) {
-        const publicBase = r2PublicUrl ? r2PublicUrl.replace(/\/$/, "") : `https://${r2BucketName}.${r2AccountId}.r2.dev`;
-        return {
-          url: `${publicBase}/${fileName}`,
-          provider: "cloudflare-r2",
-          fileName,
-        };
-      } else {
-        console.warn(`R2 upload responded with ${res.status}. Falling back to local storage.`);
+      return {
+        url: `${publicBase}/${cleanKey}`,
+        provider: "cloudflare-r2",
+        fileName: cleanKey,
+      };
+    } catch (r2Err: any) {
+      console.error("Cloudflare R2 upload error via AWS SDK:", r2Err);
+      // If on Vercel and R2 failed, throw descriptive error so user knows R2 credentials/bucket need check
+      if (process.env.VERCEL) {
+        throw new Error(
+          `อัปโหลดไปยัง Cloudflare R2 ล้มเหลว (${r2Err?.name || "R2Error"}: ${r2Err?.message || "กรุณาตรวจสอบการตั้งค่า R2 บน Vercel"})`
+        );
       }
-    } catch (r2Err) {
-      console.warn("R2 upload error, falling back to local storage:", r2Err);
     }
   }
 
   // 2. Local File System or Serverless Fallback
-  // On Vercel serverless functions, the file system is read-only (/var/task).
-  // If R2 is not yet configured, gracefully fall back to base64 Data URI so avatars and images upload seamlessly.
+  // On Vercel without R2 credentials:
   if (process.env.VERCEL) {
     const base64 = buffer.toString("base64");
     return {
@@ -94,16 +98,18 @@ export async function uploadFileToStorage(
     };
   }
 
+  // Local development disk storage
   try {
     const uploadDir = path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, fileName);
+    const cleanName = path.basename(fileName);
+    const filePath = path.join(uploadDir, cleanName);
     await writeFile(filePath, buffer);
 
     return {
-      url: `/uploads/${fileName}`,
+      url: `/uploads/${cleanName}`,
       provider: "local",
-      fileName,
+      fileName: cleanName,
     };
   } catch (fsErr: any) {
     console.warn("Disk write failed, using data URI fallback:", fsErr?.message);

@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Lock,
   Coins,
   Sparkles,
@@ -43,6 +44,13 @@ interface MangaChapterData {
   imageUrls?: string[] | null;
   prevChapter?: { id: string; chapterNumber: number; title: string } | null;
   nextChapter?: { id: string; chapterNumber: number; title: string } | null;
+  allChapters?: Array<{
+    id: string;
+    chapterNumber: number;
+    title: string;
+    isFree: boolean;
+    coinPrice: number;
+  }>;
 }
 
 export function MangaReader({ initialChapter }: { initialChapter: MangaChapterData }) {
@@ -54,6 +62,29 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
   const [unlocking, setUnlocking] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  // Keyboard navigation for previous/next chapter (ArrowLeft / ArrowRight)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft" && chapter.prevChapter) {
+        router.push(`/reader/manga/${chapter.prevChapter.id}`);
+      } else if (e.key === "ArrowRight" && chapter.nextChapter) {
+        router.push(`/reader/manga/${chapter.nextChapter.id}`);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [chapter.prevChapter, chapter.nextChapter, router]);
 
   // Monitor scroll for Scroll-to-Top Floating Button
   useEffect(() => {
@@ -193,6 +224,76 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
   };
 
   const userTotalCoins = (user?.wallet?.paidBalance || 0) + (user?.wallet?.freeBalance || 0);
+
+  // Clean Chapter Navigator (Previous, Chapter Selector, Next) with ZERO cluttered icons in between
+  const renderChapterNavigator = () => (
+    <div className="w-full flex items-center justify-between gap-2 sm:gap-3">
+      {/* Previous Chapter Button */}
+      {chapter.prevChapter ? (
+        <Link
+          href={`/reader/manga/${chapter.prevChapter.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 text-zinc-200 hover:text-white text-xs font-semibold transition shrink-0 active:scale-95"
+          title="ตอนก่อนหน้า (หรือกดลูกศรซ้าย ←)"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="hidden min-[400px]:inline">ตอนก่อนหน้า</span>
+          <span className="min-[400px]:hidden">ก่อนหน้า</span>
+        </Link>
+      ) : (
+        <div className="text-xs text-zinc-600 px-3 py-2 shrink-0 select-none font-medium">
+          ตอนแรกสุด
+        </div>
+      )}
+
+      {/* Chapter Dropdown Selector — Pure & Clean, NO cluttered icons in between */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex-1 min-w-0 max-w-[240px] sm:max-w-[300px]"
+      >
+        <select
+          value={chapter.id}
+          onChange={(e) => {
+            if (e.target.value && e.target.value !== chapter.id) {
+              router.push(`/reader/manga/${e.target.value}`);
+            }
+          }}
+          className="w-full bg-white/[0.06] hover:bg-white/[0.1] focus:bg-zinc-900 border border-white/15 focus:border-[#8B5CF6] rounded-xl px-2.5 sm:px-3 py-2 text-xs font-semibold text-zinc-200 truncate appearance-none cursor-pointer outline-none transition text-center pr-7 font-prompt"
+        >
+          {chapter.allChapters && chapter.allChapters.length > 0 ? (
+            chapter.allChapters.map((c) => (
+              <option key={c.id} value={c.id} className="bg-zinc-900 text-white py-1.5">
+                ตอนที่ {c.chapterNumber}: {c.title}
+              </option>
+            ))
+          ) : (
+            <option value={chapter.id} className="bg-zinc-900 text-white">
+              ตอนที่ {chapter.chapterNumber}: {chapter.title}
+            </option>
+          )}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+      </div>
+
+      {/* Next Chapter Button */}
+      {chapter.nextChapter ? (
+        <Link
+          href={`/reader/manga/${chapter.nextChapter.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition shrink-0 active:scale-95 shadow-md shadow-[#8B5CF6]/30"
+          title="ตอนถัดไป (หรือกดลูกศรขวา →)"
+        >
+          <span className="hidden min-[400px]:inline">ตอนถัดไป</span>
+          <span className="min-[400px]:hidden">ถัดไป</span>
+          <ChevronRight className="w-4 h-4" />
+        </Link>
+      ) : (
+        <div className="text-xs text-zinc-600 px-3 py-2 shrink-0 select-none font-medium">
+          ตอนล่าสุด
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div
@@ -340,40 +441,9 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           </div>
         )}
 
-        {/* Chapter Navigation Footer */}
-        <div className="w-full max-w-3xl my-8 sm:my-10 px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-4">
-          {chapter.prevChapter ? (
-            <Link
-              href={`/reader/manga/${chapter.prevChapter.id}`}
-              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium transition shrink-0 active:scale-95"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="hidden min-[380px]:inline">ตอนก่อนหน้า</span>
-              <span className="min-[380px]:hidden">ก่อนหน้า</span>
-            </Link>
-          ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-2 sm:px-3.5 py-2 shrink-0">ตอนแรกสุด</div>
-          )}
-
-          <Link
-            href={`/stories/${chapter.story.slug}`}
-            className="px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 text-xs font-medium transition text-center truncate active:scale-95"
-          >
-            สารบัญตอน
-          </Link>
-
-          {chapter.nextChapter ? (
-            <Link
-              href={`/reader/manga/${chapter.nextChapter.id}`}
-              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition shrink-0 active:scale-95 shadow-md shadow-[#8B5CF6]/20"
-            >
-              <span className="hidden min-[380px]:inline">ตอนถัดไป</span>
-              <span className="min-[380px]:hidden">ถัดไป</span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          ) : (
-            <div className="text-xs opacity-30 cursor-not-allowed px-2 sm:px-3.5 py-2 shrink-0">ตอนล่าสุด</div>
-          )}
+        {/* Chapter Navigation Footer — Clean & uncluttered */}
+        <div className="w-full max-w-xl my-8 sm:my-10 px-3 sm:px-4">
+          {renderChapterNavigator()}
         </div>
 
         {/* Real Chapter Comments with generous bottom gap */}
@@ -386,11 +456,22 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
         </div>
       </main>
 
+      {/* Floating Bottom Chapter Navigator — Smoothly toggle with tap/click (controls visible) */}
+      <div
+        className={`fixed bottom-4 sm:bottom-6 inset-x-0 mx-auto z-40 max-w-lg px-4 transition-all duration-300 pointer-events-none ${
+          showControls ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
+        }`}
+      >
+        <div className="bg-[#121215]/92 backdrop-blur-xl border border-white/15 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.7)] p-2 sm:p-2.5 pointer-events-auto">
+          {renderChapterNavigator()}
+        </div>
+      </div>
+
       {/* Floating Scroll to Top Button */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-4 sm:bottom-10 sm:right-10 z-40 flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-[#121215]/90 hover:bg-[#8B5CF6] border border-white/20 hover:border-[#8B5CF6] text-neutral-300 hover:text-white font-prompt text-xs font-bold shadow-2xl backdrop-blur-md transition-all duration-300 active:scale-95 group hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] animate-in fade-in slide-in-from-bottom-3"
+          className="fixed bottom-20 right-4 sm:bottom-24 sm:right-8 z-40 flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-[#121215]/90 hover:bg-[#8B5CF6] border border-white/20 hover:border-[#8B5CF6] text-neutral-300 hover:text-white font-prompt text-xs font-bold shadow-2xl backdrop-blur-md transition-all duration-300 active:scale-95 group hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] animate-in fade-in slide-in-from-bottom-3"
           title="เลื่อนขึ้นบนสุด"
         >
           <ArrowUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />

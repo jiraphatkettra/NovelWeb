@@ -76,8 +76,8 @@ export async function GET(
       }
     }
 
-    // Fetch sibling chapters for Prev / Next navigation
-    const [prevChapter, nextChapter] = await Promise.all([
+    // Fetch sibling chapters for Prev / Next navigation and full chapter list for switcher
+    const [prevChapter, nextChapter, allChapters] = await Promise.all([
       prisma.chapter.findFirst({
         where: {
           storyId: chapter.storyId,
@@ -91,6 +91,14 @@ export async function GET(
         where: {
           storyId: chapter.storyId,
           chapterNumber: { gt: chapter.chapterNumber },
+          status: "PUBLISHED",
+        },
+        orderBy: { chapterNumber: "asc" },
+        select: { id: true, chapterNumber: true, title: true, isFree: true, coinPrice: true },
+      }),
+      prisma.chapter.findMany({
+        where: {
+          storyId: chapter.storyId,
           status: "PUBLISHED",
         },
         orderBy: { chapterNumber: "asc" },
@@ -140,6 +148,7 @@ export async function GET(
         imageUrls: null,
         prevChapter,
         nextChapter,
+        allChapters,
       });
     }
 
@@ -166,6 +175,7 @@ export async function GET(
       imageUrls: parsedImageUrls,
       prevChapter,
       nextChapter,
+      allChapters,
     });
   } catch (error) {
     console.error("Chapter content fetch error:", error);

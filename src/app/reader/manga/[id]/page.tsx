@@ -47,7 +47,7 @@ export default async function MangaReaderPage({
     if (purchase) isUnlocked = true;
   }
 
-  const [prevChapter, nextChapter] = await Promise.all([
+  const [prevChapter, nextChapter, allChapters] = await Promise.all([
     prisma.chapter.findFirst({
       where: {
         storyId: chapter.storyId,
@@ -65,6 +65,14 @@ export default async function MangaReaderPage({
       },
       orderBy: { chapterNumber: "asc" },
       select: { id: true, chapterNumber: true, title: true },
+    }),
+    prisma.chapter.findMany({
+      where: {
+        storyId: chapter.storyId,
+        status: "PUBLISHED",
+      },
+      orderBy: { chapterNumber: "asc" },
+      select: { id: true, chapterNumber: true, title: true, isFree: true, coinPrice: true },
     }),
   ]);
 
@@ -89,6 +97,7 @@ export default async function MangaReaderPage({
     imageUrls: parsedImageUrls,
     prevChapter,
     nextChapter,
+    allChapters,
   };
 
   let r2Origin = "";

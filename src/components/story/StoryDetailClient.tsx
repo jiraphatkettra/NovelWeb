@@ -20,6 +20,7 @@ import {
   Clock,
   Gift,
   X,
+  Heart,
 } from "lucide-react";
 import { AuthorFollowButton } from "@/components/author/AuthorFollowButton";
 import { CommentSection } from "@/components/story/CommentSection";
@@ -40,6 +41,8 @@ interface StoryDetail {
   tags: string;
   contentRating: string;
   viewsCount: number;
+  likesCount?: number;
+  isLiked?: boolean;
   ratingAverage: number;
   ratingsCount: number;
   isBookmarked: boolean;
@@ -70,6 +73,9 @@ export function StoryDetailClient({ slug }: { slug: string }) {
   const [story, setStory] = useState<StoryDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [likesCount, setLikesCount] = useState<number>(0);
+  const [isLiked, setIsLiked] = useState<boolean>(false);
+  const [liking, setLiking] = useState<boolean>(false);
   const [userRating, setUserRating] = useState<number>(5);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [showAgeModal, setShowAgeModal] = useState(false);
@@ -137,6 +143,8 @@ export function StoryDetailClient({ slug }: { slug: string }) {
       if (json.success && json.data) {
         setStory(json.data);
         setIsBookmarked(json.data.isBookmarked);
+        setLikesCount(json.data.likesCount || 0);
+        setIsLiked(!!json.data.isLiked);
         if (json.data.userRating) setUserRating(json.data.userRating);
       }
     } catch {
@@ -149,6 +157,47 @@ export function StoryDetailClient({ slug }: { slug: string }) {
   useEffect(() => {
     fetchStory();
   }, [slug]);
+
+  const handleToggleLike = async () => {
+    if (!user) {
+      toast.info("กรุณาเข้าสู่ระบบ", "เข้าสู่ระบบก่อนกดไลค์มังงะ");
+      openAuthModal("LOGIN");
+      return;
+    }
+    if (!story || liking) return;
+
+    const prevLiked = isLiked;
+    const prevCount = likesCount;
+
+    // Optimistic update
+    setIsLiked(!prevLiked);
+    setLikesCount(prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
+    setLiking(true);
+
+    try {
+      const res = await fetch(`/api/v1/stories/${story.id}/like`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (json.success) {
+        setIsLiked(json.data.isLiked);
+        setLikesCount(json.data.likesCount);
+        if (json.data.isLiked) {
+          toast.success("ถูกใจแล้ว!", "ขอบคุณที่ให้กำลังใจมังงะเรื่องนี้");
+        }
+      } else {
+        setIsLiked(prevLiked);
+        setLikesCount(prevCount);
+        toast.error("ไม่สามารถกดไลค์ได้", json.error?.message);
+      }
+    } catch {
+      setIsLiked(prevLiked);
+      setLikesCount(prevCount);
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    } finally {
+      setLiking(false);
+    }
+  };
 
   const handleBookmarkToggle = async () => {
     if (!user) {
@@ -286,6 +335,23 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                 </button>
               )}
 
+              {/* Like Manga Button */}
+              <button
+                onClick={handleToggleLike}
+                disabled={liking}
+                className={`w-full py-2.5 rounded-xl border flex items-center justify-center gap-2 text-sm font-medium transition active:scale-[0.98] ${
+                  isLiked
+                    ? "bg-rose-500/15 border-rose-500/40 text-rose-400"
+                    : "bg-kakao-card border-kakao-border text-neutral-300 hover:border-rose-500/30 hover:text-rose-300"
+                }`}
+              >
+                <Heart className={`w-4 h-4 transition-transform ${isLiked ? "fill-rose-500 text-rose-500 scale-110" : ""}`} />
+                <span>{isLiked ? "ถูกใจแล้ว" : "กดไลค์เรื่องนี้"}</span>
+                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-white/5 ml-0.5">
+                  {likesCount.toLocaleString()}
+                </span>
+              </button>
+
               <button
                 onClick={handleBookmarkToggle}
                 className={`w-full py-2.5 rounded-xl border flex items-center justify-center gap-2 text-sm font-medium transition ${
@@ -339,9 +405,13 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                   <span className="font-medium">{story.author.penName || story.author.name}</span>
                 </Link>
                 <AuthorFollowButton authorId={story.author.id} authorName={story.author.penName || story.author.name} />
-                <span className="flex items-center gap-1">
-                  <Eye className="w-3.5 h-3.5" />
-                  {story.viewsCount.toLocaleString()}
+                <span className="flex items-center gap-1.5 text-neutral-300" title="ยอดอ่านทั้งหมด">
+                  <Eye className="w-3.5 h-3.5 text-sky-400" />
+                  <strong className="text-white font-semibold">{story.viewsCount.toLocaleString()}</strong> ยอดอ่าน
+                </span>
+                <span className="flex items-center gap-1.5 text-neutral-300" title="ยอดไลค์ทั้งหมด">
+                  <Heart className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : "text-rose-400"}`} />
+                  <strong className="text-white font-semibold">{likesCount.toLocaleString()}</strong> ไลค์
                 </span>
                 <span className="flex items-center gap-1 text-white font-semibold">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />

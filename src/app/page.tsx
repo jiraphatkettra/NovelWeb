@@ -12,6 +12,8 @@ import {
   Clock,
   Eye,
   PenTool,
+  Heart,
+  Flame,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAuthModal } from "@/context/AuthModalContext";
@@ -32,6 +34,8 @@ interface StoryItem {
   category: string;
   contentRating: string;
   viewsCount: number;
+  weeklyViewsCount?: number;
+  likesCount?: number;
   ratingAverage: number;
   ratingsCount: number;
   isFeatured: boolean;
@@ -239,9 +243,9 @@ function HomePageContent() {
     }
   }, [featuredStories.length, activeHeroIndex]);
 
-  // Top rankings
+  // Top weekly rankings: Sorted strictly by reads (weekly views / views count) WITHOUT caring about likes!
   const rankingStories = [...stories]
-    .sort((a, b) => ((b.viewsCount ?? 0) * (b.ratingAverage ?? 5)) - ((a.viewsCount ?? 0) * (a.ratingAverage ?? 5)))
+    .sort((a, b) => ((b.weeklyViewsCount || b.viewsCount || 0) - (a.weeklyViewsCount || a.viewsCount || 0)))
     .slice(0, 10);
 
   // Hero auto-advance with Ken Burns key reset
@@ -551,10 +555,18 @@ function HomePageContent() {
             className={rankingReveal.isVisible ? "reveal-visible" : "reveal-hidden"}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white font-prompt">
-                <span className="section-title-underline">อันดับยอดนิยม</span>
-              </h2>
-              <span className="text-[11px] text-neutral-500">ผลงานที่มีผู้อ่านสูงสุด</span>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Flame className="w-4 h-4 fill-amber-400" />
+                </div>
+                <h2 className="text-lg font-bold text-white font-prompt">
+                  <span className="section-title-underline">เรื่องยอดฮิตประจำสัปดาห์</span>
+                </h2>
+              </div>
+              <span className="text-[11px] text-neutral-400 flex items-center gap-1">
+                <Eye className="w-3 h-3 text-sky-400" />
+                <span>จัดอันดับตามยอดอ่านสูงสุด</span>
+              </span>
             </div>
 
             {loading && stories.length === 0 ? (
@@ -600,9 +612,15 @@ function HomePageContent() {
                       <p className="text-[11px] text-neutral-500 truncate mt-0.5">
                         {story.author?.penName || story.author?.name || "ไม่ระบุนามปากกา"}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-neutral-500">
-                        <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                        <AnimatedNumber value={story.ratingAverage ?? 5} decimals={1} className="text-white" />
+                      <div className="flex items-center gap-2.5 mt-1.5 text-[10px] text-neutral-400">
+                        <span className="flex items-center gap-1" title="ยอดอ่านทั้งหมด">
+                          <Eye className="w-3 h-3 text-sky-400" />
+                          <span className="text-white font-medium">{(story.weeklyViewsCount || story.viewsCount || 0).toLocaleString()}</span>
+                        </span>
+                        <span className="flex items-center gap-1" title="ยอดไลค์ทั้งหมด">
+                          <Heart className="w-3 h-3 text-rose-400 fill-rose-500/30" />
+                          <span className="text-white font-medium">{(story.likesCount || 0).toLocaleString()}</span>
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -685,12 +703,15 @@ function HomePageContent() {
                       <p className="text-[11px] text-neutral-400 truncate">
                         {story.author?.penName || story.author?.name || "ไม่ระบุนามปากกา"}
                       </p>
-                      <div className="flex items-center gap-2 text-[10px] text-neutral-500">
-                        <span className="flex items-center gap-0.5">
-                          <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                          <span className="text-neutral-300 font-medium">{(story.ratingAverage ?? 5).toFixed(1)}</span>
+                      <div className="flex items-center justify-between text-[10px] text-neutral-500 pt-0.5">
+                        <span className="flex items-center gap-1 text-neutral-400" title="ยอดอ่าน">
+                          <Eye className="w-3 h-3 text-sky-400" />
+                          <span>{(story.viewsCount ?? 0).toLocaleString()}</span>
                         </span>
-                        <span>•</span>
+                        <span className="flex items-center gap-1 text-neutral-400" title="ยอดไลค์">
+                          <Heart className="w-3 h-3 text-rose-400 fill-rose-500/30" />
+                          <span>{(story.likesCount ?? 0).toLocaleString()}</span>
+                        </span>
                         <span>{story._count?.chapters ?? 0} ตอน</span>
                       </div>
                     </div>

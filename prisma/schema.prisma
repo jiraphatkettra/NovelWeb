@@ -42,6 +42,8 @@ model User {
   userTickets   UserTicket[]
   dailyGiftClaims DailyGiftClaim[]
   notifications Notification[]
+  storyLikes      StoryLike[]
+  commentLikes    CommentLike[]
 }
 
 model UserSession {
@@ -91,6 +93,8 @@ model Story {
   status        String    @default("PUBLISHED") // DRAFT, PENDING_REVIEW, APPROVED, PUBLISHED, SUSPENDED, ARCHIVED
   contentRating String    @default("ALL_AGES") // ALL_AGES, TEEN_13, MATURE_18
   viewsCount    Int       @default(0)
+  weeklyViewsCount Int    @default(0)
+  likesCount    Int       @default(0)
   ratingAverage Float     @default(5.0)
   ratingsCount  Int       @default(0)
   category      String    @default("Fantasy") // Fantasy, Romance, Action, Sci-Fi, Horror, Slice of Life, Mystery
@@ -106,8 +110,12 @@ model Story {
   ratings       Rating[]
   comments      Comment[]
   userTickets   UserTicket[]
+  likes         StoryLike[]
+  storyViews    StoryView[]
 
   @@index([status, viewsCount(sort: Desc)])
+  @@index([status, weeklyViewsCount(sort: Desc)])
+  @@index([status, likesCount(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
   @@index([status, ratingAverage(sort: Desc)])
   @@index([isFeatured, updatedAt(sort: Desc)])
@@ -249,9 +257,12 @@ model Comment {
   story     Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
+  commentLikes CommentLike[]
 
   @@index([storyId, createdAt(sort: Desc)])
+  @@index([storyId, likes(sort: Desc)])
   @@index([chapterId, createdAt(sort: Desc)])
+  @@index([chapterId, likes(sort: Desc)])
   @@index([userId])
   @@index([parentId])
 }
@@ -452,4 +463,45 @@ model Notification {
 
   @@index([userId, isRead, createdAt(sort: Desc)])
 }
+
+model StoryLike {
+  id        String   @id @default(cuid())
+  userId    String
+  storyId   String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storyId])
+  @@index([storyId])
+  @@index([userId])
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model StoryView {
+  id        String   @id @default(cuid())
+  storyId   String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId, createdAt])
+  @@index([createdAt])
+}
+
 

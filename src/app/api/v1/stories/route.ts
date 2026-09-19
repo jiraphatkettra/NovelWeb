@@ -38,13 +38,17 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    let orderBy: Record<string, "asc" | "desc"> = { viewsCount: "desc" };
+    let orderBy: any = [{ viewsCount: "desc" }, { createdAt: "desc" }];
     if (isFeatured) {
       orderBy = { updatedAt: "desc" };
+    } else if (sort === "weekly_popular" || sort === "weekly_views") {
+      orderBy = [{ weeklyViewsCount: "desc" }, { viewsCount: "desc" }];
     } else if (sort === "newest") {
       orderBy = { createdAt: "desc" };
     } else if (sort === "rating") {
       orderBy = { ratingAverage: "desc" };
+    } else if (sort === "likes") {
+      orderBy = [{ likesCount: "desc" }, { viewsCount: "desc" }];
     }
 
     const cacheKey = `stories:${type || "ALL"}:${category || "ALL"}:${isFeatured}:${sort}:${page}:${limit}:${search || ""}`;

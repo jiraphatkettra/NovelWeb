@@ -46,42 +46,62 @@ export async function GET(
       return apiError("RESOURCE_NOT_FOUND", "ไม่พบมังงะเรื่องนี้", null, 404);
     }
 
-    // Increment view count asynchronously
+    // Increment view count & record view asynchronously
     prisma.story
       .update({
         where: { id: story.id },
-        data: { viewsCount: { increment: 1 } },
+        data: {
+          viewsCount: { increment: 1 },
+          weeklyViewsCount: { increment: 1 },
+        },
       })
       .catch(() => {});
 
-    // Check purchased chapters for current user
+    prisma.storyView
+      .create({
+        data: {
+          storyId: story.id,
+          userId: user?.id || null,
+        },
+      })
+      .catch(() => {});
+
+    // Check purchased chapters, bookmark, rating, and like for current user
     let purchasedChapterIds: string[] = [];
     let isBookmarked = false;
+    let isLiked = false;
     let userRating: number | null = null;
 
     if (user) {
-      const purchases = await prisma.chapterPurchase.findMany({
-        where: {
-          userId: user.id,
-          chapterId: { in: story.chapters.map((c) => c.id) },
-        },
-        select: { chapterId: true },
-      });
+      const [purchases, bookmark, rating, like] = await Promise.all([
+        prisma.chapterPurchase.findMany({
+          where: {
+            userId: user.id,
+            chapterId: { in: story.chapters.map((c) => c.id) },
+          },
+          select: { chapterId: true },
+        }),
+        prisma.bookmark.findUnique({
+          where: {
+            userId_storyId: { userId: user.id, storyId: story.id },
+          },
+        }),
+        prisma.rating.findUnique({
+          where: {
+            storyId_userId: { storyId: story.id, userId: user.id },
+          },
+        }),
+        prisma.storyLike.findUnique({
+          where: {
+            userId_storyId: { userId: user.id, storyId: story.id },
+          },
+        }),
+      ]);
+
       purchasedChapterIds = purchases.map((p) => p.chapterId);
-
-      const bookmark = await prisma.bookmark.findUnique({
-        where: {
-          userId_storyId: { userId: user.id, storyId: story.id },
-        },
-      });
       isBookmarked = !!bookmark;
-
-      const rating = await prisma.rating.findUnique({
-        where: {
-          storyId_userId: { storyId: story.id, userId: user.id },
-        },
-      });
       userRating = rating?.score || null;
+      isLiked = !!like;
     }
 
     const enrichedChapters = story.chapters.map((ch) => ({
@@ -93,6 +113,7 @@ export async function GET(
       ...story,
       chapters: enrichedChapters,
       isBookmarked,
+      isLiked,
       userRating,
     });
   } catch (error) {

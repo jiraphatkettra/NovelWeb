@@ -98,11 +98,30 @@ export async function GET(
       }),
     ]);
 
-    // Asynchronously increment chapter views
+    // Asynchronously increment chapter views, story views, and record weekly view
     prisma.chapter
       .update({
         where: { id: chapter.id },
         data: { viewsCount: { increment: 1 } },
+      })
+      .catch(() => {});
+
+    prisma.story
+      .update({
+        where: { id: chapter.storyId },
+        data: {
+          viewsCount: { increment: 1 },
+          weeklyViewsCount: { increment: 1 },
+        },
+      })
+      .catch(() => {});
+
+    prisma.storyView
+      .create({
+        data: {
+          storyId: chapter.storyId,
+          userId: user?.id || null,
+        },
       })
       .catch(() => {});
 

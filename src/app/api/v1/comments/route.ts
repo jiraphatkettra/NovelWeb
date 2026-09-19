@@ -16,12 +16,14 @@ export async function GET(req: NextRequest) {
       return apiError("VALIDATION_ERROR", "ต้องระบุ storyId หรือ chapterId");
     }
 
+    const user = await getCurrentUser();
+
     const comments = await prisma.comment.findMany({
       where: {
         ...(chapterId ? { chapterId } : { storyId }),
         parentId: null, // Only top level comments, replies nested
       },
-      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ isPinned: "desc" }, { likes: "desc" }, { createdAt: "desc" }],
       include: {
         user: {
           select: { id: true, name: true, penName: true, avatar: true, role: true },
@@ -32,12 +34,36 @@ export async function GET(req: NextRequest) {
               select: { id: true, name: true, penName: true, avatar: true, role: true },
             },
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: [{ likes: "desc" }, { createdAt: "asc" }],
         },
       },
     });
 
-    return apiSuccess(comments);
+    let likedCommentIds = new Set<string>();
+    if (user) {
+      const allCommentIds = comments.flatMap((c) => [c.id, ...(c.replies?.map((r) => r.id) || [])]);
+      if (allCommentIds.length > 0) {
+        const userLikes = await prisma.commentLike.findMany({
+          where: {
+            userId: user.id,
+            commentId: { in: allCommentIds },
+          },
+          select: { commentId: true },
+        });
+        likedCommentIds = new Set(userLikes.map((l) => l.commentId));
+      }
+    }
+
+    const commentsWithLikes = comments.map((c) => ({
+      ...c,
+      hasLiked: likedCommentIds.has(c.id),
+      replies: c.replies.map((r) => ({
+        ...r,
+        hasLiked: likedCommentIds.has(r.id),
+      })),
+    }));
+
+    return apiSuccess(commentsWithLikes);
   } catch (error) {
     console.error("Comments fetch error:", error);
     return apiError("INTERNAL_SERVER_ERROR", "ไม่สามารถดึงคอมเมนต์ได้");

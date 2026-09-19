@@ -224,7 +224,7 @@ export function StoryModerationModal({
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/[0.08] text-white">
-                  {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                  มังงะ
                 </span>
                 <span
                   className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${

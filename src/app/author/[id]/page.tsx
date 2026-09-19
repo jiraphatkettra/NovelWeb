@@ -62,7 +62,7 @@ export default function PublicAuthorPage({
   const [author, setAuthor] = useState<AuthorData | null>(null);
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState<"ALL" | "NOVEL" | "MANGA">("ALL");
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "MANGA">("ALL");
 
   useEffect(() => {
     async function fetchAuthorData() {
@@ -245,7 +245,6 @@ export default function PublicAuthorPage({
             <div className="flex items-center p-1 rounded-full bg-white/[0.05] border border-white/[0.08]">
               {[
                 { id: "ALL", label: "ทั้งหมด" },
-                { id: "NOVEL", label: "นิยาย" },
                 { id: "MANGA", label: "มังงะ & เว็บตูน" },
               ].map((t) => (
                 <button
@@ -289,7 +288,7 @@ export default function PublicAuthorPage({
                     {/* Type Badge */}
                     <div className="absolute top-3 left-3">
                       <span className="px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-white border border-white/10 uppercase tracking-wider">
-                        {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                        มังงะ
                       </span>
                     </div>
 

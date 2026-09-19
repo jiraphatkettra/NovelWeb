@@ -206,7 +206,7 @@ export default function LibraryPage() {
             <Clock className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
             <h3 className="text-sm font-bold text-white font-prompt">ยังไม่มีผลงานที่กำลังอ่านค้างอยู่</h3>
             <p className="text-xs text-neutral-400 mt-1 mb-5">
-              เมื่อคุณเริ่มอ่านนิยายหรือมังงะ ระบบจะจดจำความคืบหน้าไว้ที่นี่โดยอัตโนมัติ
+              เมื่อคุณเริ่มอ่านมังงะ ระบบจะจดจำความคืบหน้าไว้ที่นี่โดยอัตโนมัติ
             </p>
             <Link
               href="/"
@@ -230,7 +230,7 @@ export default function LibraryPage() {
                   />
                   {/* Maximum 1 Badge */}
                   <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 backdrop-blur-md text-neutral-300 border border-white/10">
-                    {item.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                    มังงะ
                   </span>
 
                   {/* Progress Bar overlay at bottom of cover */}
@@ -311,7 +311,7 @@ export default function LibraryPage() {
                   />
                   {/* Maximum 1 Badge */}
                   <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 backdrop-blur-md text-neutral-300 border border-white/10">
-                    {b.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                    มังงะ
                   </span>
                 </Link>
 
@@ -379,7 +379,7 @@ export default function LibraryPage() {
                   />
                   {/* Maximum 1 Badge */}
                   <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 backdrop-blur-md text-neutral-300 border border-white/10">
-                    {item.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                    มังงะ
                   </span>
                 </div>
 

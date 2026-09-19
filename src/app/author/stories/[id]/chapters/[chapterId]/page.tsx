@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { sanitizeHtml } from "@/lib/sanitize";
 import {
   ArrowLeft,
   Save,
@@ -34,13 +33,12 @@ import {
   DownloadCloud,
 } from "lucide-react";
 import { ImageUploadDropzone } from "@/components/common/ImageUploadDropzone";
-import { RichChapterEditor } from "@/components/author/RichChapterEditor";
 import { useToast } from "@/context/ToastContext";
 
 interface StoryInfo {
   id: string;
   title: string;
-  type: "NOVEL" | "MANGA";
+  type: "MANGA";
   slug: string;
 }
 
@@ -144,10 +142,6 @@ export default function ChapterEditorPage() {
 
     if (storyId) loadData();
   }, [storyId, chapterId]);
-
-  // 2. Metrics calculation
-  const wordCount = textContent.trim() ? textContent.trim().split(/\s+/).length : 0;
-  const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
   // 3. Apply recovery from local storage
   const applyLocalRecovery = () => {
@@ -502,8 +496,6 @@ export default function ChapterEditorPage() {
     );
   }
 
-  const isNovel = story.type === "NOVEL";
-
   return (
     <div className="min-h-screen pb-20 bg-black text-white">
       {/* Top Floating Control Bar */}
@@ -519,7 +511,7 @@ export default function ChapterEditorPage() {
             </Link>
             <div>
               <span className="text-[10px] font-mono uppercase tracking-wider text-[#A78BFA]">
-                {isNovel ? "NOVEL TEXT EDITOR" : "MANGA UPLOADER"}
+                MANGA UPLOADER
               </span>
               <h2 className="text-xs font-bold text-white truncate max-w-[180px] sm:max-w-xs">{story.title}</h2>
             </div>
@@ -665,13 +657,8 @@ export default function ChapterEditorPage() {
             <div className="flex items-center sm:justify-end gap-3 text-xs text-neutral-400 self-end pb-1.5 font-mono">
               <span className="flex items-center gap-1">
                 <FileText className="w-3.5 h-3.5 text-neutral-500" />
-                {isNovel ? `${wordCount.toLocaleString()} คำ` : `${images.length} หน้าภาพ`}
+                {images.length} หน้าภาพ
               </span>
-              {isNovel && (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-neutral-500" />~{readingTimeMinutes} นาทีอ่าน
-                </span>
-              )}
             </div>
           </div>
 
@@ -695,21 +682,8 @@ export default function ChapterEditorPage() {
           )}
         </div>
 
-        {/* SECTION: NOVEL RICH TEXT CHAPTER EDITOR */}
-        {isNovel && (
-          <RichChapterEditor
-            value={textContent}
-            onChange={(newVal) => {
-              setTextContent(newVal);
-              setHasUnsavedChanges(true);
-            }}
-            placeholder="เริ่มต้นบรรยายจินตนาการของคุณที่นี่..."
-          />
-        )}
-
         {/* SECTION: MANGA PAGE UPLOADER */}
-        {!isNovel && (
-          <div className="space-y-6">
+        <div className="space-y-6">
             {/* GOOGLE DRIVE & ARCHIVE IMPORT HERO CARD */}
             <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#18181c] via-[#121215] to-[#0d0d10] border border-white/[0.12] shadow-2xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
@@ -1002,7 +976,6 @@ export default function ChapterEditorPage() {
               )}
             </div>
           </div>
-        )}
       </main>
 
       {/* PREVIEW MODAL */}
@@ -1025,26 +998,17 @@ export default function ChapterEditorPage() {
 
             {/* Preview Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {isNovel ? (
-                <div
-                  className="font-sarabun text-sm text-neutral-200 leading-loose prose prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeHtml(textContent || "<p>ยังไม่มีเนื้อหาข้อความในตอนนี้</p>"),
-                  }}
-                />
-              ) : (
-                <div className="max-w-md mx-auto space-y-1.5">
-                  {images.length === 0 ? (
-                    <p className="text-center text-xs text-neutral-500 py-10">ยังไม่มีรูปภาพสำหรับดูตัวอย่าง</p>
-                  ) : (
-                    images.map((url, i) => (
-                      <div key={i} className="rounded-lg overflow-hidden bg-black">
-                        <img src={url} alt={`Preview ${i + 1}`} className="w-full h-auto block" />
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
+              <div className="max-w-md mx-auto space-y-1.5">
+                {images.length === 0 ? (
+                  <p className="text-center text-xs text-neutral-500 py-10">ยังไม่มีรูปภาพสำหรับดูตัวอย่าง</p>
+                ) : (
+                  images.map((url, i) => (
+                    <div key={i} className="rounded-lg overflow-hidden bg-black">
+                      <img src={url} alt={`Preview ${i + 1}`} className="w-full h-auto block" />
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>

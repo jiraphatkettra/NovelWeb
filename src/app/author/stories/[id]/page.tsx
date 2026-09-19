@@ -204,7 +204,7 @@ export default function StoryChapterManagerPage() {
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 font-medium">
-                {story.type === "NOVEL" ? "นิยาย" : "มังงะ"}
+                มังงะ & เว็บตูน
               </span>
               <span
                 className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${

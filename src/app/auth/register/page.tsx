@@ -222,7 +222,7 @@ export default function RegisterPage() {
           <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-start gap-2.5 text-[11px] text-zinc-400">
             <Sparkles className="w-4 h-4 text-[#A78BFA] shrink-0 mt-0.5" />
             <span>
-              ทุกบัญชีเริ่มต้นเป็นผู้อ่าน และสามารถกด <strong className="text-[#C4B5FD] font-semibold">"เปิดโหมดนักเขียน"</strong> เพื่อลงนิยายหรือมังงะได้ฟรีทุกเมื่อหลังเข้าสู่ระบบ
+              ทุกบัญชีเริ่มต้นเป็นผู้อ่าน และสามารถกด <strong className="text-[#C4B5FD] font-semibold">"เปิดโหมดนักเขียน"</strong> เพื่อลงมังงะและเว็บตูนได้ฟรีทุกเมื่อหลังเข้าสู่ระบบ
             </span>
           </div>
 

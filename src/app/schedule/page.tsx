@@ -144,7 +144,7 @@ function ScheduleContent() {
               <span>ตารางอัปเดตรายสัปดาห์</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-prompt tracking-tight">
-              ตารางอัปเดตเว็บตูน & นิยาย
+              ตารางอัปเดตเว็บตูน & มังงะ
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
               ติดตามตอนใหม่ล่าสุดที่อัปเดตประจำวัน พร้อมระบบรออ่านฟรี และตั๋วอ่านฟรีประจำวัน
@@ -260,7 +260,7 @@ function ScheduleContent() {
                       </span>
                     ) : (
                       <span className="px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-md text-neutral-300 text-[9px] font-medium border border-white/10">
-                        {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                        มังงะ
                       </span>
                     )}
                   </div>

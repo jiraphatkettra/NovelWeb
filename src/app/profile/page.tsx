@@ -272,7 +272,7 @@ export default function ProfilePage() {
               <span>ก้าวสู่การเป็นนักเขียน</span>
             </div>
             <h3 className="text-sm font-bold text-white font-prompt">
-              ต้องการเริ่มต้นเผยแพร่ผลงานนิยายหรือมังงะของคุณใช่ไหม?
+              ต้องการเริ่มต้นเผยแพร่ผลงานมังงะหรือเว็บตูนของคุณใช่ไหม?
             </h3>
             <p className="text-xs text-neutral-400 max-w-lg leading-relaxed">
               สมัครเป็นนักเขียนเพื่อสร้างสรรค์ผลงาน ตั้งราคาเหรียญ และรับส่วนแบ่งรายได้ 70% สู่บัญชีธนาคาร

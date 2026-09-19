@@ -91,7 +91,7 @@ export default function AuthorStudioPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newSynopsis, setNewSynopsis] = useState("");
   const [newCoverUrl, setNewCoverUrl] = useState("");
-  const [newType, setNewType] = useState<"NOVEL" | "MANGA">("NOVEL");
+  const [newType] = useState<"MANGA">("MANGA");
   const [newCategory, setNewCategory] = useState("แฟนตาซี");
   const [newRating, setNewRating] = useState<"ALL_AGES" | "TEEN_13" | "MATURE_18">("ALL_AGES");
   const [newReleaseDay, setNewReleaseDay] = useState("MON");
@@ -154,10 +154,8 @@ export default function AuthorStudioPage() {
           synopsis: newSynopsis.trim(),
           coverUrl:
             newCoverUrl ||
-            (newType === "NOVEL"
-              ? "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80"
-              : "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80"),
-          type: newType,
+            "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+          type: "MANGA",
           category: newCategory,
           contentRating: newRating,
           releaseDay: newReleaseDay,
@@ -323,7 +321,7 @@ export default function AuthorStudioPage() {
               สตูดิโอนักเขียน (Creator Studio)
             </h1>
             <p className="text-xs text-neutral-400 max-w-lg mx-auto leading-relaxed">
-              เปิดใช้งานบัญชีนักเขียนฟรี เริ่มสร้างนิยายหรือมังงะ จัดการตอน และสร้างรายได้จากผลงานของคุณ
+              เปิดใช้งานบัญชีนักเขียนฟรี เริ่มสร้างมังงะและเว็บตูน จัดการตอน และสร้างรายได้จากผลงานของคุณ
             </p>
           </div>
 
@@ -341,8 +339,8 @@ export default function AuthorStudioPage() {
               <div className="w-7 h-7 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400">
                 <BookOpen className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-white">นิยาย & มังงะ</p>
-              <p className="text-[11px] text-neutral-400">รองรับทั้งระบบเขียน Rich Text สำหรับนิยาย และอัปโหลดภาพแบบต่อเนื่องสำหรับมังงะ</p>
+              <p className="text-xs font-bold text-white">มังงะ & เว็บตูน</p>
+              <p className="text-[11px] text-neutral-400">ระบบอัปโหลดภาพแบบต่อเนื่อง รองรับไฟล์ภาพหลายหน้า, ZIP และ Google Drive</p>
             </div>
 
             <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1">
@@ -379,12 +377,12 @@ export default function AuthorStudioPage() {
 
               <div>
                 <label className="block text-neutral-300 font-medium mb-1.5">
-                  เกี่ยวกับตัวคุณ / แนวที่ชอบเขียน (Bio)
+                  เกี่ยวกับตัวคุณ / แนวที่ชอบวาด (Bio)
                 </label>
                 <input
                   type="text"
                   onChange={(e) => setOnboardingBio(e.target.value)}
-                  placeholder="เช่น นักเขียนนิยายแฟนตาซีและเกิดใหม่"
+                  placeholder="เช่น นักวาดมังงะแฟนตาซีและเว็บตูน"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                 />
               </div>
@@ -507,7 +505,7 @@ export default function AuthorStudioPage() {
                 <BookOpen className="w-10 h-10 text-neutral-600 mx-auto mb-2.5" />
                 <h3 className="text-sm font-bold text-white font-prompt">ยังไม่มีผลงานในสตูดิโอ</h3>
                 <p className="text-xs text-neutral-400 max-w-sm mx-auto mt-1 mb-5">
-                  เริ่มต้นสร้างผลงานชิ้นแรกของคุณ ไม่ว่าจะเป็นนิยายบรรยายหรือการ์ตูนมังงะ
+                  เริ่มต้นสร้างผลงานมังงะและเว็บตูนชิ้นแรกของคุณ พร้อมระบบอัปโหลดภาพอัตโนมัติและรับรายได้ 70%
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
@@ -538,7 +536,7 @@ export default function AuthorStudioPage() {
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 font-medium">
-                              {story.type === "NOVEL" ? "นิยาย" : "มังงะ"}
+                              มังงะ & เว็บตูน
                             </span>
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
@@ -633,33 +631,15 @@ export default function AuthorStudioPage() {
             <form onSubmit={handleCreateStory} className="space-y-4 text-xs">
               {/* ประเภทผลงาน */}
               <div>
-                <label className="text-neutral-300 font-medium block mb-2">ประเภทผลงาน (เลือกแล้วเปลี่ยนไม่ได้)</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setNewType("NOVEL")}
-                    className={`p-3 rounded-xl border text-left flex flex-col gap-0.5 transition ${
-                      newType === "NOVEL"
-                        ? "bg-[#8B5CF6]/10 border-[#8B5CF6] text-white"
-                        : "bg-white/[0.03] border-white/[0.08] text-neutral-400 hover:border-white/20"
-                    }`}
-                  >
-                    <span className="font-bold text-xs">นิยาย (Novel)</span>
-                    <span className="text-[10px] text-neutral-500">เขียนด้วย Rich Text Editor</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setNewType("MANGA")}
-                    className={`p-3 rounded-xl border text-left flex flex-col gap-0.5 transition ${
-                      newType === "MANGA"
-                        ? "bg-[#8B5CF6]/10 border-[#8B5CF6] text-white"
-                        : "bg-white/[0.03] border-white/[0.08] text-neutral-400 hover:border-white/20"
-                    }`}
-                  >
-                    <span className="font-bold text-xs">มังงะ (Manga / Webtoon)</span>
-                    <span className="text-[10px] text-neutral-500">อัปโหลดไฟล์ภาพหลายหน้า</span>
-                  </button>
+                <label className="text-neutral-300 font-medium block mb-2">ประเภทผลงาน</label>
+                <div className="p-3 rounded-xl border border-[#8B5CF6]/40 bg-[#8B5CF6]/10 text-left flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-xs text-white block">มังงะ & เว็บตูน (Manga / Webtoon)</span>
+                    <span className="text-[10px] text-[#A78BFA]">รองรับการอัปโหลดไฟล์ภาพ, ZIP และ Google Drive</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#A78BFA] text-[10px] font-bold font-mono">
+                    MANGA
+                  </span>
                 </div>
               </div>
 

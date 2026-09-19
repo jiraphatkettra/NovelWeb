@@ -56,8 +56,7 @@ export function Navbar() {
   const navTabs = [
     { label: "หน้าแรก", href: "/" },
     { label: "ตารางรายวัน", href: "/schedule" },
-    { label: "มังงะ", href: "/?type=MANGA" },
-    { label: "นิยาย", href: "/?type=NOVEL" },
+    { label: "มังงะ & เว็บตูน", href: "/?type=MANGA" },
     { label: "ชั้นหนังสือ", href: "/library" },
     { label: "ฟีด", href: "/feed" },
   ];

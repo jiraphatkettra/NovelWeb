@@ -111,7 +111,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
             <span>เริ่มต้นเป็นนักเขียนทันที</span>
           </h2>
           <p className="text-xs text-neutral-400">
-            เปิดพื้นที่สร้างสรรค์ผลงานของคุณ ไม่ว่าจะเป็นนิยายบรรยายหรือการ์ตูนมังงะ พร้อมสร้างรายได้จากผู้อ่านทั่วประเทศ
+            เปิดพื้นที่สร้างสรรค์ผลงานของคุณ สำหรับการ์ตูนมังงะและเว็บตูน พร้อมสร้างรายได้จากผู้อ่านทั่วประเทศ
           </p>
         </div>
 
@@ -124,8 +124,8 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
           </div>
           <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-center space-y-1">
             <BookOpen className="w-4 h-4 text-sky-400 mx-auto" />
-            <p className="text-xs font-bold text-white">นิยาย & มังงะ</p>
-            <p className="text-[10px] text-neutral-400">รองรับทั้ง 2 รูปแบบ</p>
+            <p className="text-xs font-bold text-white">มังงะ & เว็บตูน</p>
+            <p className="text-[10px] text-neutral-400">อัปโหลดภาพ & ZIP</p>
           </div>
           <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-center space-y-1">
             <ShieldCheck className="w-4 h-4 text-emerald-400 mx-auto" />

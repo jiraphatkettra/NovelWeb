@@ -31,7 +31,7 @@ function SearchPageContent() {
   const initialQuery = searchParams?.get("q") || "";
 
   const [query, setQuery] = useState(initialQuery);
-  const [type, setType] = useState<"ALL" | "NOVEL" | "MANGA">("ALL");
+  const [type, setType] = useState<"ALL" | "MANGA">("ALL");
   const [category, setCategory] = useState("ALL");
   const [stories, setStories] = useState<SearchStory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,8 +93,7 @@ function SearchPageContent() {
         <div className="flex items-center gap-1">
           {[
             { key: "ALL", label: "ทั้งหมด" },
-            { key: "NOVEL", label: "นิยาย" },
-            { key: "MANGA", label: "มังงะ" },
+            { key: "MANGA", label: "มังงะ & เว็บตูน" },
           ].map((t) => (
             <button
               key={t.key}
@@ -183,7 +182,7 @@ function SearchPageContent() {
                   />
                   {/* Maximum 1 Badge */}
                   <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/75 text-neutral-300 backdrop-blur-sm border border-white/10">
-                    {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                    มังงะ
                   </span>
                 </div>
 

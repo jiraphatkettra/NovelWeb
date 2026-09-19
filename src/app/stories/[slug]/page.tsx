@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     const authorName = story.author.penName || story.author.name;
-    const typeLabel = story.type === "MANGA" ? "มังงะ" : "นิยาย";
+    const typeLabel = "มังงะ";
     const title = `${story.title} (${typeLabel}) โดย ${authorName} - ReadVerse`;
     const description =
       story.synopsis?.slice(0, 160).replace(/\n/g, " ") ||
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   } catch {
     return {
-      title: "ReadVerse - แพลตฟอร์มมังงะและนิยายออนไลน์",
+      title: "ReadVerse - แพลตฟอร์มมังงะและเว็บตูนออนไลน์",
     };
   }
 }

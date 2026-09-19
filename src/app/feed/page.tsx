@@ -112,7 +112,7 @@ export default function FeedPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 font-medium">
-                        {ch.story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                        มังงะ
                       </span>
                       <span className="text-[11px] text-neutral-400 truncate">
                         {ch.story.title}

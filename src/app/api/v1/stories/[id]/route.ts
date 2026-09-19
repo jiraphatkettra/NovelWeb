@@ -43,7 +43,7 @@ export async function GET(
     });
 
     if (!story) {
-      return apiError("RESOURCE_NOT_FOUND", "ไม่พบนิยายหรือมังงะเรื่องนี้", null, 404);
+      return apiError("RESOURCE_NOT_FOUND", "ไม่พบมังงะเรื่องนี้", null, 404);
     }
 
     // Increment view count asynchronously

@@ -116,7 +116,7 @@ export default function LoginPage() {
             <BookOpen className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold text-white font-prompt">เข้าสู่ระบบ ReadVerse</h1>
-          <p className="text-xs text-zinc-400">ยินดีต้อนรับกลับสู่โลกแห่งนิยายและมังงะ</p>
+          <p className="text-xs text-zinc-400">ยินดีต้อนรับกลับสู่โลกแห่งมังงะและเว็บตูน</p>
         </div>
 
         {errorMsg && (

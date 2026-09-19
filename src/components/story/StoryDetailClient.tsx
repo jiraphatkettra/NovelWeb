@@ -118,7 +118,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
         setUnlockModalChapter(null);
         await fetchStory();
         await fetchTickets();
-        const readerPath = `/reader/${story?.type === "MANGA" ? "manga" : "novel"}/${targetId}`;
+        const readerPath = `/reader/manga/${targetId}`;
         router.push(readerPath);
       } else {
         toast.error("ไม่สามารถปลดล็อกได้", json.error?.message);
@@ -242,7 +242,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
 
   const firstChapter = story.chapters[0];
   const firstChapterUrl = firstChapter
-    ? `/reader/${story.type === "MANGA" ? "manga" : "novel"}/${firstChapter.id}`
+    ? `/reader/manga/${firstChapter.id}`
     : "#";
 
   return (
@@ -314,7 +314,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#8B5CF6]/20 text-[#C4B5FD] border border-[#8B5CF6]/30">
-                  {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                  มังงะ & เว็บตูน
                 </span>
                 <span className="text-xs text-neutral-400">{story.category}</span>
                 {story.contentRating === "MATURE_18" && (
@@ -414,7 +414,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
 
               <div className="space-y-2">
                 {story.chapters.map((ch) => {
-                  const chapterUrl = `/reader/${story.type === "MANGA" ? "manga" : "novel"}/${ch.id}`;
+                  const chapterUrl = `/reader/manga/${ch.id}`;
                   return (
                     <Link
                       key={ch.id}

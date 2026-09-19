@@ -195,7 +195,7 @@ export default function AuthorApplyPage() {
           สมัครเป็นนักเขียน (Author Application)
         </h1>
         <p className="text-xs text-neutral-400 max-w-md mx-auto">
-          ร่วมเป็นผู้สร้างสรรค์นิยายและมังงะ พร้อมรับส่วนแบ่งรายได้ 70% เมื่อผู้อ่านปลดล็อกตอน
+          ร่วมเป็นผู้สร้างสรรค์มังงะและเว็บตูน พร้อมรับส่วนแบ่งรายได้ 70% เมื่อผู้อ่านปลดล็อกตอน
         </p>
       </div>
 
@@ -306,7 +306,7 @@ export default function AuthorApplyPage() {
                     rows={4}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="บอกเล่าประสบการณ์ สไตล์เรื่องที่สนใจเขียน หรือแรงบันดาลใจ เช่น นิยายแฟนตาซีเกิดใหม่, มังงะแอ็กชันไซไฟ..."
+                    placeholder="บอกเล่าประสบการณ์ สไตล์เรื่องที่สนใจวาด หรือแรงบันดาลใจ เช่น มังงะแฟนตาซีเกิดใหม่, เว็บตูนแอ็กชันไซไฟ..."
                     className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] resize-none leading-relaxed"
                   />
                 </div>
@@ -515,7 +515,7 @@ export default function AuthorApplyPage() {
 
             <div className="flex-1 overflow-y-auto text-xs text-neutral-300 space-y-3 pr-2 leading-relaxed">
               <p className="font-bold text-white">ข้อ 1. ลิขสิทธิ์ในผลงาน</p>
-              <p>นักเขียนยังคงเป็นเจ้าของลิขสิทธิ์ในผลงานนิยายและมังงะของตนเองอย่างสมบูรณ์ 100% แพลตฟอร์มได้รับสิทธิ์ในการเผยแพร่และจัดจำหน่ายเหรียญเพื่อปลดล็อกอ่านบนระบบเท่านั้น</p>
+              <p>นักเขียนยังคงเป็นเจ้าของลิขสิทธิ์ในผลงานมังงะและเว็บตูนของตนเองอย่างสมบูรณ์ 100% แพลตฟอร์มได้รับสิทธิ์ในการเผยแพร่และจัดจำหน่ายเหรียญเพื่อปลดล็อกอ่านบนระบบเท่านั้น</p>
 
               <p className="font-bold text-white">ข้อ 2. ส่วนแบ่งรายได้ (Revenue Share 70/30)</p>
               <p>นักเขียนจะได้รับส่วนแบ่งรายได้ 70% จากมูลค่าเหรียญที่ผู้อ่านใช้ปลดล็อกอ่านผลงาน โดยแพลตฟอร์มจะหักค่าบริการระบบ 30% นักเขียนสามารถส่งคำขอถอนเงินได้เมื่อมียอดสะสมขั้นต่ำ 300 บาท</p>

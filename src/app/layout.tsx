@@ -24,9 +24,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ReadVerse — อ่านนิยายและมังงะออนไลน์",
+  title: "ReadVerse — อ่านมังงะและเว็บตูนออนไลน์ (Webtoon & Manga)",
   description:
-    "แพลตฟอร์มอ่านนิยายและมังงะคุณภาพ พร้อมระบบสนับสนุนนักเขียน",
+    "แพลตฟอร์มอ่านมังงะและเว็บตูนคุณภาพ ภาพคมชัด พร้อมระบบสนับสนุนนักวาดและครีเอเตอร์",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -65,8 +65,7 @@ export default function RootLayout({
                     <Link href="/" className="text-white font-bold font-prompt text-sm">
                       ReadVerse
                     </Link>
-                    <Link href="/?type=NOVEL" className="hover:text-white transition">นิยาย</Link>
-                    <Link href="/?type=MANGA" className="hover:text-white transition">มังงะ</Link>
+                    <Link href="/?type=MANGA" className="hover:text-white transition">มังงะ & เว็บตูน</Link>
                     <Link href="/coin-shop" className="hover:text-white transition">เหรียญ</Link>
                     <Link href="/library" className="hover:text-white transition">ชั้นหนังสือ</Link>
                     <Link href="/help" className="hover:text-white transition">ช่วยเหลือ</Link>

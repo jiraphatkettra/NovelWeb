@@ -798,7 +798,7 @@ export default function AdminPage() {
                           ตรวจผลงาน <ArrowUpRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
-                      <p className="text-xs text-neutral-400">ผลงานนิยาย & มังงะ</p>
+                      <p className="text-xs text-neutral-400">ผลงานมังงะ & เว็บตูน</p>
                       <p className="text-2xl font-black text-white font-prompt mt-1">
                         {overview.metrics.totalStories.toLocaleString()} <span className="text-xs font-normal text-neutral-500">เรื่อง</span>
                       </p>
@@ -1128,7 +1128,7 @@ export default function AdminPage() {
                             <div className="space-y-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-xs px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 font-medium">
-                                  {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                                  มังงะ
                                 </span>
                                 <span className="font-bold text-white text-sm sm:text-base font-prompt line-clamp-1">
                                   {story.title}

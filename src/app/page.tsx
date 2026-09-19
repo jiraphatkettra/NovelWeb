@@ -331,7 +331,7 @@ function HomePageContent() {
               {/* Category chip */}
               <div className="flex items-center gap-2 animate-text-reveal animate-text-reveal-d1">
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#8B5CF6]/20 text-[#C4B5FD] border border-[#8B5CF6]/30 backdrop-blur-md">
-                  {currentHero.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                  มังงะ & เว็บตูน
                 </span>
                 <span className="text-xs text-neutral-400 font-medium">{currentHero.category}</span>
               </div>
@@ -431,7 +431,7 @@ function HomePageContent() {
             className={continueReadingReveal.isVisible ? "reveal-visible" : "reveal-hidden"}
           >
             <Link
-              href={`/reader/${lastBookmark.story.type === "MANGA" ? "manga" : "novel"}/${lastBookmark.lastChapterId}`}
+              href={`/reader/manga/${lastBookmark.lastChapterId}`}
               className="flex items-center gap-4 p-4 rounded-xl glass-card hover:border-[#8B5CF6]/40 transition group"
             >
               <img
@@ -472,8 +472,7 @@ function HomePageContent() {
             <div className="flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/[0.05]">
               {[
                 { id: "ALL", label: "ทั้งหมด" },
-                { id: "MANGA", label: "มังงะ" },
-                { id: "NOVEL", label: "นิยาย" },
+                { id: "MANGA", label: "มังงะ & เว็บตูน" },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -673,7 +672,7 @@ function HomePageContent() {
                         </span>
                       ) : (
                         <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-semibold bg-black/75 text-neutral-300 backdrop-blur-md border border-white/10">
-                          {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
+                          มังงะ
                         </span>
                       )}
                     </div>

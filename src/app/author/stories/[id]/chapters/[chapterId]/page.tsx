@@ -179,6 +179,61 @@ export default function ChapterEditorPage() {
     setSaving(true);
     const finalStatus = targetStatus || status;
 
+    // Check if there are any Base64 data URIs
+    let currentImages = [...images];
+    const base64Indices = currentImages
+      .map((img, idx) => (img.startsWith("data:") ? idx : -1))
+      .filter((idx) => idx !== -1);
+
+    if (base64Indices.length > 0) {
+      toast.info(
+        `ตรวจพบรูปภาพแบบ Base64 (${base64Indices.length} หน้า)`,
+        "กำลังส่งรูปภาพเข้า Cloudflare R2 อัตโนมัติ กรุณารอสักครู่..."
+      );
+
+      try {
+        // Upload Base64 images to R2 in parallel chunks of 4
+        const CHUNK_SIZE = 4;
+        for (let i = 0; i < base64Indices.length; i += CHUNK_SIZE) {
+          const chunkIndices = base64Indices.slice(i, i + CHUNK_SIZE);
+          await Promise.all(
+            chunkIndices.map(async (idx) => {
+              const base64Str = currentImages[idx];
+              const split = base64Str.split(",");
+              const mimeMatch = split[0].match(/:(.*?);/);
+              const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+              const bstr = atob(split[1]);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+              }
+              const blob = new Blob([u8arr], { type: mime });
+              const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
+
+              const formData = new FormData();
+              formData.append("file", blob, `page_${String(idx + 1).padStart(3, "0")}.${ext}`);
+
+              const uploadRes = await fetch("/api/v1/upload", {
+                method: "POST",
+                body: formData,
+              });
+              const uploadJson = await uploadRes.json();
+              if (!uploadRes.ok || !uploadJson.success || !uploadJson.data?.url) {
+                throw new Error(uploadJson.error?.message || "อัปโหลดเข้า R2 ไม่สำเร็จ");
+              }
+              currentImages[idx] = uploadJson.data.url;
+            })
+          );
+        }
+        setImages(currentImages);
+      } catch (uploadErr: any) {
+        setSaving(false);
+        toast.error("อัปโหลดภาพเข้า Cloudflare R2 ไม่สำเร็จ", uploadErr?.message);
+        return;
+      }
+    }
+
     const payload = {
       title,
       coinPrice: Number(coinPrice) || 0,
@@ -186,7 +241,7 @@ export default function ChapterEditorPage() {
       status: finalStatus,
       scheduledPublishAt: finalStatus === "SCHEDULED" && scheduledDate ? new Date(scheduledDate).toISOString() : undefined,
       textContent,
-      imageUrls: images,
+      imageUrls: currentImages,
     };
 
     const payloadStr = JSON.stringify(payload);

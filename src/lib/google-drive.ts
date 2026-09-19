@@ -1,6 +1,6 @@
-import fs from "fs";
 import path from "path";
 import AdmZip from "adm-zip";
+import { uploadFileToStorage } from "@/lib/storage";
 
 export interface ExtractedImagePage {
   url: string;
@@ -107,6 +107,28 @@ export function isImageBuffer(buffer: Buffer): { isImage: boolean; ext: string }
 }
 
 /**
+ * Helper to get MIME type from file extension
+ */
+export function getMimeTypeFromExt(ext: string): string {
+  const cleanExt = ext.replace(".", "").toLowerCase();
+  switch (cleanExt) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "gif":
+      return "image/gif";
+    case "avif":
+      return "image/avif";
+    default:
+      return "image/jpeg";
+  }
+}
+
+/**
  * Helper to collect all cookies from a fetch Response
  */
 function getCookieString(res: Response): string {
@@ -125,7 +147,7 @@ function getCookieString(res: Response): string {
 
 /**
  * Downloads a file from Google Drive with redirect & large-file virus scan bypass.
- * Handles both small files, large ZIPs, and modern Google Drive confirmation screens.
+ * Handles small files, large ZIPs, and modern Google Drive confirmation screens.
  */
 export async function downloadGoogleDriveFile(
   fileId: string
@@ -326,6 +348,7 @@ export async function downloadGoogleDriveFile(
  * Fetches and processes a public Google Drive folder.
  * If the folder contains a .zip / .cbz, it unpacks it automatically.
  * If the folder contains images, it retrieves and sorts them.
+ * Uses Universal Storage Adapter (R2 / Data URI) so it never fails on Vercel read-only filesystem.
  */
 export async function fetchGoogleDriveFolder(
   folderId: string,
@@ -386,7 +409,7 @@ export async function fetchGoogleDriveFolder(
     try {
       const { buffer, fileName } = await downloadGoogleDriveFile(zipFile.id);
       if (isZipArchive(buffer)) {
-        const extractedPages = extractAndSortMangaZip(buffer, subFolder);
+        const extractedPages = await extractAndSortMangaZip(buffer, subFolder);
         return {
           isZip: true,
           pages: extractedPages,
@@ -399,19 +422,16 @@ export async function fetchGoogleDriveFolder(
     }
   }
 
-  // 2. If folder contains images directly -> Download images and save to target directory
+  // 2. If folder contains images directly -> Upload via Universal Storage Adapter
   const imageFiles = folderFiles.filter(
     (f) => /\.(jpe?g|png|webp|avif|gif)$/i.test(f.name) || !f.name.includes(".")
   );
 
   if (imageFiles.length > 0) {
     const sortedImages = naturalSort(imageFiles, (f) => f.name);
-    const targetDir = path.join(process.cwd(), "public", "uploads", "manga", subFolder);
-    fs.mkdirSync(targetDir, { recursive: true });
-
     const pages: ExtractedImagePage[] = [];
 
-    // Download each image (up to 100 pages per chapter)
+    // Process up to 100 pages per chapter
     for (let i = 0; i < Math.min(sortedImages.length, 100); i++) {
       const img = sortedImages[i];
       try {
@@ -419,17 +439,17 @@ export async function fetchGoogleDriveFolder(
         const check = isImageBuffer(buffer);
         const ext = check.ext ? `.${check.ext}` : path.extname(img.name) || ".jpg";
         const padIndex = String(i + 1).padStart(3, "0");
-        const newFileName = `p${padIndex}_page${ext}`;
-        const dest = path.join(targetDir, newFileName);
+        const newFileName = `${subFolder}_p${padIndex}${ext}`;
+        const mime = getMimeTypeFromExt(ext);
 
-        fs.writeFileSync(dest, buffer);
+        const uploadRes = await uploadFileToStorage(buffer, newFileName, mime);
         pages.push({
-          url: `/uploads/manga/${subFolder}/${newFileName}`,
+          url: uploadRes.url,
           fileName: img.name,
           pageNumber: i + 1,
           sizeBytes: buffer.length,
         });
-      } catch (dlErr) {
+      } catch {
         // If direct download fails, use Google's direct image CDN
         const padIndex = String(i + 1).padStart(3, "0");
         pages.push({
@@ -461,12 +481,13 @@ export async function fetchGoogleDriveFolder(
 }
 
 /**
- * Extracts and automatically sorts images from a ZIP or CBZ buffer into the public/uploads/manga folder
+ * Extracts and automatically sorts images from a ZIP or CBZ buffer.
+ * Uses Universal Storage Adapter (R2 / Data URI / Local) so it is 100% compatible with Vercel Serverless.
  */
-export function extractAndSortMangaZip(
+export async function extractAndSortMangaZip(
   zipBuffer: Buffer,
   subFolder: string = "drive_import"
-): ExtractedImagePage[] {
+): Promise<ExtractedImagePage[]> {
   if (!isZipArchive(zipBuffer)) {
     throw new Error("ไฟล์ไม่ใช่ไฟล์บีบอัดแบบ ZIP หรือไฟล์เสียหาย (Invalid ZIP/CBZ archive)");
   }
@@ -494,14 +515,11 @@ export function extractAndSortMangaZip(
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
   validEntries.sort((a, b) => collator.compare(a.entryName, b.entryName));
 
-  // 3. Prepare target directory in public/uploads/manga/
-  const targetDir = path.join(process.cwd(), "public", "uploads", "manga", subFolder);
-  fs.mkdirSync(targetDir, { recursive: true });
-
   const results: ExtractedImagePage[] = [];
 
-  // 4. Extract and save each image in sequence
-  validEntries.forEach((entry, index) => {
+  // 3. Extract and save each image via Universal Storage Adapter
+  for (let index = 0; index < validEntries.length; index++) {
+    const entry = validEntries[index];
     const originalName = path.basename(entry.entryName);
     const ext = path.extname(originalName).toLowerCase() || ".jpg";
     const rawBase = originalName.replace(ext, "");
@@ -511,22 +529,20 @@ export function extractAndSortMangaZip(
 
     const padIndex = String(index + 1).padStart(3, "0");
     const safeBase = sanitizedBase || `page_${padIndex}`;
-    const newFileName = `p${padIndex}_${safeBase}${ext}`;
-    const destinationPath = path.join(targetDir, newFileName);
+    const newFileName = `${subFolder}_p${padIndex}_${safeBase}${ext}`;
+    const mime = getMimeTypeFromExt(ext);
 
     const fileData = entry.getData();
     if (fileData && fileData.length > 0) {
-      fs.writeFileSync(destinationPath, fileData);
-
-      const publicUrl = `/uploads/manga/${subFolder}/${newFileName}`;
+      const uploadRes = await uploadFileToStorage(fileData, newFileName, mime);
       results.push({
-        url: publicUrl,
+        url: uploadRes.url,
         fileName: originalName,
         pageNumber: index + 1,
         sizeBytes: fileData.length,
       });
     }
-  });
+  }
 
   if (results.length === 0) {
     throw new Error("เกิดข้อผิดพลาด: ไม่สามารถบันทึกรูปภาพจากไฟล์ ZIP ลงระบบได้");
@@ -536,24 +552,21 @@ export function extractAndSortMangaZip(
 }
 
 /**
- * Saves a single image buffer directly to public/uploads/manga
+ * Saves a single image buffer via Universal Storage Adapter
  */
-export function saveSingleMangaImage(
+export async function saveSingleMangaImage(
   buffer: Buffer,
   originalName: string = "page_1.jpg",
   subFolder: string = "drive_import"
-): ExtractedImagePage {
-  const targetDir = path.join(process.cwd(), "public", "uploads", "manga", subFolder);
-  fs.mkdirSync(targetDir, { recursive: true });
-
+): Promise<ExtractedImagePage> {
   const ext = path.extname(originalName) || ".jpg";
-  const uniqueName = `p001_${Date.now()}${ext}`;
-  const destinationPath = path.join(targetDir, uniqueName);
+  const uniqueName = `${subFolder}_p001_${Date.now()}${ext}`;
+  const mime = getMimeTypeFromExt(ext);
 
-  fs.writeFileSync(destinationPath, buffer);
+  const uploadRes = await uploadFileToStorage(buffer, uniqueName, mime);
 
   return {
-    url: `/uploads/manga/${subFolder}/${uniqueName}`,
+    url: uploadRes.url,
     fileName: originalName,
     pageNumber: 1,
     sizeBytes: buffer.length,

@@ -10,9 +10,10 @@ import {
   extractAndSortMangaZip,
   saveSingleMangaImage,
   naturalSort,
+  getMimeTypeFromExt,
 } from "@/lib/google-drive";
+import { uploadFileToStorage } from "@/lib/storage";
 import path from "path";
-import fs from "fs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120; // 2 minutes for large ZIP downloads and processing
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
 
         // Check if it is a ZIP / CBZ archive
         if (isZipArchive(buffer) || (fileName && /\.(zip|cbz)$/i.test(fileName))) {
-          const extractedPages = extractAndSortMangaZip(buffer, subFolder);
+          const extractedPages = await extractAndSortMangaZip(buffer, subFolder);
           const urls = extractedPages.map((p) => p.url);
           return apiSuccess({
             source: "GOOGLE_DRIVE_ZIP",
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
         // Check if it is a direct Image file
         const imageCheck = isImageBuffer(buffer);
         if (imageCheck.isImage) {
-          const singlePage = saveSingleMangaImage(
+          const singlePage = await saveSingleMangaImage(
             buffer,
             fileName || `page_1.${imageCheck.ext}`,
             subFolder
@@ -155,7 +156,7 @@ export async function POST(req: NextRequest) {
 
         // Verify with magic bytes as well
         if (isZipArchive(buffer)) {
-          const extractedPages = extractAndSortMangaZip(buffer, subFolder);
+          const extractedPages = await extractAndSortMangaZip(buffer, subFolder);
           const urls = extractedPages.map((p) => p.url);
 
           return apiSuccess({
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
         const arrayBuf = await singleFile.arrayBuffer();
         const buffer = Buffer.from(arrayBuf);
         if (isZipArchive(buffer)) {
-          const extractedPages = extractAndSortMangaZip(buffer, subFolder);
+          const extractedPages = await extractAndSortMangaZip(buffer, subFolder);
           const urls = extractedPages.map((p) => p.url);
 
           return apiSuccess({
@@ -204,9 +205,6 @@ export async function POST(req: NextRequest) {
       // Natural sort files by filename
       const sortedFiles = naturalSort(validImages, (f) => f.name);
 
-      const targetDir = path.join(process.cwd(), "public", "uploads", "manga", subFolder);
-      fs.mkdirSync(targetDir, { recursive: true });
-
       const results = [];
       for (let i = 0; i < sortedFiles.length; i++) {
         const f = sortedFiles[i];
@@ -216,14 +214,14 @@ export async function POST(req: NextRequest) {
           .replace(/[^a-zA-Z0-9_\u0E00-\u0E7F-]/g, "_")
           .slice(0, 30);
         const padIndex = String(i + 1).padStart(3, "0");
-        const newFileName = `p${padIndex}_${sanitized || `page_${padIndex}`}${ext}`;
-        const destPath = path.join(targetDir, newFileName);
-
+        const newFileName = `${subFolder}_p${padIndex}_${sanitized || `page_${padIndex}`}${ext}`;
+        const mime = getMimeTypeFromExt(ext);
         const buf = Buffer.from(await f.arrayBuffer());
-        fs.writeFileSync(destPath, buf);
+
+        const uploadRes = await uploadFileToStorage(buf, newFileName, mime);
 
         results.push({
-          url: `/uploads/manga/${subFolder}/${newFileName}`,
+          url: uploadRes.url,
           fileName: f.name,
           pageNumber: i + 1,
           sizeBytes: buf.length,

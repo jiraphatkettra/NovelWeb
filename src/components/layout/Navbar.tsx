@@ -29,6 +29,12 @@ import { useAuthModal } from "@/context/AuthModalContext";
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname() || "";
+
+  // Hide global navbar on reader pages for full immersion
+  if (pathname.startsWith("/reader/")) {
+    return null;
+  }
+
   const searchParams = useSearchParams();
   const { user, logout, switchDemoRole } = useAuth();
   const { openAuthModal } = useAuthModal();

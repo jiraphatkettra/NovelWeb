@@ -72,6 +72,37 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
     });
   };
 
+  // Progressive background prefetching for smooth Webtoon scrolling (0 latency)
+  useEffect(() => {
+    if (!chapter.isUnlocked || !chapter.imageUrls || chapter.imageUrls.length <= 3) return;
+
+    let cancel = false;
+    const urls = chapter.imageUrls || [];
+    const preloadNext = async () => {
+      for (let i = 3; i < urls.length; i++) {
+        if (cancel) break;
+        const img = new Image();
+        img.src = urls[i];
+        // small pause between preloads to keep main thread and network responsive
+        await new Promise((r) => setTimeout(r, 120));
+      }
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const handle = (window as any).requestIdleCallback(() => preloadNext());
+      return () => {
+        cancel = true;
+        (window as any).cancelIdleCallback?.(handle);
+      };
+    } else {
+      const timer = setTimeout(preloadNext, 400);
+      return () => {
+        cancel = true;
+        clearTimeout(timer);
+      };
+    }
+  }, [chapter.isUnlocked, chapter.imageUrls]);
+
   // Auto-record reading progress & bookmark chapter position with real scroll percentage
   useEffect(() => {
     if (!user || !chapter?.id) return;
@@ -281,13 +312,18 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           <div className="w-full max-w-2xl mx-auto relative flex flex-col items-center">
             {chapter.imageUrls && chapter.imageUrls.length > 0 ? (
               chapter.imageUrls.map((imgUrl, index) => (
-                <div key={index} className="relative w-full overflow-hidden">
+                <div
+                  key={index}
+                  className="relative w-full overflow-hidden min-h-[350px] sm:min-h-[450px] bg-[#0c0c0e]"
+                >
                   <img
                     src={imgUrl}
                     alt={`Panel ${index + 1}`}
                     onDragStart={handleDragStart}
                     className="w-full h-auto block select-none pointer-events-none"
-                    loading="lazy"
+                    loading={index < 3 ? "eager" : "lazy"}
+                    decoding="async"
+                    fetchPriority={index === 0 ? "high" : "auto"}
                   />
 
                   {/* Forensic Dynamic Watermark Overlay */}

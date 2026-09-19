@@ -91,5 +91,22 @@ export default async function MangaReaderPage({
     nextChapter,
   };
 
-  return <MangaReader initialChapter={initialChapterData} />;
+  let r2Origin = "";
+  if (parsedImageUrls.length > 0 && parsedImageUrls[0].startsWith("http")) {
+    try {
+      r2Origin = new URL(parsedImageUrls[0]).origin;
+    } catch {}
+  }
+
+  return (
+    <>
+      {r2Origin && (
+        <>
+          <link rel="preconnect" href={r2Origin} crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href={r2Origin} />
+        </>
+      )}
+      <MangaReader initialChapter={initialChapterData} />
+    </>
+  );
 }

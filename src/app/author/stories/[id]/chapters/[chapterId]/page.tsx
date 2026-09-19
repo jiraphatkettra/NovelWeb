@@ -689,7 +689,7 @@ export default function ChapterEditorPage() {
                       type="url"
                       value={driveUrl}
                       onChange={(e) => setDriveUrl(e.target.value)}
-                      placeholder="วางลิงก์ Google Drive (เช่น https://drive.google.com/file/d/... หรือ drive.google.com/open?id=...)"
+                      placeholder="วางลิงก์ Google Drive (ลิงก์ไฟล์ .ZIP / .CBZ, ลิงก์โฟลเดอร์ หรือลิงก์ภาพ)"
                       disabled={isImportingDrive || isUploadingZip}
                       className="w-full px-4 py-2.5 pl-10 rounded-xl bg-black/70 border border-white/[0.12] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] disabled:opacity-50 transition"
                     />
@@ -729,14 +729,14 @@ export default function ChapterEditorPage() {
                     ) : (
                       <>
                         <FileArchive className="w-4 h-4 text-[#A78BFA]" />
-                        <span>เลือกไฟล์ .ZIP จากเครื่อง</span>
+                        <span>เลือกไฟล์ .ZIP / .CBZ จากเครื่อง</span>
                       </>
                     )}
                   </button>
                   <input
                     ref={zipInputRef}
                     type="file"
-                    accept=".zip,application/zip,application/x-zip-compressed"
+                    accept=".zip,.cbz,application/zip,application/x-zip-compressed,application/x-cbz"
                     onChange={handleZipFileUpload}
                     className="hidden"
                   />
@@ -745,7 +745,7 @@ export default function ChapterEditorPage() {
                 <div className="flex items-center gap-2 text-[11px] text-neutral-400 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.05]">
                   <AlertCircle className="w-3.5 h-3.5 text-[#A78BFA] flex-shrink-0" />
                   <span>
-                    <strong>คำแนะนำ:</strong> สำหรับ Google Drive กรุณาตั้งค่าแชร์ไฟล์เป็น <strong>&quot;ทุกคนที่มีลิงก์ (Anyone with the link)&quot;</strong> เพื่อให้ระบบดึงข้อมูลได้ทันที หากเป็นไฟล์ ZIP ระบบจะคลายซิปและเรียงหน้าให้อัตโนมัติ
+                    <strong>คำแนะนำ:</strong> รองรับทั้ง <strong>ลิงก์ไฟล์ .ZIP / .CBZ</strong>, <strong>ลิงก์โฟลเดอร์ Google Drive</strong> และ <strong>อัปโหลด .ZIP จากเครื่อง</strong> (สำหรับ Google Drive ต้องตั้งค่าแชร์เป็น <strong>&quot;ทุกคนที่มีลิงก์ (Anyone with the link)&quot;</strong>) ระบบจะแตกไฟล์และจัดเรียงหน้าตามลำดับตัวเลขอัตโนมัติทันที
                   </span>
                 </div>
               </div>

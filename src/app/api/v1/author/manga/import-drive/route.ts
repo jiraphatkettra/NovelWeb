@@ -4,6 +4,7 @@ import { apiSuccess, apiError } from "@/lib/api-response";
 import {
   extractDriveId,
   downloadGoogleDriveFile,
+  fetchGoogleDriveFolder,
   isZipArchive,
   isImageBuffer,
   extractAndSortMangaZip,
@@ -13,11 +14,19 @@ import {
 import path from "path";
 import fs from "fs";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 120; // 2 minutes for large ZIP downloads and processing
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user || !["AUTHOR", "SUPER_ADMIN", "MODERATOR"].includes(user.role)) {
-      return apiError("FORBIDDEN", "เฉพาะนักเขียนและทีมงานเท่านั้นที่สามารถนำเข้าภาพมังงะได้", null, 403);
+      return apiError(
+        "FORBIDDEN",
+        "เฉพาะนักเขียนและทีมงานเท่านั้นที่สามารถนำเข้าภาพมังงะได้",
+        null,
+        403
+      );
     }
 
     const contentType = req.headers.get("content-type") || "";
@@ -44,11 +53,27 @@ export async function POST(req: NextRequest) {
       const subFolder = `${storyId}_${chapterId}_${Date.now()}`;
 
       try {
-        // Download from Google Drive
+        // A.1: If it is a Google Drive Folder Link
+        if (driveInfo.type === "folder") {
+          const folderResult = await fetchGoogleDriveFolder(driveInfo.id, subFolder);
+          const urls = folderResult.pages.map((p) => p.url);
+
+          return apiSuccess({
+            source: folderResult.isZip ? "GOOGLE_DRIVE_FOLDER_ZIP" : "GOOGLE_DRIVE_FOLDER_IMAGES",
+            images: urls,
+            pages: folderResult.pages,
+            totalCount: folderResult.pages.length,
+            extractedFromZip: folderResult.isZip,
+            fileName: folderResult.fileName || "folder_manga",
+            message: folderResult.message,
+          });
+        }
+
+        // A.2: If it is a Google Drive File Link
         const { buffer, fileName } = await downloadGoogleDriveFile(driveInfo.id);
 
-        // A.1: If it is a ZIP archive -> Auto-extract and Natural Sort
-        if (isZipArchive(buffer)) {
+        // Check if it is a ZIP / CBZ archive
+        if (isZipArchive(buffer) || (fileName && /\.(zip|cbz)$/i.test(fileName))) {
           const extractedPages = extractAndSortMangaZip(buffer, subFolder);
           const urls = extractedPages.map((p) => p.url);
           return apiSuccess({
@@ -62,10 +87,14 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // A.2: If it is a direct Image file
+        // Check if it is a direct Image file
         const imageCheck = isImageBuffer(buffer);
         if (imageCheck.isImage) {
-          const singlePage = saveSingleMangaImage(buffer, fileName || `page_1.${imageCheck.ext}`, subFolder);
+          const singlePage = saveSingleMangaImage(
+            buffer,
+            fileName || `page_1.${imageCheck.ext}`,
+            subFolder
+          );
           return apiSuccess({
             source: "GOOGLE_DRIVE_IMAGE",
             images: [singlePage.url],
@@ -87,7 +116,8 @@ export async function POST(req: NextRequest) {
         console.error("Drive download/extract error:", err);
         return apiError(
           "DRIVE_FETCH_ERROR",
-          `ไม่สามารถดึงไฟล์จาก Google Drive ได้: ${err.message || "กรุณาตรวจสอบว่าลิงก์เปิดแชร์สาธารณะแล้วหรือยัง"}`,
+          err.message ||
+            "ไม่สามารถดึงไฟล์จาก Google Drive ได้ กรุณาตรวจสอบว่าลิงก์เปิดแชร์สาธารณะ (Anyone with the link) แล้วหรือยัง",
           null,
           500
         );
@@ -106,23 +136,58 @@ export async function POST(req: NextRequest) {
       const files = formData.getAll("files") as File[];
       const singleFile = formData.get("file") as File | null;
 
-      // B.1 Direct ZIP upload
-      const zipTarget = singleFile && singleFile.name.endsWith(".zip") ? singleFile : files.find((f) => f.name.endsWith(".zip"));
+      // Helper to check if file is ZIP or CBZ
+      const isZip = (f: File | null) =>
+        Boolean(
+          f &&
+            (/\.(zip|cbz)$/i.test(f.name) ||
+              f.type === "application/zip" ||
+              f.type === "application/x-zip-compressed" ||
+              f.type === "application/x-cbz")
+        );
+
+      // B.1 Direct ZIP / CBZ upload
+      const zipTarget = isZip(singleFile) ? singleFile : files.find((f) => isZip(f));
+
       if (zipTarget) {
         const arrayBuf = await zipTarget.arrayBuffer();
         const buffer = Buffer.from(arrayBuf);
-        const extractedPages = extractAndSortMangaZip(buffer, subFolder);
-        const urls = extractedPages.map((p) => p.url);
 
-        return apiSuccess({
-          source: "DIRECT_ZIP_UPLOAD",
-          images: urls,
-          pages: extractedPages,
-          totalCount: extractedPages.length,
-          extractedFromZip: true,
-          fileName: zipTarget.name,
-          message: `แตกไฟล์ ZIP และเรียงหน้าตามลำดับตัวเลขอัตโนมัติสำเร็จ (${extractedPages.length} หน้า)`,
-        });
+        // Verify with magic bytes as well
+        if (isZipArchive(buffer)) {
+          const extractedPages = extractAndSortMangaZip(buffer, subFolder);
+          const urls = extractedPages.map((p) => p.url);
+
+          return apiSuccess({
+            source: "DIRECT_ZIP_UPLOAD",
+            images: urls,
+            pages: extractedPages,
+            totalCount: extractedPages.length,
+            extractedFromZip: true,
+            fileName: zipTarget.name,
+            message: `แตกไฟล์ ${zipTarget.name} และเรียงหน้าตามลำดับตัวเลขอัตโนมัติสำเร็จ (${extractedPages.length} หน้า)`,
+          });
+        }
+      }
+
+      // If single file buffer is actually a zip even without .zip extension
+      if (singleFile) {
+        const arrayBuf = await singleFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuf);
+        if (isZipArchive(buffer)) {
+          const extractedPages = extractAndSortMangaZip(buffer, subFolder);
+          const urls = extractedPages.map((p) => p.url);
+
+          return apiSuccess({
+            source: "DIRECT_ZIP_UPLOAD",
+            images: urls,
+            pages: extractedPages,
+            totalCount: extractedPages.length,
+            extractedFromZip: true,
+            fileName: singleFile.name,
+            message: `แตกไฟล์ ZIP และเรียงหน้าตามลำดับตัวเลขอัตโนมัติสำเร็จ (${extractedPages.length} หน้า)`,
+          });
+        }
       }
 
       // B.2 Multiple Images Upload with Natural Sorting
@@ -130,7 +195,10 @@ export async function POST(req: NextRequest) {
       const validImages = allImages.filter((f) => /\.(jpe?g|png|webp|avif|gif)$/i.test(f.name));
 
       if (validImages.length === 0) {
-        return apiError("VALIDATION_ERROR", "ไม่พบไฟล์ภาพที่รองรับ กรุณาเลือกไฟล์ .jpg, .png หรือ .webp");
+        return apiError(
+          "VALIDATION_ERROR",
+          "ไม่พบไฟล์ภาพหรือไฟล์ ZIP ที่รองรับ กรุณาเลือกไฟล์ .zip, .cbz, .jpg, .png หรือ .webp"
+        );
       }
 
       // Natural sort files by filename
@@ -143,9 +211,12 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < sortedFiles.length; i++) {
         const f = sortedFiles[i];
         const ext = path.extname(f.name).toLowerCase() || ".jpg";
-        const sanitized = path.basename(f.name, ext).replace(/[^a-zA-Z0-9_\u0E00-\u0E7F-]/g, "_").slice(0, 30);
+        const sanitized = path
+          .basename(f.name, ext)
+          .replace(/[^a-zA-Z0-9_\u0E00-\u0E7F-]/g, "_")
+          .slice(0, 30);
         const padIndex = String(i + 1).padStart(3, "0");
-        const newFileName = `p${padIndex}_${sanitized}${ext}`;
+        const newFileName = `p${padIndex}_${sanitized || `page_${padIndex}`}${ext}`;
         const destPath = path.join(targetDir, newFileName);
 
         const buf = Buffer.from(await f.arrayBuffer());
@@ -170,9 +241,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return apiError("BAD_REQUEST", "รูปแบบ Content-Type ไม่รองรับ (ต้องเป็น JSON หรือ multipart/form-data)");
+    return apiError(
+      "BAD_REQUEST",
+      "รูปแบบ Content-Type ไม่รองรับ (ต้องเป็น JSON หรือ multipart/form-data)"
+    );
   } catch (error: any) {
     console.error("Manga import error:", error);
-    return apiError("INTERNAL_SERVER_ERROR", "เกิดข้อผิดพลาดในกระบวนการนำเข้ามังงะ");
+    return apiError(
+      "INTERNAL_SERVER_ERROR",
+      `เกิดข้อผิดพลาดในกระบวนการนำเข้ามังงะ: ${error?.message || "กรุณาลองใหม่อีกครั้ง"}`
+    );
   }
 }

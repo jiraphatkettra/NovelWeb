@@ -189,19 +189,30 @@ export default function ChapterEditorPage() {
       imageUrls: images,
     };
 
+    const payloadStr = JSON.stringify(payload);
+    // Vercel Serverless Function payload limit is 4.5MB
+    if (payloadStr.length > 4.2 * 1024 * 1024) {
+      setSaving(false);
+      toast.error(
+        "ขนาดข้อมูลรูปภาพรวมกันใหญ่เกินขีดจำกัดของ Vercel (เกิน 4.2MB)",
+        "แนะนำให้ใช้ 'โฟลเดอร์ Google Drive' เพื่อดึงลิงก์ CDN โดยตรง หรือตั้งค่า Cloudflare R2 สำหรับภาพความละเอียดสูง"
+      );
+      return;
+    }
+
     try {
       let res;
       if (isNew) {
         res = await fetch(`/api/v1/author/stories/${storyId}/chapters`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: payloadStr,
         });
       } else {
         res = await fetch(`/api/v1/author/stories/${storyId}/chapters/${chapterId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: payloadStr,
         });
       }
 
@@ -212,10 +223,14 @@ export default function ChapterEditorPage() {
         setLastSavedTime(
           now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
         );
-        localStorage.removeItem(storageKey);
+        try {
+          localStorage.removeItem(storageKey);
+        } catch {}
 
+        // Use window.history.replaceState instead of router.replace
+        // to avoid unmounting the component and losing in-memory images
         if (isNew && json.data?.chapter?.id) {
-          router.replace(`/author/stories/${storyId}/chapters/${json.data.chapter.id}`);
+          window.history.replaceState(null, "", `/author/stories/${storyId}/chapters/${json.data.chapter.id}`);
         }
 
         if (targetStatus === "PUBLISHED") {
@@ -225,32 +240,41 @@ export default function ChapterEditorPage() {
           toast.success("บันทึกฉบับร่างเรียบร้อย");
         }
       } else {
-        toast.error("บันทึกไม่สำเร็จ", json.error?.message);
+        toast.error("บันทึกไม่สำเร็จ", json.error?.message || "เกิดข้อผิดพลาดในการบันทึก");
       }
-    } catch {
-      toast.error("เกิดข้อผิดพลาดในการบันทึกตอน");
+    } catch (err: any) {
+      console.error("Save chapter error:", err);
+      toast.error("เกิดข้อผิดพลาดในการบันทึกตอน", err?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     } finally {
       setSaving(false);
     }
   };
 
-  // 5. Autosave backup
+  // 5. Autosave backup (Protected against LocalStorage QuotaExceededError)
   useEffect(() => {
     if (!hasUnsavedChanges || !title.trim()) return;
 
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify({
-        title,
-        textContent,
-        images,
-        timestamp: Date.now(),
-      })
-    );
+    try {
+      // Exclude large base64 data URIs from localStorage because browser quota is strictly 5MB
+      const safeImages = images.filter((img) => !img.startsWith("data:")).slice(0, 100);
+
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          title,
+          textContent,
+          images: safeImages.length > 0 ? safeImages : undefined,
+          imageCount: images.length,
+          timestamp: Date.now(),
+        })
+      );
+    } catch (storageErr) {
+      console.warn("LocalStorage draft backup skipped due to size:", storageErr);
+    }
 
     const timer = setTimeout(() => {
       saveChapter("DRAFT");
-    }, 25000);
+    }, 30000);
 
     return () => clearTimeout(timer);
   }, [hasUnsavedChanges, textContent, images, title]);

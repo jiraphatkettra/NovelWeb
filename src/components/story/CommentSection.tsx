@@ -196,7 +196,7 @@ export function CommentSection({
 
       {/* Write Comment Box */}
       <form onSubmit={handlePostComment} className="space-y-3">
-        <div className="relative rounded-xl bg-[#121215] border border-white/[0.08] focus-within:border-[#FFE600]/60 transition p-3">
+        <div className="relative rounded-xl bg-[#121215] border border-white/[0.08] focus-within:border-[#8B5CF6]/60 transition p-3">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
@@ -217,7 +217,7 @@ export function CommentSection({
             <button
               type="submit"
               disabled={!user || !newComment.trim() || submitting}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#FFE600] text-black font-bold text-xs transition disabled:opacity-30 hover:bg-[#F5DC00]"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#8B5CF6] text-white font-semibold text-xs transition disabled:opacity-30 hover:bg-[#7C3AED] shadow-sm shadow-purple-500/20"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{submitting ? "กำลังส่ง..." : "ส่งความเห็น"}</span>
@@ -229,7 +229,7 @@ export function CommentSection({
       {/* Comments List */}
       {loading ? (
         <div className="py-10 text-center">
-          <div className="animate-spin w-6 h-6 border-2 border-[#FFE600] border-t-transparent rounded-full mx-auto" />
+          <div className="animate-spin w-6 h-6 border-2 border-[#8B5CF6] border-t-transparent rounded-full mx-auto" />
         </div>
       ) : comments.length === 0 ? (
         <div className="py-8 text-center text-neutral-500 text-xs">
@@ -261,12 +261,12 @@ export function CommentSection({
                           {item.user.penName || item.user.name}
                         </span>
                         {isStoryAuthor && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#FFE600]/20 text-[#FFE600] font-bold border border-[#FFE600]/30">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#8B5CF6]/20 text-[#C4B5FD] font-semibold border border-[#8B5CF6]/30">
                             นักเขียน
                           </span>
                         )}
                         {item.user.role === "SUPER_ADMIN" && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-bold">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">
                             แอดมิน
                           </span>
                         )}
@@ -284,15 +284,15 @@ export function CommentSection({
                   </div>
 
                   {item.isPinned && (
-                    <span className="flex items-center gap-1 text-[10px] text-[#FFE600] font-semibold bg-[#FFE600]/10 px-2 py-0.5 rounded">
-                      <Pin className="w-3 h-3" />
+                    <span className="flex items-center gap-1 text-[10px] text-[#C4B5FD] font-semibold bg-[#8B5CF6]/15 px-2 py-0.5 rounded border border-[#8B5CF6]/20">
+                      <Pin className="w-3 h-3 text-[#A78BFA]" />
                       ปักหมุด
                     </span>
                   )}
                 </div>
 
                 {/* Content */}
-                <p className="text-xs text-neutral-300 whitespace-pre-line leading-relaxed pl-9">
+                <p className="text-xs text-neutral-200 pl-9 leading-relaxed whitespace-pre-wrap">
                   {item.content}
                 </p>
 
@@ -341,7 +341,7 @@ export function CommentSection({
                       <button
                         onClick={() => handlePostReply(item.id)}
                         disabled={!replyContent.trim()}
-                        className="px-3 py-1 rounded bg-[#FFE600] text-black text-[11px] font-bold hover:bg-[#F5DC00] disabled:opacity-40"
+                        className="px-3 py-1 rounded bg-[#8B5CF6] text-white text-[11px] font-semibold hover:bg-[#7C3AED] disabled:opacity-40"
                       >
                         ตอบกลับ
                       </button>
@@ -370,7 +370,7 @@ export function CommentSection({
                             {reply.user.penName || reply.user.name}
                           </span>
                           {authorId && reply.user.id === authorId && (
-                            <span className="text-[9px] px-1 rounded bg-[#FFE600]/20 text-[#FFE600] font-bold">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#8B5CF6]/20 text-[#C4B5FD] font-semibold border border-[#8B5CF6]/25">
                               นักเขียน
                             </span>
                           )}

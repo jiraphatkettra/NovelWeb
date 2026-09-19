@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
+import { memoryCache } from "@/lib/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -171,6 +172,8 @@ export async function PATCH(req: NextRequest) {
       data: updateData,
     });
 
+    memoryCache.invalidateTag("stories");
+
     // Create audit log
     await prisma.auditLog.create({
       data: {
@@ -262,6 +265,8 @@ export async function DELETE(req: NextRequest) {
     await prisma.story.delete({
       where: { id: storyId },
     });
+
+    memoryCache.invalidateTag("stories");
 
     await prisma.auditLog.create({
       data: {

@@ -139,7 +139,7 @@ function ScheduleContent() {
       <div className="border-b border-white/[0.08] pt-8 pb-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFE600]/10 border border-[#FFE600]/20 text-[#FFE600] text-xs font-semibold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 text-[#A78BFA] text-xs font-semibold mb-3">
               <Sparkles className="w-3.5 h-3.5" />
               <span>ตารางอัปเดตรายสัปดาห์</span>
             </div>
@@ -153,7 +153,7 @@ function ScheduleContent() {
 
           {/* Minimal Daily Ticket Card (기다무) */}
           <div className="flex items-center gap-3.5 p-3 sm:p-3.5 rounded-xl bg-[#121215] border border-white/[0.08] shadow-sm">
-            <div className="w-9 h-9 rounded-lg bg-[#FFE600]/10 border border-[#FFE600]/25 flex items-center justify-center text-[#FFE600] shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/25 flex items-center justify-center text-[#A78BFA] shrink-0">
               <Ticket className="w-4 h-4" />
             </div>
             <div className="text-left min-w-0 pr-2">
@@ -172,7 +172,7 @@ function ScheduleContent() {
             <button
               onClick={handleClaimDailyTicket}
               disabled={claimingTicket || !canClaimDaily}
-              className="px-3.5 py-2 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] disabled:bg-white/5 disabled:text-neutral-500 text-black font-bold text-xs shrink-0 transition active:scale-[0.98]"
+              className="px-3.5 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-white/5 disabled:text-neutral-500 text-white font-bold text-xs shrink-0 transition active:scale-[0.98]"
             >
               {claimingTicket ? "กำลังรับ..." : canClaimDaily ? "รับตั๋วฟรี" : "รับแล้ววันนี้"}
             </button>
@@ -193,14 +193,14 @@ function ScheduleContent() {
                 onClick={() => setActiveDay(day.key)}
                 className={`relative flex-1 min-w-[70px] sm:min-w-[90px] py-2 px-3 rounded-xl text-center transition duration-200 ${
                   isActive
-                    ? "bg-[#FFE600] text-black font-bold shadow-sm"
+                    ? "bg-[#8B5CF6] text-white font-bold shadow-sm"
                     : "bg-[#121215] hover:bg-neutral-800 text-neutral-400 hover:text-white border border-white/5"
                 }`}
               >
-                <div className={`text-xs sm:text-sm font-prompt font-bold ${isActive ? "text-black" : "text-white"}`}>
+                <div className="text-xs sm:text-sm font-prompt font-bold text-white">
                   {day.label}
                 </div>
-                <div className={`text-[10px] tracking-wider uppercase ${isActive ? "text-black/70 font-semibold" : "text-neutral-500"}`}>
+                <div className={`text-[10px] tracking-wider uppercase ${isActive ? "text-white/80 font-semibold" : "text-neutral-500"}`}>
                   {day.sub}
                 </div>
                 {count > 0 && (
@@ -222,7 +222,7 @@ function ScheduleContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {loading ? (
           <div className="flex items-center justify-center py-28">
-            <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full" />
+            <div className="animate-spin w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full" />
           </div>
         ) : currentStories.length === 0 ? (
           <div className="text-center py-24 border border-dashed border-white/10 rounded-2xl bg-[#121215]/50">
@@ -268,7 +268,7 @@ function ScheduleContent() {
                   {/* Bottom Info on Image */}
                   <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[11px] text-neutral-300">
                     <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 text-[#FFE600] fill-[#FFE600]" />
+                      <Star className="w-3 h-3 text-[#A78BFA] fill-[#A78BFA]" />
                       <span>{story.ratingAverage.toFixed(1)}</span>
                     </div>
                     <div className="flex items-center gap-1 text-neutral-400">
@@ -284,7 +284,7 @@ function ScheduleContent() {
                     <div className="text-[10px] text-neutral-400 font-medium line-clamp-1 mb-1">
                       {story.category}
                     </div>
-                    <h3 className="font-prompt font-bold text-xs sm:text-sm text-white group-hover:text-[#FFE600] transition line-clamp-2 leading-snug">
+                    <h3 className="font-prompt font-bold text-xs sm:text-sm text-white group-hover:text-[#A78BFA] transition line-clamp-2 leading-snug">
                       {story.title}
                     </h3>
                   </div>
@@ -314,7 +314,7 @@ export default function SchedulePage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-black">
-          <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full" />
         </div>
       }
     >

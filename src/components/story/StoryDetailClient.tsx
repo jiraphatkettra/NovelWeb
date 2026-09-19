@@ -275,7 +275,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                 <Link
                   href={firstChapterUrl}
                   onClick={(e) => handleChapterClick(e, firstChapter, firstChapterUrl)}
-                  className="w-full py-3 rounded-xl bg-kakao-yellow hover:bg-kakao-yellow-hover text-black font-bold text-sm text-center flex items-center justify-center gap-2 transition active:scale-[0.98]"
+                  className="w-full py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-sm text-center flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-lg shadow-purple-500/25"
                 >
                   <BookOpen className="w-4 h-4" />
                   อ่านตอนแรก
@@ -290,11 +290,11 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                 onClick={handleBookmarkToggle}
                 className={`w-full py-2.5 rounded-xl border flex items-center justify-center gap-2 text-sm font-medium transition ${
                   isBookmarked
-                    ? "bg-kakao-yellow/10 border-kakao-yellow/40 text-kakao-yellow"
+                    ? "bg-[#8B5CF6]/15 border-[#8B5CF6]/40 text-[#C4B5FD]"
                     : "bg-kakao-card border-kakao-border text-neutral-300 hover:border-neutral-600"
                 }`}
               >
-                <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-kakao-yellow" : ""}`} />
+                <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-[#8B5CF6] text-[#8B5CF6]" : ""}`} />
                 {isBookmarked ? "อยู่ในชั้นหนังสือ" : "เพิ่มเข้าชั้นหนังสือ"}
               </button>
 
@@ -313,10 +313,10 @@ export function StoryDetailClient({ slug }: { slug: string }) {
             {/* Title & Meta */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-kakao-yellow text-black">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#8B5CF6]/20 text-[#C4B5FD] border border-[#8B5CF6]/30">
                   {story.type === "MANGA" ? "มังงะ" : "นิยาย"}
                 </span>
-                <span className="text-xs text-neutral-500">{story.category}</span>
+                <span className="text-xs text-neutral-400">{story.category}</span>
                 {story.contentRating === "MATURE_18" && (
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white">18+</span>
                 )}
@@ -343,8 +343,8 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                   <Eye className="w-3.5 h-3.5" />
                   {story.viewsCount.toLocaleString()}
                 </span>
-                <span className="flex items-center gap-1 text-kakao-yellow font-semibold">
-                  <Star className="w-3.5 h-3.5 fill-kakao-yellow" />
+                <span className="flex items-center gap-1 text-white font-semibold">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   {story.ratingAverage.toFixed(1)}
                   <span className="text-neutral-500 font-normal">({story.ratingsCount})</span>
                 </span>
@@ -357,7 +357,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                 {tagsArray.map((tag, idx) => (
                   <span
                     key={idx}
-                    className="px-2.5 py-1 rounded-lg bg-kakao-card border border-kakao-border text-xs text-neutral-400"
+                    className="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-neutral-400"
                   >
                     #{tag}
                   </span>
@@ -379,7 +379,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
               <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button key={star} onClick={() => handleRate(star)} className="p-0.5 hover:scale-110 transition">
-                    <Star className={`w-5 h-5 ${star <= userRating ? "fill-kakao-yellow text-kakao-yellow" : "text-neutral-700"}`} />
+                    <Star className={`w-5 h-5 ${star <= userRating ? "fill-amber-400 text-amber-400" : "text-neutral-700"}`} />
                   </button>
                 ))}
                 {ratingSubmitted && <span className="text-[11px] text-green-400 ml-2">✓</span>}
@@ -397,7 +397,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
               </div>
               <button
                 onClick={() => setShowGiftModal(true)}
-                className="px-3 py-1.5 rounded-lg bg-kakao-yellow text-black text-[11px] font-bold hover:bg-kakao-yellow-hover transition"
+                className="px-3.5 py-1.5 rounded-xl bg-[#8B5CF6] text-white text-[11px] font-semibold hover:bg-[#7C3AED] transition shadow-md shadow-purple-500/20"
               >
                 <Gift className="w-3 h-3 inline mr-1" />
                 รับตั๋วฟรี
@@ -412,7 +412,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                 </h3>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {story.chapters.map((ch) => {
                   const chapterUrl = `/reader/${story.type === "MANGA" ? "manga" : "novel"}/${ch.id}`;
                   return (
@@ -420,17 +420,17 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                       key={ch.id}
                       href={chapterUrl}
                       onClick={(e) => handleChapterClick(e, ch, chapterUrl)}
-                      className="group flex items-center justify-between p-3 rounded-xl bg-kakao-card border border-kakao-border hover:border-neutral-700 transition"
+                      className="group flex items-center justify-between p-3.5 rounded-xl bg-kakao-card border border-kakao-border hover:border-[#8B5CF6]/30 transition"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-7 h-7 rounded-lg bg-neutral-800 text-neutral-400 group-hover:bg-kakao-yellow group-hover:text-black font-bold text-xs flex items-center justify-center transition shrink-0 font-prompt">
+                        <span className="w-7 h-7 rounded-lg bg-neutral-800 text-neutral-400 group-hover:bg-[#8B5CF6] group-hover:text-white font-bold text-xs flex items-center justify-center transition shrink-0 font-prompt">
                           {ch.chapterNumber}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-white group-hover:text-neutral-200 transition truncate">
+                          <p className="text-sm font-medium text-white group-hover:text-[#C4B5FD] transition truncate">
                             {ch.title}
                           </p>
-                          <span className="text-[10px] text-neutral-600">
+                          <span className="text-[10px] text-neutral-500">
                             {ch.viewsCount.toLocaleString()} วิว
                           </span>
                         </div>
@@ -438,21 +438,21 @@ export function StoryDetailClient({ slug }: { slug: string }) {
 
                       <div className="flex items-center gap-2 shrink-0 ml-2">
                         {ch.isFree ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-500/10 text-green-400 border border-green-500/20">
+                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             ฟรี
                           </span>
                         ) : ch.isUnlocked ? (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-neutral-400">
-                            <CheckCircle className="w-3 h-3 text-green-400" />
+                          <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-medium text-neutral-400 bg-white/5">
+                            <CheckCircle className="w-3 h-3 text-emerald-400" />
                             ปลดล็อก
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-kakao-yellow/10 text-kakao-yellow border border-kakao-yellow/20">
-                            <Coins className="w-3 h-3" />
+                          <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#8B5CF6]/15 text-[#C4B5FD] border border-[#8B5CF6]/25">
+                            <Coins className="w-3 h-3 text-[#A78BFA]" />
                             {ch.coinPrice}
                           </span>
                         )}
-                        <ArrowRight className="w-3.5 h-3.5 text-neutral-600 group-hover:text-kakao-yellow transition" />
+                        <ArrowRight className="w-3.5 h-3.5 text-neutral-600 group-hover:text-[#A78BFA] transition" />
                       </div>
                     </Link>
                   );
@@ -518,9 +518,9 @@ export function StoryDetailClient({ slug }: { slug: string }) {
               <X className="w-4 h-4" />
             </button>
 
-            <BookOpen className="w-8 h-8 text-kakao-yellow mx-auto mb-3" />
+            <BookOpen className="w-8 h-8 text-[#8B5CF6] mx-auto mb-3" />
             <h3 className="text-lg font-bold text-white font-prompt">ปลดล็อกตอน</h3>
-            <p className="text-sm text-kakao-yellow mt-1 font-medium">{unlockModalChapter.title}</p>
+            <p className="text-sm text-[#C4B5FD] mt-1 font-medium">{unlockModalChapter.title}</p>
 
             <div className="mt-5 space-y-2">
               {/* Ticket option */}
@@ -529,12 +529,12 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                 disabled={ticketCount <= 0 || unlocking}
                 className={`w-full p-3.5 rounded-xl border text-left flex items-center justify-between transition ${
                   ticketCount > 0
-                    ? "bg-kakao-yellow/5 border-kakao-yellow/30 hover:bg-kakao-yellow/10"
+                    ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/15"
                     : "bg-neutral-900 border-kakao-border opacity-50 cursor-not-allowed"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Ticket className={`w-5 h-5 ${ticketCount > 0 ? "text-kakao-yellow" : "text-neutral-600"}`} />
+                  <Ticket className={`w-5 h-5 ${ticketCount > 0 ? "text-[#A78BFA]" : "text-neutral-600"}`} />
                   <div>
                     <p className="text-xs font-bold text-white">ใช้ตั๋วอ่านฟรี</p>
                     <p className="text-[11px] text-neutral-500">
@@ -542,8 +542,8 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                     </p>
                   </div>
                 </div>
-                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
-                  ticketCount > 0 ? "bg-kakao-yellow text-black" : "bg-neutral-800 text-neutral-600"
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
+                  ticketCount > 0 ? "bg-[#8B5CF6] text-white" : "bg-neutral-800 text-neutral-600"
                 }`}>
                   ฟรี
                 </span>
@@ -556,7 +556,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
                 className="w-full p-3.5 rounded-xl bg-neutral-900 border border-kakao-border hover:border-neutral-600 text-left flex items-center justify-between transition"
               >
                 <div className="flex items-center gap-3">
-                  <Coins className="w-5 h-5 text-kakao-yellow" />
+                  <Coins className="w-5 h-5 text-[#A78BFA]" />
                   <div>
                     <p className="text-xs font-bold text-white">ปลดล็อกด้วยเหรียญ</p>
                     <p className="text-[11px] text-neutral-500">ปลดล็อกถาวร</p>
@@ -608,7 +608,7 @@ export function StoryDetailClient({ slug }: { slug: string }) {
           <Link
             href={firstChapterUrl}
             onClick={(e) => handleChapterClick(e, firstChapter, firstChapterUrl)}
-            className="flex-1 py-3 px-4 rounded-xl bg-kakao-yellow hover:bg-kakao-yellow-hover text-black font-bold text-xs text-center flex items-center justify-center gap-2 shadow-lg shadow-kakao-yellow/20 active:scale-[0.98] transition font-prompt"
+            className="flex-1 py-3 px-4 rounded-xl bg-kakao-yellow hover:bg-kakao-yellow-hover text-white font-bold text-xs text-center flex items-center justify-center gap-2 shadow-lg shadow-kakao-yellow/20 active:scale-[0.98] transition font-prompt"
           >
             <BookOpen className="w-4 h-4" />
             <span>อ่านตอนแรก</span>

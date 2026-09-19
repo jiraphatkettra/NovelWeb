@@ -29,50 +29,68 @@ export async function GET(req: NextRequest) {
       take: 100,
     });
 
-    // Populate target snippets for context (e.g. comment text, story title)
-    const enrichedReports = await Promise.all(
-      reports.map(async (rep) => {
-        let targetDetail: any = null;
-        try {
-          if (rep.targetType === "STORY") {
-            targetDetail = await prisma.story.findUnique({
-              where: { id: rep.targetId },
-              select: { id: true, title: true, slug: true, coverUrl: true, status: true },
-            });
-          } else if (rep.targetType === "COMMENT") {
-            targetDetail = await prisma.comment.findUnique({
-              where: { id: rep.targetId },
-              select: {
-                id: true,
-                content: true,
-                user: { select: { id: true, name: true, email: true } },
-                chapter: { select: { id: true, chapterNumber: true, story: { select: { title: true } } } },
-              },
-            });
-          } else if (rep.targetType === "USER") {
-            targetDetail = await prisma.user.findUnique({
-              where: { id: rep.targetId },
-              select: { id: true, name: true, penName: true, email: true, status: true },
-            });
-          } else if (rep.targetType === "CHAPTER") {
-            targetDetail = await prisma.chapter.findUnique({
-              where: { id: rep.targetId },
-              select: { id: true, chapterNumber: true, title: true, status: true, story: { select: { title: true } } },
-            });
-          }
-        } catch (e) {
-          console.warn("Failed to populate targetDetail:", e);
-        }
+    // Batch fetch target snippets to eliminate N+1 queries
+    const storyIds = Array.from(new Set(reports.filter((r) => r.targetType === "STORY").map((r) => r.targetId)));
+    const commentIds = Array.from(new Set(reports.filter((r) => r.targetType === "COMMENT").map((r) => r.targetId)));
+    const userIds = Array.from(new Set(reports.filter((r) => r.targetType === "USER").map((r) => r.targetId)));
+    const chapterIds = Array.from(new Set(reports.filter((r) => r.targetType === "CHAPTER").map((r) => r.targetId)));
 
-        return {
-          ...rep,
-          targetDetail,
-        };
-      })
-    );
+    const [stories, comments, users, chapters, pendingCount] = await Promise.all([
+      storyIds.length
+        ? prisma.story.findMany({
+            where: { id: { in: storyIds } },
+            select: { id: true, title: true, slug: true, coverUrl: true, status: true },
+          })
+        : Promise.resolve([]),
+      commentIds.length
+        ? prisma.comment.findMany({
+            where: { id: { in: commentIds } },
+            select: {
+              id: true,
+              content: true,
+              user: { select: { id: true, name: true, email: true } },
+              chapter: { select: { id: true, chapterNumber: true, story: { select: { title: true } } } },
+            },
+          })
+        : Promise.resolve([]),
+      userIds.length
+        ? prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, penName: true, email: true, status: true },
+          })
+        : Promise.resolve([]),
+      chapterIds.length
+        ? prisma.chapter.findMany({
+            where: { id: { in: chapterIds } },
+            select: { id: true, chapterNumber: true, title: true, status: true, story: { select: { title: true } } },
+          })
+        : Promise.resolve([]),
+      prisma.report.count({
+        where: { status: "PENDING" },
+      }),
+    ]);
 
-    const pendingCount = await prisma.report.count({
-      where: { status: "PENDING" },
+    const storyMap = new Map(stories.map((s) => [s.id, s]));
+    const commentMap = new Map(comments.map((c) => [c.id, c]));
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const chapterMap = new Map(chapters.map((ch) => [ch.id, ch]));
+
+    const enrichedReports = reports.map((rep) => {
+      let targetDetail: any = null;
+      if (rep.targetType === "STORY") {
+        targetDetail = storyMap.get(rep.targetId) || null;
+      } else if (rep.targetType === "COMMENT") {
+        targetDetail = commentMap.get(rep.targetId) || null;
+      } else if (rep.targetType === "USER") {
+        targetDetail = userMap.get(rep.targetId) || null;
+      } else if (rep.targetType === "CHAPTER") {
+        targetDetail = chapterMap.get(rep.targetId) || null;
+      }
+
+      return {
+        ...rep,
+        targetDetail,
+      };
     });
 
     return apiSuccess({ reports: enrichedReports, pendingCount });

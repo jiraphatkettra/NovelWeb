@@ -240,8 +240,8 @@ export function StoryModerationModal({
                   {status}
                 </span>
                 {isFeatured && (
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#FFE600]/20 text-[#FFE600] border border-[#FFE600]/30 flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-[#FFE600]" />
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#8B5CF6]/20 text-[#A78BFA] border border-[#8B5CF6]/30 flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-[#A78BFA]" />
                     แนะนำ (Featured)
                   </span>
                 )}
@@ -290,7 +290,7 @@ export function StoryModerationModal({
             onClick={() => setActiveTab("controls")}
             className={`py-3 transition border-b-2 flex items-center gap-2 whitespace-nowrap ${
               activeTab === "controls"
-                ? "border-[#FFE600] text-[#FFE600]"
+                ? "border-[#8B5CF6] text-[#A78BFA]"
                 : "border-transparent text-neutral-400 hover:text-white"
             }`}
           >
@@ -301,7 +301,7 @@ export function StoryModerationModal({
             onClick={() => setActiveTab("chapters")}
             className={`py-3 transition border-b-2 flex items-center gap-2 whitespace-nowrap ${
               activeTab === "chapters"
-                ? "border-[#FFE600] text-[#FFE600]"
+                ? "border-[#8B5CF6] text-[#A78BFA]"
                 : "border-transparent text-neutral-400 hover:text-white"
             }`}
           >
@@ -312,7 +312,7 @@ export function StoryModerationModal({
             onClick={() => setActiveTab("reports")}
             className={`py-3 transition border-b-2 flex items-center gap-2 whitespace-nowrap ${
               activeTab === "reports"
-                ? "border-[#FFE600] text-[#FFE600]"
+                ? "border-[#8B5CF6] text-[#A78BFA]"
                 : "border-transparent text-neutral-400 hover:text-white"
             }`}
           >
@@ -447,18 +447,18 @@ export function StoryModerationModal({
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-[#FFE600]" />
+                        <Sparkles className="w-4 h-4 text-[#A78BFA]" />
                         ดันเป็นผลงานแนะนำ (Featured Pick)
                       </span>
                       <button
                         type="button"
                         onClick={() => setIsFeatured(!isFeatured)}
                         className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                          isFeatured ? "bg-[#FFE600]" : "bg-neutral-800"
+                          isFeatured ? "bg-[#8B5CF6]" : "bg-neutral-800"
                         }`}
                       >
                         <div
-                          className={`w-5 h-5 rounded-full bg-black transition-transform ${
+                          className={`w-5 h-5 rounded-full bg-white transition-transform ${
                             isFeatured ? "translate-x-5" : "translate-x-0"
                           }`}
                         />
@@ -475,7 +475,7 @@ export function StoryModerationModal({
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="bg-neutral-900 border border-white/[0.1] rounded-lg text-xs text-white py-1 px-2.5 focus:outline-none focus:border-[#FFE600]"
+                      className="bg-neutral-900 border border-white/[0.1] rounded-lg text-xs text-white py-1 px-2.5 focus:outline-none focus:border-[#8B5CF6]"
                     >
                       <option value="Fantasy">แฟนตาซี (Fantasy)</option>
                       <option value="Romance">โรแมนซ์ (Romance)</option>
@@ -493,7 +493,7 @@ export function StoryModerationModal({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                    <Send className="w-3.5 h-3.5 text-[#FFE600]" />
+                    <Send className="w-3.5 h-3.5 text-[#A78BFA]" />
                     ส่งข้อความแจ้งเตือนถึงนักเขียน (Notification Note)
                   </label>
                   <span className="text-[10px] text-neutral-500">แจ้งเตือนไปยังกล่องข้อความของนักเขียนทันที</span>
@@ -504,7 +504,7 @@ export function StoryModerationModal({
                   value={moderationNote}
                   onChange={(e) => setModerationNote(e.target.value)}
                   placeholder="พิมพ์เหตุผลคำชี้แจง หรือสิ่งที่ต้องการให้นักเขียนแก้ไข เช่น ปัญหารูปปก หรือฉากที่ไม่เหมาะสม..."
-                  className="w-full p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition resize-none leading-relaxed"
+                  className="w-full p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] transition resize-none leading-relaxed"
                 />
 
                 {/* Quick Presets */}
@@ -684,10 +684,10 @@ export function StoryModerationModal({
               type="button"
               disabled={submitting}
               onClick={handleSaveModeration}
-              className="px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F2DA00] text-black text-xs font-bold transition shadow-md shadow-[#FFE600]/20 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition shadow-md shadow-[#8B5CF6]/20 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
             >
               {submitting ? (
-                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <span>บันทึกการปรับปรุง</span>

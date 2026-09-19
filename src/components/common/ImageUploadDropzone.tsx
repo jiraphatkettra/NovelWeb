@@ -207,7 +207,7 @@ async function compressImage(file: File, maxDim: number, quality = 0.85): Promis
           onClick={() => fileInputRef.current?.click()}
           className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 flex flex-col items-center justify-center gap-2 ${
             isDragging
-              ? "border-amber-400 bg-amber-500/10 shadow-lg shadow-amber-500/10"
+              ? "border-[#8B5CF6] bg-[#8B5CF6]/10 shadow-lg shadow-[#8B5CF6]/10"
               : "border-zinc-700 bg-zinc-900/60 hover:border-zinc-500 hover:bg-zinc-800/40"
           }`}
         >
@@ -220,9 +220,9 @@ async function compressImage(file: File, maxDim: number, quality = 0.85): Promis
             className="hidden"
           />
 
-          <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-amber-400 group-hover:scale-110 transition">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-[#A78BFA] group-hover:scale-110 transition">
             {uploading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-[#A78BFA]" />
             ) : (
               <Upload className="w-6 h-6" />
             )}

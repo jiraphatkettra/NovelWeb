@@ -92,7 +92,7 @@ export function generatePasswordResetEmailHtml({
           <!-- Header -->
           <tr>
             <td style="padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-              <div style="display: inline-block; width: 44px; height: 44px; background-color: #FFE600; border-radius: 12px; line-height: 44px; text-align: center; font-weight: 900; font-size: 20px; color: #000000;">
+              <div style="display: inline-block; width: 44px; height: 44px; background-color: #8B5CF6; border-radius: 12px; line-height: 44px; text-align: center; font-weight: 900; font-size: 20px; color: #ffffff;">
                 R
               </div>
               <h1 style="margin: 16px 0 0 0; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">ReadVerse</h1>
@@ -108,7 +108,7 @@ export function generatePasswordResetEmailHtml({
               </p>
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${resetUrl}" style="display: inline-block; background-color: #FFE600; color: #000000; font-weight: 700; font-size: 14px; padding: 14px 32px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 14px rgba(255, 230, 0, 0.25);">
+                <a href="${resetUrl}" style="display: inline-block; background-color: #8B5CF6; color: #ffffff; font-weight: 700; font-size: 14px; padding: 14px 32px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);">
                   ตั้งรหัสผ่านใหม่
                 </a>
               </div>
@@ -116,7 +116,7 @@ export function generatePasswordResetEmailHtml({
               <p style="margin: 0 0 12px 0; font-size: 12px; line-height: 1.5; color: #71717a;">
                 หากปุ่มด้านบนกดไม่ได้ กรุณาคัดลอกลิงก์ด้านล่างนี้ไปวางในเบราว์เซอร์ของคุณ:
               </p>
-              <p style="margin: 0 0 24px 0; font-size: 12px; color: #FFE600; word-break: break-all;">
+              <p style="margin: 0 0 24px 0; font-size: 12px; color: #A78BFA; word-break: break-all;">
                 ${resetUrl}
               </p>
 

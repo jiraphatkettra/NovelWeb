@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { prisma } from "./prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key-for-auth-2026";
@@ -29,7 +30,7 @@ export function verifyToken(token: string): JwtPayload | null {
   }
 }
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value;
   if (!token) return null;
@@ -50,4 +51,5 @@ export async function getCurrentUser() {
   }
 
   return user;
-}
+});
+

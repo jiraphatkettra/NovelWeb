@@ -120,7 +120,7 @@ export default function LibraryPage() {
   if (!user) {
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center text-[#A78BFA] mb-4">
           <Bookmark className="w-7 h-7" />
         </div>
         <h1 className="text-xl sm:text-2xl font-bold text-white font-prompt mb-2">
@@ -132,7 +132,7 @@ export default function LibraryPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => openAuthModal("LOGIN")}
-            className="px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.98]"
+            className="px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition active:scale-[0.98]"
           >
             เข้าสู่ระบบ
           </button>
@@ -166,7 +166,7 @@ export default function LibraryPage() {
             onClick={() => setActiveTab("READING")}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
               activeTab === "READING"
-                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                ? "bg-[#8B5CF6] text-white shadow-sm font-bold"
                 : "text-neutral-400 hover:text-white"
             }`}
           >
@@ -176,7 +176,7 @@ export default function LibraryPage() {
             onClick={() => setActiveTab("BOOKMARKS")}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
               activeTab === "BOOKMARKS"
-                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                ? "bg-[#8B5CF6] text-white shadow-sm font-bold"
                 : "text-neutral-400 hover:text-white"
             }`}
           >
@@ -186,7 +186,7 @@ export default function LibraryPage() {
             onClick={() => setActiveTab("PURCHASED")}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
               activeTab === "PURCHASED"
-                ? "bg-[#FFE600] text-black shadow-sm font-bold"
+                ? "bg-[#8B5CF6] text-white shadow-sm font-bold"
                 : "text-neutral-400 hover:text-white"
             }`}
           >
@@ -197,7 +197,7 @@ export default function LibraryPage() {
 
       {loading ? (
         <div className="py-24 flex justify-center">
-          <div className="w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : activeTab === "READING" ? (
         /* Tab 1: กำลังอ่าน (Reading) */
@@ -210,7 +210,7 @@ export default function LibraryPage() {
             </p>
             <Link
               href="/"
-              className="inline-flex px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+              className="inline-flex px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
             >
               สำรวจผลงาน
             </Link>
@@ -236,7 +236,7 @@ export default function LibraryPage() {
                   {/* Progress Bar overlay at bottom of cover */}
                   <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/80">
                     <div
-                      className="h-full bg-[#FFE600]"
+                      className="h-full bg-[#8B5CF6]"
                       style={{ width: `${Math.max(5, Math.min(100, item.progressPercent))}%` }}
                     />
                   </div>
@@ -244,7 +244,7 @@ export default function LibraryPage() {
 
                 <div className="p-3 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#FFE600] transition line-clamp-1">
+                    <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#A78BFA] transition line-clamp-1">
                       {item.story.title}
                     </h3>
                     <p className="text-[11px] text-neutral-400 truncate mt-0.5">
@@ -262,7 +262,7 @@ export default function LibraryPage() {
                           ? `/reader/${item.story.type === "MANGA" ? "manga" : "novel"}/${item.lastChapterId}`
                           : `/stories/${item.story.slug}`
                       }
-                      className="flex-1 py-1.5 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] text-black text-[11px] font-bold text-center flex items-center justify-center gap-1 transition"
+                      className="flex-1 py-1.5 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-[11px] font-bold text-center flex items-center justify-center gap-1 transition"
                     >
                       <Play className="w-3 h-3 fill-current" />
                       <span>อ่านต่อ</span>
@@ -291,7 +291,7 @@ export default function LibraryPage() {
             </p>
             <Link
               href="/"
-              className="inline-flex px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+              className="inline-flex px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
             >
               สำรวจผลงาน
             </Link>
@@ -318,7 +318,7 @@ export default function LibraryPage() {
                 <div className="p-3 flex-1 flex flex-col justify-between">
                   <div>
                     <Link href={`/stories/${b.story.slug}`}>
-                      <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#FFE600] transition line-clamp-1">
+                      <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#A78BFA] transition line-clamp-1">
                         {b.story.title}
                       </h3>
                     </Link>
@@ -358,7 +358,7 @@ export default function LibraryPage() {
             </p>
             <Link
               href="/"
-              className="inline-flex px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+              className="inline-flex px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
             >
               สำรวจผลงาน
             </Link>
@@ -385,13 +385,13 @@ export default function LibraryPage() {
 
                 <div className="p-3 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#FFE600] transition line-clamp-1">
+                    <h3 className="font-prompt font-bold text-xs text-white group-hover:text-[#A78BFA] transition line-clamp-1">
                       {item.story.title}
                     </h3>
                     <p className="text-[11px] text-neutral-400 truncate mt-0.5">
                       {item.story.author.penName || item.story.author.name}
                     </p>
-                    <div className="text-[10px] text-[#FFE600] mt-1.5 font-medium">
+                    <div className="text-[10px] text-[#A78BFA] mt-1.5 font-medium">
                       ปลดล็อกแล้ว {item.unlockedChaptersCount} ตอน
                     </div>
                   </div>

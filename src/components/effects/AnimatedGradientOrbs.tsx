@@ -18,22 +18,22 @@ export function AnimatedGradientOrbs() {
         }}
       />
 
-      {/* Secondary orb — gold/yellow */}
+      {/* Secondary orb — electric violet / indigo */}
       <div
-        className="absolute top-[40%] -right-[15%] w-[500px] h-[500px] rounded-full opacity-[0.05]"
+        className="absolute top-[40%] -right-[15%] w-[550px] h-[550px] rounded-full opacity-[0.06]"
         style={{
           background:
-            "radial-gradient(circle, rgba(255, 230, 0, 0.8), rgba(255, 184, 0, 0.4), transparent 70%)",
+            "radial-gradient(circle, rgba(139, 92, 246, 0.7), rgba(124, 58, 237, 0.35), transparent 70%)",
           animation: "orb-drift-2 30s ease-in-out infinite",
         }}
       />
 
-      {/* Tertiary orb — pink/rose */}
+      {/* Tertiary orb — soft lavender / deep blue */}
       <div
-        className="absolute -bottom-[20%] left-[30%] w-[450px] h-[450px] rounded-full opacity-[0.04]"
+        className="absolute -bottom-[20%] left-[30%] w-[500px] h-[500px] rounded-full opacity-[0.05]"
         style={{
           background:
-            "radial-gradient(circle, rgba(244, 63, 94, 0.7), rgba(168, 85, 247, 0.3), transparent 70%)",
+            "radial-gradient(circle, rgba(167, 139, 250, 0.6), rgba(99, 102, 241, 0.3), transparent 70%)",
           animation: "orb-drift-1 35s ease-in-out infinite",
           animationDelay: "-10s",
         }}

@@ -89,7 +89,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg bg-[#141418] border border-white/10 rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 overflow-hidden">
         {/* Glow effect */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#8B5CF6]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
@@ -102,12 +102,12 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
 
         {/* Header Badge & Title */}
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 text-[#A78BFA] text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
             <span>ReadVerse Creator Studio</span>
           </div>
           <h2 className="text-2xl font-bold text-white font-prompt flex items-center gap-2.5">
-            <PenTool className="w-6 h-6 text-amber-400" />
+            <PenTool className="w-6 h-6 text-[#A78BFA]" />
             <span>เริ่มต้นเป็นนักเขียนทันที</span>
           </h2>
           <p className="text-xs text-neutral-400">
@@ -118,7 +118,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
         {/* Feature Highlights Bento */}
         <div className="grid grid-cols-3 gap-2.5">
           <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-center space-y-1">
-            <Coins className="w-4 h-4 text-amber-400 mx-auto" />
+            <Coins className="w-4 h-4 text-[#A78BFA] mx-auto" />
             <p className="text-xs font-bold text-white">ส่วนแบ่ง 70%</p>
             <p className="text-[10px] text-neutral-400">จากยอดปลดล็อกตอน</p>
           </div>
@@ -152,7 +152,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
               value={penName}
               onChange={(e) => setPenName(e.target.value)}
               placeholder="นามปากกาที่คุณต้องการใช้แสดง"
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
             />
           </div>
 
@@ -165,7 +165,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="เช่น เขียนแนวกำลังภายใน แฟนตาซี หรือรักโรแมนติก..."
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] resize-none"
             />
           </div>
 
@@ -175,7 +175,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
               type="checkbox"
               checked={agreementAccepted}
               onChange={(e) => setAgreementAccepted(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-neutral-700 text-amber-500 focus:ring-amber-500 bg-neutral-900"
+              className="mt-0.5 w-4 h-4 rounded border-neutral-700 text-[#8B5CF6] focus:ring-[#8B5CF6] bg-neutral-900"
             />
             <span className="text-[11px] text-neutral-400 leading-relaxed">
               ฉันยืนยันว่าเนื้อหาผลงานที่นำมาลงเป็นผลงานที่สร้างสรรค์ขึ้นเอง และยินยอมปฏิบัติตาม{" "}
@@ -183,7 +183,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
                 href="/legal/author-agreement"
                 target="_blank"
                 rel="noreferrer"
-                className="text-amber-400 underline hover:text-amber-300"
+                className="text-[#A78BFA] underline hover:text-[#C4B5FD]"
               >
                 สัญญาข้อตกลงนักเขียน (Author Agreement)
               </a>
@@ -193,7 +193,7 @@ export function BecomeAuthorModal({ isOpen, onClose, onSuccess }: BecomeAuthorMo
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-bold text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 mt-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#8B5CF6] via-[#7C3AED] to-[#6D28D9] hover:from-[#7C3AED] hover:to-[#5B21B6] text-white font-bold text-sm shadow-lg shadow-[#8B5CF6]/25 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 mt-2"
           >
             {loading ? (
               <span>กำลังเปิดใช้งาน...</span>

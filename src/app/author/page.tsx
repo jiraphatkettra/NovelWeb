@@ -294,7 +294,7 @@ export default function AuthorStudioPage() {
   if (!user) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-12 h-12 rounded-xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mb-4">
+        <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center text-[#A78BFA] mb-4">
           <PenTool className="w-6 h-6" />
         </div>
         <h2 className="text-xl font-bold text-white font-prompt mb-2">สตูดิโอนักเขียน</h2>
@@ -303,7 +303,7 @@ export default function AuthorStudioPage() {
         </p>
         <Link
           href="/auth/login"
-          className="px-6 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+          className="px-6 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
         >
           เข้าสู่ระบบ
         </Link>
@@ -316,7 +316,7 @@ export default function AuthorStudioPage() {
       <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-2xl bg-[#121215] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mx-auto mb-2">
+            <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center text-[#A78BFA] mx-auto mb-2">
               <PenTool className="w-6 h-6" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white font-prompt">
@@ -330,7 +330,7 @@ export default function AuthorStudioPage() {
           {/* Value props */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
             <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1">
-              <div className="w-7 h-7 rounded-lg bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600]">
+              <div className="w-7 h-7 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center text-[#A78BFA]">
                 <Coins className="w-4 h-4" />
               </div>
               <p className="text-xs font-bold text-white">ส่วนแบ่งรายได้ 70%</p>
@@ -365,7 +365,7 @@ export default function AuthorStudioPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="block text-neutral-300 font-medium mb-1.5">
-                  นามปากกา (Pen Name) <span className="text-[#FFE600]">*</span>
+                  นามปากกา (Pen Name) <span className="text-[#A78BFA]">*</span>
                 </label>
                 <input
                   type="text"
@@ -373,7 +373,7 @@ export default function AuthorStudioPage() {
                   defaultValue={user.penName || user.name}
                   onChange={(e) => setOnboardingPenName(e.target.value)}
                   placeholder="เช่น นามปากกาในดวงใจ"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                 />
               </div>
 
@@ -385,7 +385,7 @@ export default function AuthorStudioPage() {
                   type="text"
                   onChange={(e) => setOnboardingBio(e.target.value)}
                   placeholder="เช่น นักเขียนนิยายแฟนตาซีและเกิดใหม่"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                 />
               </div>
             </div>
@@ -396,11 +396,11 @@ export default function AuthorStudioPage() {
                   type="checkbox"
                   checked={onboardingAgreement}
                   onChange={(e) => setOnboardingAgreement(e.target.checked)}
-                  className="mt-0.5 rounded accent-[#FFE600]"
+                  className="mt-0.5 rounded accent-[#8B5CF6]"
                 />
                 <span>
                   ฉันยอมรับ{" "}
-                  <Link href="/legal/author-agreement" target="_blank" className="text-[#FFE600] underline">
+                  <Link href="/legal/author-agreement" target="_blank" className="text-[#A78BFA] underline">
                     สัญญาข้อตกลงและเงื่อนไขของนักเขียน
                   </Link>{" "}
                   และยืนยันว่าเป็นเจ้าของลิขสิทธิ์ผลงานที่นำมาลง
@@ -411,7 +411,7 @@ export default function AuthorStudioPage() {
             <button
               type="submit"
               disabled={onboardingLoading}
-              className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.99] disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition active:scale-[0.99] disabled:opacity-50"
             >
               {onboardingLoading ? "กำลังเปิดใช้งาน..." : "เปิดใช้งานบัญชีนักเขียนทันที"}
             </button>
@@ -426,7 +426,7 @@ export default function AuthorStudioPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
         <div>
-          <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-[#A78BFA] text-xs font-bold uppercase tracking-wider mb-1">
             <PenTool className="w-3.5 h-3.5" />
             <span>สตูดิโอนักเขียน</span>
           </div>
@@ -446,7 +446,7 @@ export default function AuthorStudioPage() {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition active:scale-[0.99]"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition active:scale-[0.99]"
           >
             <Plus className="w-4 h-4" />
             <span>สร้างเรื่องใหม่</span>
@@ -456,7 +456,7 @@ export default function AuthorStudioPage() {
 
       {loading || !data ? (
         <div className="py-20 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full mx-auto" />
+          <div className="animate-spin w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full mx-auto" />
         </div>
       ) : (
         <div className="my-6 space-y-8">
@@ -464,7 +464,7 @@ export default function AuthorStudioPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-4 rounded-xl bg-[#121215] border border-white/[0.08]">
               <div className="flex items-center gap-2 text-neutral-400 text-xs mb-1.5">
-                <BookOpen className="w-4 h-4 text-[#FFE600]" />
+                <BookOpen className="w-4 h-4 text-[#A78BFA]" />
                 <span>จำนวนผลงาน</span>
               </div>
               <p className="text-xl font-bold text-white font-prompt">{data.stats.totalStories} เรื่อง</p>
@@ -480,10 +480,10 @@ export default function AuthorStudioPage() {
 
             <div className="p-4 rounded-xl bg-[#121215] border border-white/[0.08]">
               <div className="flex items-center gap-2 text-neutral-400 text-xs mb-1.5">
-                <Coins className="w-4 h-4 text-[#FFE600]" />
+                <Coins className="w-4 h-4 text-[#A78BFA]" />
                 <span>รายได้รวมสะสม (70%)</span>
               </div>
-              <p className="text-xl font-bold text-[#FFE600] font-prompt">฿{data.author.totalEarnings.toLocaleString()}</p>
+              <p className="text-xl font-bold text-[#A78BFA] font-prompt">฿{data.author.totalEarnings.toLocaleString()}</p>
             </div>
 
             <div className="p-4 rounded-xl bg-[#121215] border border-white/[0.08]">
@@ -511,7 +511,7 @@ export default function AuthorStudioPage() {
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
                 >
                   <Plus className="w-4 h-4" />
                   <span>สร้างเรื่องแรก</span>
@@ -546,7 +546,7 @@ export default function AuthorStudioPage() {
                                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                   : story.status === "ARCHIVED"
                                   ? "bg-neutral-800 text-neutral-400 border-neutral-700"
-                                  : "bg-[#FFE600]/10 text-[#FFE600] border-[#FFE600]/20"
+                                  : "bg-[#8B5CF6]/10 text-[#A78BFA] border-[#8B5CF6]/20"
                               }`}
                             >
                               {story.status === "PUBLISHED"
@@ -574,7 +574,7 @@ export default function AuthorStudioPage() {
                       <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-white/[0.06]">
                         <Link
                           href={`/author/stories/${story.id}`}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition"
                         >
                           <Settings className="w-3.5 h-3.5" />
                           <span>จัดการตอน</span>
@@ -640,7 +640,7 @@ export default function AuthorStudioPage() {
                     onClick={() => setNewType("NOVEL")}
                     className={`p-3 rounded-xl border text-left flex flex-col gap-0.5 transition ${
                       newType === "NOVEL"
-                        ? "bg-[#FFE600]/10 border-[#FFE600] text-white"
+                        ? "bg-[#8B5CF6]/10 border-[#8B5CF6] text-white"
                         : "bg-white/[0.03] border-white/[0.08] text-neutral-400 hover:border-white/20"
                     }`}
                   >
@@ -653,7 +653,7 @@ export default function AuthorStudioPage() {
                     onClick={() => setNewType("MANGA")}
                     className={`p-3 rounded-xl border text-left flex flex-col gap-0.5 transition ${
                       newType === "MANGA"
-                        ? "bg-[#FFE600]/10 border-[#FFE600] text-white"
+                        ? "bg-[#8B5CF6]/10 border-[#8B5CF6] text-white"
                         : "bg-white/[0.03] border-white/[0.08] text-neutral-400 hover:border-white/20"
                     }`}
                   >
@@ -672,7 +672,7 @@ export default function AuthorStudioPage() {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="เช่น มหาศึกราชันย์มนตรา"
-                  className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] text-xs"
+                  className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] text-xs"
                 />
               </div>
 
@@ -683,7 +683,7 @@ export default function AuthorStudioPage() {
                   <select
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
                   >
                     {AVAILABLE_TAGS.map((c) => (
                       <option key={c} value={c}>
@@ -698,7 +698,7 @@ export default function AuthorStudioPage() {
                   <select
                     value={newRating}
                     onChange={(e) => setNewRating(e.target.value as "ALL_AGES" | "TEEN_13" | "MATURE_18")}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
                   >
                     <option value="ALL_AGES">ทั่วไป (All Ages)</option>
                     <option value="TEEN_13">13+ (วัยรุ่น)</option>
@@ -711,7 +711,7 @@ export default function AuthorStudioPage() {
                   <select
                     value={newReleaseDay}
                     onChange={(e) => setNewReleaseDay(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
                   >
                     <option value="MON">วันจันทร์ (MON)</option>
                     <option value="TUE">วันอังคาร (TUE)</option>
@@ -728,7 +728,7 @@ export default function AuthorStudioPage() {
               {/* Tags */}
               <div>
                 <label className="text-neutral-300 font-medium block mb-1.5 flex items-center gap-1.5">
-                  <Tag className="w-3 h-3 text-[#FFE600]" />
+                  <Tag className="w-3 h-3 text-[#A78BFA]" />
                   <span>แนว/แท็กของเรื่อง</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -741,7 +741,7 @@ export default function AuthorStudioPage() {
                         onClick={() => toggleTag(t)}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition ${
                           isSelected
-                            ? "bg-[#FFE600] text-black font-semibold"
+                            ? "bg-[#8B5CF6] text-white font-semibold"
                             : "bg-white/[0.04] text-neutral-400 hover:text-white border border-white/[0.08]"
                         }`}
                       >
@@ -772,7 +772,7 @@ export default function AuthorStudioPage() {
                   value={newSynopsis}
                   onChange={(e) => setNewSynopsis(e.target.value)}
                   placeholder="เขียนเรื่องย่อเพื่อดึงดูดผู้อ่าน..."
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] resize-none leading-relaxed"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] resize-none leading-relaxed"
                 />
               </div>
 
@@ -780,7 +780,7 @@ export default function AuthorStudioPage() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="w-full py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{creating ? "กำลังสร้างผลงาน..." : "บันทึกและไปหน้าจัดการตอน"}</span>
@@ -829,7 +829,7 @@ export default function AuthorStudioPage() {
                   required
                   value={payoutAmount}
                   onChange={(e) => setPayoutAmount(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs focus:outline-none focus:border-[#FFE600]"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs focus:outline-none focus:border-[#8B5CF6]"
                 />
               </div>
 
@@ -838,7 +838,7 @@ export default function AuthorStudioPage() {
                 <select
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
                 >
                   <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย (KBANK)</option>
                   <option value="ธนาคารไทยพาณิชย์">ธนาคารไทยพาณิชย์ (SCB)</option>
@@ -856,7 +856,7 @@ export default function AuthorStudioPage() {
                   value={bankAccountNo}
                   onChange={(e) => setBankAccountNo(e.target.value)}
                   placeholder="012-3-45678-9"
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono focus:outline-none focus:border-[#FFE600]"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono focus:outline-none focus:border-[#8B5CF6]"
                 />
               </div>
 
@@ -868,7 +868,7 @@ export default function AuthorStudioPage() {
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
                   placeholder={user.name}
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
                 />
               </div>
 

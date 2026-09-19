@@ -80,7 +80,7 @@ function SearchPageContent() {
           />
           <button
             type="submit"
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-lg bg-kakao-yellow text-black font-bold text-xs hover:bg-kakao-yellow-hover transition"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-lg bg-kakao-yellow text-white font-bold text-xs hover:bg-kakao-yellow-hover transition"
           >
             ค้นหา
           </button>
@@ -118,7 +118,7 @@ function SearchPageContent() {
               onClick={() => setCategory(c)}
               className={`px-3 py-1 rounded-lg text-xs font-medium shrink-0 transition ${
                 category === c
-                  ? "bg-kakao-yellow text-black font-bold"
+                  ? "bg-kakao-yellow text-white font-bold"
                   : "bg-kakao-card text-neutral-400 border border-kakao-border hover:text-white"
               }`}
             >
@@ -131,7 +131,7 @@ function SearchPageContent() {
       {/* Results */}
       {loading ? (
         <div className="py-20 flex justify-center">
-          <div className="w-6 h-6 border-2 border-[#FFE600]/30 border-t-[#FFE600] rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-[#8B5CF6]/30 border-t-[#8B5CF6] rounded-full animate-spin" />
         </div>
       ) : stories.length === 0 ? (
         <div className="py-20 text-center rounded-2xl border border-dashed border-white/10 bg-[#121215]/40 max-w-md mx-auto">
@@ -155,7 +155,7 @@ function SearchPageContent() {
             )}
             <Link
               href="/"
-              className="px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
+              className="px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition"
             >
               สำรวจผลงานทั้งหมด
             </Link>
@@ -188,7 +188,7 @@ function SearchPageContent() {
                 </div>
 
                 <div className="mt-2 space-y-0.5">
-                  <h4 className="text-xs font-semibold text-white line-clamp-1 font-prompt group-hover:text-[#FFE600] transition">
+                  <h4 className="text-xs font-semibold text-white line-clamp-1 font-prompt group-hover:text-[#A78BFA] transition">
                     {story.title}
                   </h4>
                   <p className="text-[11px] text-neutral-500 truncate">
@@ -196,7 +196,7 @@ function SearchPageContent() {
                   </p>
                   <div className="flex items-center gap-2 text-[10px] text-neutral-600">
                     <span className="flex items-center gap-0.5">
-                      <Star className="w-2.5 h-2.5 fill-[#FFE600] text-[#FFE600]" />
+                      <Star className="w-2.5 h-2.5 fill-[#A78BFA] text-[#A78BFA]" />
                       <span className="text-neutral-400">{story.ratingAverage?.toFixed(1) || "5.0"}</span>
                     </span>
                     <span>{story._count?.chapters || 0} ตอน</span>

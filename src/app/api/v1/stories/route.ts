@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { getCategoryMatchValues } from "@/lib/categories";
+import { memoryCache } from "@/lib/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -46,35 +47,50 @@ export async function GET(req: NextRequest) {
       orderBy = { ratingAverage: "desc" };
     }
 
-    const [total, stories] = await Promise.all([
-      prisma.story.count({ where }),
-      prisma.story.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              penName: true,
-              avatar: true,
-            },
-          },
-          _count: {
-            select: { chapters: true, comments: true },
-          },
-        },
-      }),
-    ]);
+    const cacheKey = `stories:${type || "ALL"}:${category || "ALL"}:${isFeatured}:${sort}:${page}:${limit}:${search || ""}`;
+    const ttlSeconds = search ? 15 : 45; // 45s for common feed/hero, 15s for searches
 
-    return apiSuccess(stories, {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    });
+    const result = await memoryCache.remember(
+      cacheKey,
+      ttlSeconds,
+      async () => {
+        const [total, stories] = await Promise.all([
+          prisma.story.count({ where }),
+          prisma.story.findMany({
+            where,
+            orderBy,
+            skip,
+            take: limit,
+            include: {
+              author: {
+                select: {
+                  id: true,
+                  name: true,
+                  penName: true,
+                  avatar: true,
+                },
+              },
+              _count: {
+                select: { chapters: true, comments: true },
+              },
+            },
+          }),
+        ]);
+
+        return {
+          stories,
+          meta: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        };
+      },
+      ["stories"]
+    );
+
+    return apiSuccess(result.stories, result.meta);
   } catch (error) {
     console.error("Stories fetch error:", error);
     return apiError("INTERNAL_SERVER_ERROR", "ไม่สามารถดึงข้อมูลเรื่องได้");

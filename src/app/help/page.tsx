@@ -52,7 +52,7 @@ export default function HelpCenterPage() {
     <div className="min-h-screen bg-black text-white py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-10">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600] mx-auto mb-3">
+        <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center text-[#A78BFA] mx-auto mb-3">
           <HelpCircle className="w-6 h-6" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-prompt">
@@ -78,7 +78,7 @@ export default function HelpCenterPage() {
                 className="w-full p-4 text-left flex items-center justify-between text-xs sm:text-sm font-semibold text-neutral-200 hover:text-white"
               >
                 <span>{faq.q}</span>
-                {isOpen ? <ChevronUp className="w-4 h-4 text-[#FFE600]" /> : <ChevronDown className="w-4 h-4 text-neutral-500" />}
+                {isOpen ? <ChevronUp className="w-4 h-4 text-[#A78BFA]" /> : <ChevronDown className="w-4 h-4 text-neutral-500" />}
               </button>
               {isOpen && (
                 <div className="px-4 pb-4 pt-1 text-xs text-neutral-400 border-t border-white/[0.06] leading-relaxed font-sarabun">
@@ -120,7 +120,7 @@ export default function HelpCenterPage() {
               <select
                 value={ticketCategory}
                 onChange={(e) => setTicketCategory(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white focus:outline-none focus:border-[#8B5CF6]"
               >
                 <option value="COIN">ปัญหาการซื้อเหรียญ / ยอดเหรียญไม่เข้า</option>
                 <option value="ACCOUNT">ปัญหาการเข้าสู่ระบบและบัญชีผู้ใช้</option>
@@ -138,7 +138,7 @@ export default function HelpCenterPage() {
                 value={ticketTitle}
                 onChange={(e) => setTicketTitle(e.target.value)}
                 placeholder="ระบุหัวข้อปัญหาอย่างสั้นกระชับ..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
 
@@ -150,14 +150,14 @@ export default function HelpCenterPage() {
                 value={ticketDescription}
                 onChange={(e) => setTicketDescription(e.target.value)}
                 placeholder="อธิบายรายละเอียด วันที่ เวลา หรือเลขที่คำสั่งซื้อที่เกี่ยวข้อง..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] resize-none"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] resize-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition flex items-center justify-center gap-2 active:scale-[0.99]"
+              className="w-full py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               <Send className="w-4 h-4" />
               <span>{submitting ? "กำลังส่งคำร้อง..." : "ส่งคำร้องแจ้งปัญหา"}</span>

@@ -149,7 +149,7 @@ export function ReportsManagementTab() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#FFE600]"
+            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#8B5CF6]"
           >
             <option value="ALL">ทุกสถานะ (Status)</option>
             <option value="PENDING">รอตรวจสอบ (PENDING)</option>
@@ -162,7 +162,7 @@ export function ReportsManagementTab() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#FFE600]"
+            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#8B5CF6]"
           >
             <option value="ALL">ทุกประเภทเป้าหมาย</option>
             <option value="STORY">ผลงาน (STORY)</option>
@@ -266,7 +266,7 @@ export function ReportsManagementTab() {
                           <Link
                             href={`/stories/${rep.targetDetail.slug}`}
                             target="_blank"
-                            className="text-[11px] text-[#FFE600] hover:underline flex items-center gap-1"
+                            className="text-[11px] text-[#A78BFA] hover:underline flex items-center gap-1"
                           >
                             <span>เปิดดูผลงาน</span>
                             <ExternalLink className="w-3 h-3" />

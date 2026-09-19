@@ -6,12 +6,12 @@ export default function NotFound() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-black text-white">
       <div className="max-w-md w-full text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-[#121215] border border-white/10 flex items-center justify-center mx-auto text-[#FFE600]">
+        <div className="w-16 h-16 rounded-2xl bg-[#121215] border border-white/10 flex items-center justify-center mx-auto text-[#A78BFA]">
           <BookOpen className="w-8 h-8" />
         </div>
 
         <div className="space-y-2">
-          <span className="inline-block px-3 py-1 rounded-full bg-[#FFE600]/10 border border-[#FFE600]/20 text-[#FFE600] text-xs font-bold font-mono">
+          <span className="inline-block px-3 py-1 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 text-[#A78BFA] text-xs font-bold font-mono">
             404 NOT FOUND
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold font-prompt text-white">
@@ -25,7 +25,7 @@ export default function NotFound() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <Link
             href="/"
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition flex items-center justify-center gap-2 active:scale-[0.98]"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition flex items-center justify-center gap-2 active:scale-[0.98]"
           >
             <Home className="w-4 h-4" />
             <span>กลับหน้าหลัก</span>
@@ -35,7 +35,7 @@ export default function NotFound() {
             href="/search"
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#121215] hover:bg-neutral-900 border border-white/10 text-white font-semibold text-xs transition flex items-center justify-center gap-2 active:scale-[0.98]"
           >
-            <Search className="w-4 h-4 text-[#FFE600]" />
+            <Search className="w-4 h-4 text-[#A78BFA]" />
             <span>ค้นหาผลงาน</span>
           </Link>
         </div>

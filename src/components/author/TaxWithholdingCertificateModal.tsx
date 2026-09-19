@@ -147,7 +147,7 @@ export function TaxWithholdingCertificateModal({
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-kakao-yellow text-black font-bold text-xs hover:bg-kakao-yellow-hover transition"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-kakao-yellow text-white font-bold text-xs hover:bg-kakao-yellow-hover transition"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>พิมพ์เอกสาร (Print / PDF)</span>

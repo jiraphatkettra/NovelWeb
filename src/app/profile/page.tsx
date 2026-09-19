@@ -215,7 +215,7 @@ export default function ProfilePage() {
         <p className="text-xs text-neutral-400 mb-5">คุณต้องเข้าสู่ระบบก่อนเพื่อจัดการข้อมูลส่วนตัว</p>
         <Link
           href="/auth/login"
-          className="px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+          className="px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
         >
           เข้าสู่ระบบ
         </Link>
@@ -255,7 +255,7 @@ export default function ProfilePage() {
               <span>สถานะ: {user.status}</span>
             </div>
             {user.wallet && (
-              <div className="text-[#FFE600] font-bold">
+              <div className="text-[#A78BFA] font-bold">
                 เหรียญ: {(user.wallet.paidBalance || 0) + (user.wallet.freeBalance || 0)} 🪙
               </div>
             )}
@@ -265,9 +265,9 @@ export default function ProfilePage() {
 
       {/* BECOME AN AUTHOR CTA (For Readers) */}
       {user.role === "READER" && (
-        <div className="p-5 rounded-xl bg-[#121215] border border-[#FFE600]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-5 rounded-xl bg-[#121215] border border-[#8B5CF6]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FFE600]">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#A78BFA]">
               <Feather className="w-3.5 h-3.5" />
               <span>ก้าวสู่การเป็นนักเขียน</span>
             </div>
@@ -282,7 +282,7 @@ export default function ProfilePage() {
           <div>
             <button
               onClick={() => setShowBecomeModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.99]"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition active:scale-[0.99]"
             >
               <PenTool className="w-3.5 h-3.5" />
               <span>เปิดโหมดนักเขียนทันที (ฟรี)</span>
@@ -296,7 +296,7 @@ export default function ProfilePage() {
       <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
         <div className="border-b border-white/[0.08] pb-3">
           <h2 className="text-sm font-bold text-white font-prompt flex items-center gap-2">
-            <Edit3 className="w-4 h-4 text-[#FFE600]" />
+            <Edit3 className="w-4 h-4 text-[#A78BFA]" />
             <span>แก้ไขข้อมูลส่วนตัว</span>
           </h2>
           <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -313,7 +313,7 @@ export default function ProfilePage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
 
@@ -324,7 +324,7 @@ export default function ProfilePage() {
                 value={penName}
                 onChange={(e) => setPenName(e.target.value)}
                 placeholder="เช่น นามปากกาสุดเท่"
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
           </div>
@@ -346,7 +346,7 @@ export default function ProfilePage() {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="บอกเล่าเรื่องราวความชอบ หรือสไตล์งานเขียนของคุณ..."
-              className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600] resize-none leading-relaxed"
+              className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6] resize-none leading-relaxed"
             />
           </div>
 
@@ -354,7 +354,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={savingProfile}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{savingProfile ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</span>
@@ -367,7 +367,7 @@ export default function ProfilePage() {
       <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
         <div className="border-b border-white/[0.08] pb-3">
           <h2 className="text-sm font-bold text-white font-prompt flex items-center gap-2">
-            <Lock className="w-4 h-4 text-[#FFE600]" />
+            <Lock className="w-4 h-4 text-[#A78BFA]" />
             <span>เปลี่ยนรหัสผ่าน</span>
           </h2>
           <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -384,7 +384,7 @@ export default function ProfilePage() {
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+              className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
             />
           </div>
 
@@ -398,7 +398,7 @@ export default function ProfilePage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
             <div>
@@ -410,7 +410,7 @@ export default function ProfilePage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
           </div>

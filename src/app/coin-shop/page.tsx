@@ -138,13 +138,13 @@ export default function CoinShopPage() {
         </div>
 
         {/* Current Balance Card */}
-        <div className="p-3.5 px-5 rounded-xl bg-[#121215] border border-white/[0.08] flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600]">
-            <Coins className="w-5 h-5" />
+        <div className="p-3.5 px-5 rounded-xl bg-[#121118] border border-white/[0.08] flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#C4B5FD]">
+            <Coins className="w-5 h-5 text-[#A78BFA]" />
           </div>
           <div>
             <p className="text-[11px] text-neutral-400">เหรียญคงเหลือทั้งหมด</p>
-            <p className="text-xl font-bold text-[#FFE600] font-prompt">
+            <p className="text-xl font-bold text-[#C4B5FD] font-prompt">
               {totalBalance.toLocaleString()}{" "}
               <span className="text-xs font-normal text-neutral-400">เหรียญ</span>
             </p>
@@ -170,7 +170,7 @@ export default function CoinShopPage() {
 
         {loading ? (
           <div className="py-16 text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full mx-auto" />
+            <div className="animate-spin w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full mx-auto" />
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5">
@@ -181,17 +181,17 @@ export default function CoinShopPage() {
                   key={pkg.id}
                   className={`p-4 rounded-xl border flex flex-col justify-between transition-all duration-200 ${
                     pkg.isPopular
-                      ? "bg-[#16161A] border-[#FFE600]/60 shadow-sm"
-                      : "bg-[#121215] border-white/[0.08] hover:border-white/20"
+                      ? "bg-[#161420] border-[#8B5CF6]/50 shadow-lg shadow-purple-950/30"
+                      : "bg-[#121118] border-white/[0.08] hover:border-white/20"
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600]">
+                      <div className="w-7 h-7 rounded-lg bg-[#8B5CF6]/15 flex items-center justify-center text-[#A78BFA]">
                         <Coins className="w-3.5 h-3.5" />
                       </div>
                       {pkg.isPopular && (
-                        <span className="text-[10px] text-[#FFE600] font-semibold tracking-wide font-prompt">
+                        <span className="text-[10px] text-[#C4B5FD] font-semibold tracking-wide font-prompt px-2 py-0.5 rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6]/30">
                           แนะนำ
                         </span>
                       )}
@@ -207,7 +207,7 @@ export default function CoinShopPage() {
                         <span className="text-[11px] text-neutral-400">เหรียญ</span>
                       </div>
                       {pkg.bonusCoins > 0 && (
-                        <p className="text-[10px] text-[#FFE600] mt-0.5">
+                        <p className="text-[10px] text-[#C4B5FD] mt-0.5">
                           +โบนัส {pkg.bonusCoins} เหรียญ
                         </p>
                       )}
@@ -229,7 +229,7 @@ export default function CoinShopPage() {
                       }}
                       className={`w-full py-2 rounded-lg font-bold text-xs transition active:scale-[0.98] ${
                         pkg.isPopular
-                          ? "bg-[#FFE600] hover:bg-[#F5DC00] text-black"
+                          ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-md shadow-purple-500/20"
                           : "bg-white/[0.06] hover:bg-white/[0.1] text-white"
                       }`}
                     >
@@ -301,14 +301,14 @@ export default function CoinShopPage() {
                 <h3 className="text-lg font-bold text-white font-prompt">ชำระเงินสำเร็จ!</h3>
                 <p className="text-xs text-neutral-300">
                   คุณได้รับเหรียญจำนวน{" "}
-                  <strong className="text-[#FFE600] font-bold">
+                  <strong className="text-[#C4B5FD] font-bold">
                     +{successOrder.coinsCredited} เหรียญ
                   </strong>{" "}
                   เข้ากระเป๋าเรียบร้อยแล้ว
                 </p>
                 <button
                   onClick={() => setSelectedPackage(null)}
-                  className="mt-4 w-full py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                  className="mt-4 w-full py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition shadow-md shadow-purple-500/25"
                 >
                   เรียบร้อย
                 </button>
@@ -330,25 +330,25 @@ export default function CoinShopPage() {
                     onClick={() => setPaymentProvider("PROMPTPAY")}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       paymentProvider === "PROMPTPAY"
-                        ? "bg-[#FFE600]/10 border-[#FFE600]"
+                        ? "bg-[#8B5CF6]/15 border-[#8B5CF6]"
                         : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <QrCode className="w-4 h-4 text-[#FFE600]" />
+                      <QrCode className="w-4 h-4 text-[#A78BFA]" />
                       <div>
                         <p className="text-xs font-bold text-white">พร้อมเพย์ (PromptPay QR)</p>
                         <p className="text-[10px] text-neutral-400">สแกนจ่ายผ่านแอปธนาคารทุกแห่ง</p>
                       </div>
                     </div>
-                    {paymentProvider === "PROMPTPAY" && <CheckCircle2 className="w-4 h-4 text-[#FFE600]" />}
+                    {paymentProvider === "PROMPTPAY" && <CheckCircle2 className="w-4 h-4 text-[#C4B5FD]" />}
                   </div>
 
                   <div
                     onClick={() => setPaymentProvider("CREDIT_CARD")}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       paymentProvider === "CREDIT_CARD"
-                        ? "bg-[#FFE600]/10 border-[#FFE600]"
+                        ? "bg-[#8B5CF6]/15 border-[#8B5CF6]"
                         : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
                     }`}
                   >
@@ -359,14 +359,14 @@ export default function CoinShopPage() {
                         <p className="text-[10px] text-neutral-400">Visa / Mastercard</p>
                       </div>
                     </div>
-                    {paymentProvider === "CREDIT_CARD" && <CheckCircle2 className="w-4 h-4 text-[#FFE600]" />}
+                    {paymentProvider === "CREDIT_CARD" && <CheckCircle2 className="w-4 h-4 text-[#C4B5FD]" />}
                   </div>
 
                   <div
                     onClick={() => setPaymentProvider("TRUEMONEY")}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       paymentProvider === "TRUEMONEY"
-                        ? "bg-[#FFE600]/10 border-[#FFE600]"
+                        ? "bg-[#8B5CF6]/15 border-[#8B5CF6]"
                         : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
                     }`}
                   >
@@ -377,7 +377,7 @@ export default function CoinShopPage() {
                         <p className="text-[10px] text-neutral-400">กระเป๋าเงินทรูมันนี่</p>
                       </div>
                     </div>
-                    {paymentProvider === "TRUEMONEY" && <CheckCircle2 className="w-4 h-4 text-[#FFE600]" />}
+                    {paymentProvider === "TRUEMONEY" && <CheckCircle2 className="w-4 h-4 text-[#C4B5FD]" />}
                   </div>
                 </div>
 
@@ -395,7 +395,7 @@ export default function CoinShopPage() {
                 <button
                   onClick={handleBuy}
                   disabled={processing}
-                  className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
+                  className="w-full py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99] shadow-lg shadow-purple-500/25"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>{processing ? "กำลังทำรายการ..." : `ยืนยันชำระเงิน ฿${selectedPackage.priceThb}`}</span>

@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key-for-auth-2026";
 
@@ -14,6 +15,21 @@ interface ResetTokenPayload {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`reset-password:${ip}`, {
+      windowMs: 15 * 60 * 1000,
+      max: 5,
+    });
+
+    if (!rl.success) {
+      return apiError(
+        "TOO_MANY_REQUESTS",
+        `คุณทำรายการบ่อยเกินไป กรุณารอ ${Math.ceil(rl.reset / 60)} นาที`,
+        null,
+        429
+      );
+    }
+
     const body = await req.json();
     const { token, newPassword } = body;
 

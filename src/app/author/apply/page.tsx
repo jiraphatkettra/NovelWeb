@@ -157,7 +157,7 @@ export default function AuthorApplyPage() {
   if (!user) {
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-[#FFE600]/10 flex items-center justify-center text-[#FFE600] mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center text-[#A78BFA] mb-4">
           <Feather className="w-7 h-7" />
         </div>
         <h1 className="text-xl sm:text-2xl font-bold text-white font-prompt mb-2">
@@ -169,7 +169,7 @@ export default function AuthorApplyPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => openAuthModal("LOGIN")}
-            className="px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.98]"
+            className="px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition active:scale-[0.98]"
           >
             เข้าสู่ระบบ
           </button>
@@ -188,7 +188,7 @@ export default function AuthorApplyPage() {
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="text-center space-y-2 pb-5 border-b border-white/[0.08]">
-        <div className="w-12 h-12 rounded-xl bg-[#FFE600]/10 flex items-center justify-center mx-auto text-[#FFE600]">
+        <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto text-[#A78BFA]">
           <Feather className="w-6 h-6" />
         </div>
         <h1 className="text-2xl font-bold text-white font-prompt tracking-tight">
@@ -210,7 +210,7 @@ export default function AuthorApplyPage() {
           <div className="pt-2">
             <Link
               href="/author"
-              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition"
             >
               <span>ไปที่ Creator Studio</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -218,8 +218,8 @@ export default function AuthorApplyPage() {
           </div>
         </div>
       ) : existingStatus?.hasApplied && existingStatus?.kycStatus === "PENDING" ? (
-        <div className="p-6 rounded-2xl bg-[#121215] border border-[#FFE600]/30 text-center space-y-2 shadow-lg">
-          <Clock className="w-10 h-10 text-[#FFE600] mx-auto" />
+        <div className="p-6 rounded-2xl bg-[#121215] border border-[#8B5CF6]/30 text-center space-y-2 shadow-lg">
+          <Clock className="w-10 h-10 text-[#A78BFA] mx-auto" />
           <h2 className="text-base font-bold text-white font-prompt">ใบสมัครของคุณอยู่ระหว่างการตรวจสอบ</h2>
           <p className="text-xs text-neutral-300 max-w-md mx-auto leading-relaxed">
             ทีมงานกำลังตรวจสอบข้อมูลและรายละเอียดบัญชีของคุณ โดยจะแจ้งผลให้ทราบโดยเร็ว
@@ -244,7 +244,7 @@ export default function AuthorApplyPage() {
                     <div
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition ${
                         isCurrent
-                          ? "bg-[#FFE600] text-black"
+                          ? "bg-[#8B5CF6] text-white font-bold shadow-sm shadow-[#8B5CF6]/30"
                           : isDone
                           ? "bg-emerald-500 text-black font-bold"
                           : "bg-white/[0.08] text-neutral-500"
@@ -276,14 +276,14 @@ export default function AuthorApplyPage() {
             {/* Step 1: Writer Profile */}
             {currentStep === 1 && (
               <div className="p-5 sm:p-6 rounded-2xl bg-[#121215] border border-white/[0.08] space-y-4 animate-in fade-in">
-                <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold font-prompt">
+                <div className="flex items-center gap-2 text-[#A78BFA] text-xs font-bold font-prompt">
                   <Feather className="w-4 h-4" />
                   <span>ขั้นตอนที่ 1: ข้อมูลนักเขียนและนามปากกา</span>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                    นามปากกา (Pen Name) <span className="text-[#FFE600]">*</span>
+                    นามปากกา (Pen Name) <span className="text-[#A78BFA]">*</span>
                   </label>
                   <input
                     type="text"
@@ -291,7 +291,7 @@ export default function AuthorApplyPage() {
                     value={penName}
                     onChange={(e) => setPenName(e.target.value)}
                     placeholder="เช่น หมื่นลี้, ShadowWriter, จอมยุทธ์น้อย"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                   />
                   <p className="text-[11px] text-neutral-500 mt-1">
                     ชื่อนี้จะแสดงเป็นชื่อผู้แต่งบนหน้าผลงานของคุณ สามารถปรับเปลี่ยนได้ภายหลัง
@@ -307,7 +307,7 @@ export default function AuthorApplyPage() {
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="บอกเล่าประสบการณ์ สไตล์เรื่องที่สนใจเขียน หรือแรงบันดาลใจ เช่น นิยายแฟนตาซีเกิดใหม่, มังงะแอ็กชันไซไฟ..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] resize-none leading-relaxed"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] resize-none leading-relaxed"
                   />
                 </div>
 
@@ -315,7 +315,7 @@ export default function AuthorApplyPage() {
                   <button
                     type="button"
                     onClick={handleNextStep}
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition"
                   >
                     <span>ถัดไป: บัญชีรับเงิน</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -327,7 +327,7 @@ export default function AuthorApplyPage() {
             {/* Step 2: KYC & Payout Details */}
             {currentStep === 2 && (
               <div className="p-5 sm:p-6 rounded-2xl bg-[#121215] border border-white/[0.08] space-y-4 animate-in fade-in">
-                <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold font-prompt">
+                <div className="flex items-center gap-2 text-[#A78BFA] text-xs font-bold font-prompt">
                   <ShieldCheck className="w-4 h-4" />
                   <span>ขั้นตอนที่ 2: ข้อมูลยืนยันตัวตนและรับเงินส่วนแบ่ง 70%</span>
                 </div>
@@ -337,7 +337,7 @@ export default function AuthorApplyPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                    เลขประจำตัวประชาชน (13 หลัก) <span className="text-[#FFE600]">*</span>
+                    เลขประจำตัวประชาชน (13 หลัก) <span className="text-[#A78BFA]">*</span>
                   </label>
                   <input
                     type="text"
@@ -346,19 +346,19 @@ export default function AuthorApplyPage() {
                     value={idCardNumber}
                     onChange={(e) => setIdCardNumber(e.target.value.replace(/\D/g, ""))}
                     placeholder="1234567890123"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                      ธนาคารที่รับเงิน <span className="text-[#FFE600]">*</span>
+                      ธนาคารที่รับเงิน <span className="text-[#A78BFA]">*</span>
                     </label>
                     <select
                       value={bankName}
                       onChange={(e) => setBankName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#FFE600]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#8B5CF6]"
                     >
                       {THAI_BANKS.map((b) => (
                         <option key={b} value={b}>
@@ -370,7 +370,7 @@ export default function AuthorApplyPage() {
 
                   <div>
                     <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                      เลขที่บัญชีธนาคาร <span className="text-[#FFE600]">*</span>
+                      เลขที่บัญชีธนาคาร <span className="text-[#A78BFA]">*</span>
                     </label>
                     <input
                       type="text"
@@ -378,14 +378,14 @@ export default function AuthorApplyPage() {
                       value={bankAccountNo}
                       onChange={(e) => setBankAccountNo(e.target.value)}
                       placeholder="เช่น 123-4-56789-0"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                    ชื่อ-นามสกุลเจ้าของบัญชี (ตรงกับบัตรประชาชน) <span className="text-[#FFE600]">*</span>
+                    ชื่อ-นามสกุลเจ้าของบัญชี (ตรงกับบัตรประชาชน) <span className="text-[#A78BFA]">*</span>
                   </label>
                   <input
                     type="text"
@@ -393,7 +393,7 @@ export default function AuthorApplyPage() {
                     value={bankAccountName}
                     onChange={(e) => setBankAccountName(e.target.value)}
                     placeholder="เช่น นายสมชาย รักการเขียน"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                   />
                 </div>
 
@@ -410,7 +410,7 @@ export default function AuthorApplyPage() {
                   <button
                     type="button"
                     onClick={handleNextStep}
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition"
                   >
                     <span>ถัดไป: สัญญาข้อตกลง</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -422,7 +422,7 @@ export default function AuthorApplyPage() {
             {/* Step 3: Author Agreement & Confirmation */}
             {currentStep === 3 && (
               <div className="p-5 sm:p-6 rounded-2xl bg-[#121215] border border-white/[0.08] space-y-4 animate-in fade-in">
-                <div className="flex items-center gap-2 text-[#FFE600] text-xs font-bold font-prompt">
+                <div className="flex items-center gap-2 text-[#A78BFA] text-xs font-bold font-prompt">
                   <FileText className="w-4 h-4" />
                   <span>ขั้นตอนที่ 3: สรุปข้อมูลและสัญญาข้อตกลงนักเขียน</span>
                 </div>
@@ -455,14 +455,14 @@ export default function AuthorApplyPage() {
                       id="authorAgreement"
                       checked={agreementAccepted}
                       onChange={(e) => setAgreementAccepted(e.target.checked)}
-                      className="mt-0.5 rounded accent-[#FFE600] w-4 h-4"
+                      className="mt-0.5 rounded accent-[#8B5CF6] w-4 h-4"
                     />
                     <span className="text-neutral-300 text-xs leading-relaxed">
                       ข้าพเจ้าได้อ่าน เข้าใจ และยอมรับ{" "}
                       <button
                         type="button"
                         onClick={() => setShowAgreementModal(true)}
-                        className="text-[#FFE600] underline underline-offset-2 font-bold"
+                        className="text-[#A78BFA] hover:text-[#C4B5FD] underline underline-offset-2 font-bold"
                       >
                         สัญญาข้อตกลงนักเขียนและนโยบายส่วนแบ่งรายได้ 70%
                       </button>{" "}
@@ -484,7 +484,7 @@ export default function AuthorApplyPage() {
                   <button
                     type="submit"
                     disabled={submitting || !agreementAccepted}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] disabled:bg-white/5 disabled:text-neutral-500 text-black font-bold text-xs transition active:scale-[0.98]"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-white/5 disabled:text-neutral-500 text-white font-bold text-xs transition active:scale-[0.98]"
                   >
                     <span>{submitting ? "กำลังส่งใบสมัคร..." : "ยืนยันและเปิดบัญชีนักเขียน"}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -534,7 +534,7 @@ export default function AuthorApplyPage() {
                   setAgreementAccepted(true);
                   setShowAgreementModal(false);
                 }}
-                className="px-5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs"
+                className="px-5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs"
               >
                 รับทราบและยอมรับข้อตกลง
               </button>

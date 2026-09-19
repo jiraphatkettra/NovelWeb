@@ -3,12 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #f5f5f7;
-  --kakao-yellow: #FFE600;
-  --kakao-card: #121215;
-  --kakao-border: #222226;
-  --kakao-muted: #999999;
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --kakao-yellow: #8B5CF6;
+  --brand-primary: #8B5CF6;
+  --brand-hover: #7C3AED;
+  --brand-glow: rgba(139, 92, 246, 0.25);
+  --kakao-card: #111116;
+  --kakao-border: #23222a;
+  --kakao-muted: #9ca3af;
 }
 
 /* Reader Theme Variables */
@@ -147,8 +150,8 @@ body {
 
 /* --- Glow Pulse --- */
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(255, 230, 0, 0.15), 0 0 24px rgba(255, 230, 0, 0.05); }
-  50% { box-shadow: 0 0 16px rgba(255, 230, 0, 0.3), 0 0 48px rgba(255, 230, 0, 0.1); }
+  0%, 100% { box-shadow: 0 0 8px rgba(139, 92, 246, 0.15), 0 0 24px rgba(139, 92, 246, 0.05); }
+  50% { box-shadow: 0 0 16px rgba(139, 92, 246, 0.3), 0 0 48px rgba(139, 92, 246, 0.1); }
 }
 .animate-glow {
   animation: glow-pulse 3s ease-in-out infinite;
@@ -156,8 +159,8 @@ body {
 
 /* --- Logo Glow Pulse --- */
 @keyframes logo-glow {
-  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 230, 0, 0.2)); }
-  50% { filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.5)); }
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.25)); }
+  50% { filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5)); }
 }
 .animate-logo-glow {
   animation: logo-glow 4s ease-in-out infinite;
@@ -264,7 +267,7 @@ body {
   left: 0;
   height: 2px;
   width: 0;
-  background: linear-gradient(90deg, #FFE600, #FFB800);
+  background: linear-gradient(90deg, #8B5CF6, #C4B5FD);
   border-radius: 2px;
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -275,16 +278,16 @@ body {
 
 /* --- Glassmorphism Card --- */
 .glass-card {
-  background: rgba(18, 18, 21, 0.6);
+  background: rgba(18, 17, 24, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .glass-card:hover {
-  background: rgba(18, 18, 21, 0.8);
-  border-color: rgba(255, 230, 0, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 230, 0, 0.06);
+  background: rgba(24, 23, 32, 0.85);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.15);
 }
 
 /* --- Card Hover Glow --- */
@@ -303,7 +306,7 @@ body {
   transition: opacity 0.3s ease;
   background: radial-gradient(
     600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(255, 230, 0, 0.06),
+    rgba(139, 92, 246, 0.08),
     transparent 40%
   );
   z-index: 1;
@@ -314,7 +317,7 @@ body {
 }
 .card-glow:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 230, 0, 0.04);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
 }
 
 /* --- Gradient Orb Background --- */
@@ -340,19 +343,19 @@ body {
   transform: translateX(-50%);
   width: 70%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #FFE600, transparent);
+  background: linear-gradient(90deg, transparent, #8B5CF6, transparent);
   border-radius: 2px;
-  box-shadow: 0 0 8px rgba(255, 230, 0, 0.4), 0 0 16px rgba(255, 230, 0, 0.2);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5), 0 0 16px rgba(139, 92, 246, 0.25);
 }
 
 /* --- Navbar Scroll States --- */
 .navbar-transparent {
-  background: rgba(0, 0, 0, 0.4) !important;
+  background: rgba(9, 9, 11, 0.6) !important;
   border-bottom-color: transparent !important;
 }
 .navbar-solid {
-  background: rgba(0, 0, 0, 0.92) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(9, 9, 11, 0.94) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.07) !important;
 }
 
 /* --- Pulse Ring (Notification) --- */
@@ -389,11 +392,11 @@ body {
 
 /* --- Ranking Number Gradient --- */
 .rank-number-gold {
-  background: linear-gradient(135deg, #FFE600, #FFB800, #FF9500);
+  background: linear-gradient(135deg, #C4B5FD, #8B5CF6, #6366F1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 4px rgba(255, 230, 0, 0.3));
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.4));
 }
 
 /* --- Mobile & Tablet Touch / Safe Area Insets --- */

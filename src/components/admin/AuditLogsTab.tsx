@@ -76,7 +76,7 @@ export function AuditLogsTab() {
       return "bg-rose-500/15 text-rose-400 border-rose-500/30";
     }
     if (action.includes("BROADCAST") || action.includes("COIN")) {
-      return "bg-[#FFE600]/15 text-[#FFE600] border-[#FFE600]/30";
+      return "bg-[#8B5CF6]/15 text-[#A78BFA] border-[#8B5CF6]/30";
     }
     return "bg-blue-500/15 text-blue-300 border-blue-500/30";
   };
@@ -99,7 +99,7 @@ export function AuditLogsTab() {
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#FFE600]"
+            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#8B5CF6]"
           >
             <option value="ALL">ทุกการกระทำ (Action)</option>
             <option value="CONTENT">ตรวจเนื้อหา (CONTENT)</option>
@@ -113,7 +113,7 @@ export function AuditLogsTab() {
           <select
             value={targetTypeFilter}
             onChange={(e) => setTargetTypeFilter(e.target.value)}
-            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#FFE600]"
+            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#8B5CF6]"
           >
             <option value="ALL">ทุกประเภทเป้าหมาย</option>
             <option value="STORY">STORY (ผลงาน)</option>

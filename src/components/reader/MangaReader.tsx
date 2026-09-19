@@ -216,11 +216,11 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
         {!chapter.isUnlocked ? (
           /* LOCKED CHAPTER KAKAO WEBTOON STYLE */
           <div className="my-16 max-w-lg w-full mx-4 p-6 sm:p-8 rounded-2xl bg-[#121215] border border-white/10 shadow-2xl text-center text-white">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600]">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center text-[#A78BFA]">
               <Lock className="w-6 h-6" />
             </div>
 
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFE600]/10 text-[#FFE600] text-[11px] font-bold font-prompt uppercase tracking-wider mb-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#C4B5FD] text-[11px] font-bold font-prompt uppercase tracking-wider mb-2">
               <Sparkles className="w-3 h-3" />
               มังงะ & เว็บตูนพรีเมียม
             </span>
@@ -234,7 +234,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
 
             <div className="flex flex-wrap items-center justify-center gap-3 my-5 text-xs">
               <div className="flex items-center gap-2 bg-white/[0.04] px-3.5 py-2 rounded-xl border border-white/[0.08]">
-                <Coins className="w-4 h-4 text-[#FFE600]" />
+                <Coins className="w-4 h-4 text-[#A78BFA]" />
                 <span className="text-neutral-400">ราคา:</span>
                 <strong className="text-white font-mono font-bold text-xs">{chapter.coinPrice} เหรียญ</strong>
               </div>
@@ -249,7 +249,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
             {!user ? (
               <button
                 onClick={() => openAuthModal("LOGIN")}
-                className="w-full py-3.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition flex items-center justify-center gap-2 active:scale-[0.99]"
+                className="w-full py-3.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition flex items-center justify-center gap-2 active:scale-[0.99]"
               >
                 <Lock className="w-4 h-4" />
                 <span>เข้าสู่ระบบเพื่อปลดล็อก</span>
@@ -258,7 +258,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
               <button
                 onClick={handleUnlock}
                 disabled={unlocking}
-                className="w-full py-3.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
+                className="w-full py-3.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>{unlocking ? "กำลังปลดล็อก..." : `ใช้ ${chapter.coinPrice} เหรียญ ปลดล็อกทันที`}</span>
@@ -268,7 +268,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
                 <p className="text-[11px] text-rose-400">เหรียญของคุณไม่เพียงพอ ขาดอีก {chapter.coinPrice - userTotalCoins} เหรียญ</p>
                 <Link
                   href="/coin-shop"
-                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition"
                 >
                   <Coins className="w-4 h-4" />
                   <span>ไปเติมเหรียญที่ Coin Shop</span>
@@ -329,7 +329,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
           {chapter.nextChapter ? (
             <Link
               href={`/reader/manga/${chapter.nextChapter.id}`}
-              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition shrink-0 active:scale-95 shadow-md shadow-[#FFE600]/20"
+              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition shrink-0 active:scale-95 shadow-md shadow-[#8B5CF6]/20"
             >
               <span className="hidden min-[380px]:inline">ตอนถัดไป</span>
               <span className="min-[380px]:hidden">ถัดไป</span>
@@ -354,7 +354,7 @@ export function MangaReader({ initialChapter }: { initialChapter: MangaChapterDa
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-4 sm:bottom-10 sm:right-10 z-40 flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-[#121215]/90 hover:bg-[#FFE600] border border-white/20 hover:border-[#FFE600] text-neutral-300 hover:text-black font-prompt text-xs font-bold shadow-2xl backdrop-blur-md transition-all duration-300 active:scale-95 group hover:shadow-[0_0_20px_rgba(255,230,0,0.3)] animate-in fade-in slide-in-from-bottom-3"
+          className="fixed bottom-6 right-4 sm:bottom-10 sm:right-10 z-40 flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-[#121215]/90 hover:bg-[#8B5CF6] border border-white/20 hover:border-[#8B5CF6] text-neutral-300 hover:text-white font-prompt text-xs font-bold shadow-2xl backdrop-blur-md transition-all duration-300 active:scale-95 group hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] animate-in fade-in slide-in-from-bottom-3"
           title="เลื่อนขึ้นบนสุด"
         >
           <ArrowUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />

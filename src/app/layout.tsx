@@ -4,6 +4,7 @@ import { allFontVariables } from "@/lib/fonts";
 import { AuthProvider } from "@/context/AuthContext";
 import { AuthModalProvider } from "@/context/AuthModalContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { AmbientSoundProvider } from "@/context/AmbientSoundContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { LoginModal } from "@/components/auth/LoginModal";
@@ -45,15 +46,16 @@ export default function RootLayout({
         <AuthProvider>
           <AuthModalProvider>
             <ToastProvider>
-              {/* 🎆 Ambient Visual Effects */}
-              <ParticleCanvas />
-              <AnimatedGradientOrbs />
+              <AmbientSoundProvider>
+                {/* 🎆 Ambient Visual Effects */}
+                <ParticleCanvas />
+                <AnimatedGradientOrbs />
 
-              <Suspense fallback={<header className="h-14 bg-black w-full border-b border-kakao-border" />}>
-                <Navbar />
-              </Suspense>
-              <LoginModal />
-              <div className="flex-1 pb-6 md:pb-0 relative z-10">{children}</div>
+                <Suspense fallback={<header className="h-14 bg-black w-full border-b border-kakao-border" />}>
+                  <Navbar />
+                </Suspense>
+                <LoginModal />
+                <div className="flex-1 pb-6 md:pb-0 relative z-10">{children}</div>
 
               {/* Footer — Clean & Minimal */}
               <footer className="border-t border-kakao-border bg-black py-8 px-4 sm:px-6 lg:px-8 text-xs text-neutral-500 relative z-10 mb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] md:mb-0">
@@ -88,7 +90,8 @@ export default function RootLayout({
 
               <CookieConsentBanner />
               <MobileBottomNav />
-            </ToastProvider>
+            </AmbientSoundProvider>
+          </ToastProvider>
           </AuthModalProvider>
         </AuthProvider>
       </body>

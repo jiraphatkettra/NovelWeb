@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { sanitizeHtml } from "@/lib/sanitize";
 import {
   ArrowLeft,
   Save,
@@ -417,7 +418,7 @@ export default function ChapterEditorPage() {
   if (loading || !story) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -438,7 +439,7 @@ export default function ChapterEditorPage() {
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[#FFE600]">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#A78BFA]">
                 {isNovel ? "NOVEL TEXT EDITOR" : "MANGA UPLOADER"}
               </span>
               <h2 className="text-xs font-bold text-white truncate max-w-[180px] sm:max-w-xs">{story.title}</h2>
@@ -448,8 +449,8 @@ export default function ChapterEditorPage() {
           {/* Center: Autosave Status Indicator */}
           <div className="hidden md:flex items-center gap-2 text-xs font-mono text-neutral-400">
             {saving ? (
-              <span className="inline-flex items-center gap-1.5 text-[#FFE600]">
-                <span className="w-2 h-2 rounded-full bg-[#FFE600] animate-ping" />
+              <span className="inline-flex items-center gap-1.5 text-[#A78BFA]">
+                <span className="w-2 h-2 rounded-full bg-[#8B5CF6] animate-ping" />
                 กำลังบันทึกอัตโนมัติ...
               </span>
             ) : lastSavedTime ? (
@@ -491,7 +492,7 @@ export default function ChapterEditorPage() {
               type="button"
               onClick={() => saveChapter("PUBLISHED")}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition disabled:opacity-50 active:scale-[0.99] shadow-sm shadow-[#FFE600]/20"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition disabled:opacity-50 active:scale-[0.99] shadow-sm shadow-[#8B5CF6]/20"
               title="เผยแพร่ตอนให้อ่านทันที"
             >
               <Send className="w-3.5 h-3.5" />
@@ -505,15 +506,15 @@ export default function ChapterEditorPage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {/* Disaster Recovery Banner */}
         {recoveredFromLocal && (
-          <div className="mb-5 p-3.5 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5 text-xs text-[#FFE600]">
+          <div className="mb-5 p-3.5 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5 text-xs text-[#A78BFA]">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>ตรวจพบฉบับร่างที่บันทึกสำรองไว้ในเครื่อง คุณต้องการกู้คืนเนื้อหาหรือไม่?</span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={applyLocalRecovery}
-                className="px-3 py-1 rounded-lg bg-[#FFE600] text-black text-xs font-bold hover:bg-[#F5DC00]"
+                className="px-3 py-1 rounded-lg bg-[#8B5CF6] text-white text-xs font-bold hover:bg-[#7C3AED]"
               >
                 กู้คืนร่าง
               </button>
@@ -540,7 +541,7 @@ export default function ChapterEditorPage() {
                 setHasUnsavedChanges(true);
               }}
               placeholder="เช่น ตอนที่ 1: กำเนิดราชันย์มนตรา"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-prompt text-sm font-bold placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white font-prompt text-sm font-bold placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
             />
           </div>
 
@@ -548,7 +549,7 @@ export default function ChapterEditorPage() {
             {/* Pricing Input */}
             <div>
               <label className="text-neutral-400 text-xs font-medium block mb-1 flex items-center gap-1">
-                <Coins className="w-3.5 h-3.5 text-[#FFE600]" />
+                <Coins className="w-3.5 h-3.5 text-[#A78BFA]" />
                 <span>ราคาเหรียญ (0 = ฟรี)</span>
               </label>
               <input
@@ -560,7 +561,7 @@ export default function ChapterEditorPage() {
                   setCoinPrice(Number(e.target.value));
                   setHasUnsavedChanges(true);
                 }}
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white font-mono text-xs focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
 
@@ -573,7 +574,7 @@ export default function ChapterEditorPage() {
                   setStatus(e.target.value as "DRAFT" | "PUBLISHED" | "SCHEDULED");
                   setHasUnsavedChanges(true);
                 }}
-                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#FFE600]"
+                className="w-full px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#8B5CF6]"
               >
                 <option value="DRAFT">ฉบับร่าง (ยังไม่เปิดเผยแพร่)</option>
                 <option value="PUBLISHED">เผยแพร่ทันที</option>
@@ -597,9 +598,9 @@ export default function ChapterEditorPage() {
 
           {/* Scheduled Publishing Date-Time Picker */}
           {status === "SCHEDULED" && (
-            <div className="pt-2 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20">
-              <div className="flex items-center gap-2 text-xs text-[#FFE600]">
-                <Calendar className="w-4 h-4 text-[#FFE600] shrink-0" />
+            <div className="pt-2 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
+              <div className="flex items-center gap-2 text-xs text-[#A78BFA]">
+                <Calendar className="w-4 h-4 text-[#A78BFA] shrink-0" />
                 <span>วันและเวลาเผยแพร่อัตโนมัติ:</span>
               </div>
               <input
@@ -609,7 +610,7 @@ export default function ChapterEditorPage() {
                   setScheduledDate(e.target.value);
                   setHasUnsavedChanges(true);
                 }}
-                className="px-2.5 py-1 rounded-lg bg-black border border-[#FFE600]/40 text-[#FFE600] text-xs font-mono focus:outline-none focus:border-[#FFE600]"
+                className="px-2.5 py-1 rounded-lg bg-black border border-[#8B5CF6]/40 text-[#A78BFA] text-xs font-mono focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
           )}
@@ -634,7 +635,7 @@ export default function ChapterEditorPage() {
             <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#18181c] via-[#121215] to-[#0d0d10] border border-white/[0.12] shadow-2xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 flex items-center justify-center text-[#FFE600] flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 flex items-center justify-center text-[#A78BFA] flex-shrink-0">
                     <FolderArchive className="w-5 h-5" />
                   </div>
                   <div>
@@ -642,7 +643,7 @@ export default function ChapterEditorPage() {
                       <h3 className="text-sm font-bold text-white font-prompt">
                         นำเข้าภาพมังงะจาก Google Drive หรือไฟล์ ZIP
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full bg-[#FFE600]/20 border border-[#FFE600]/40 text-[#FFE600] text-[10px] font-bold flex items-center gap-1">
+                      <span className="px-2 py-0.5 rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 text-[#A78BFA] text-[10px] font-bold flex items-center gap-1">
                         <Sparkles className="w-2.5 h-2.5" />
                         Auto-Extract & Auto-Sort
                       </span>
@@ -660,7 +661,7 @@ export default function ChapterEditorPage() {
                     onClick={() => setImportMode("replace")}
                     className={`px-3 py-1.5 rounded-lg font-medium transition ${
                       importMode === "replace"
-                        ? "bg-[#FFE600] text-black font-bold shadow-sm"
+                        ? "bg-[#8B5CF6] text-white font-bold shadow-sm"
                         : "text-neutral-400 hover:text-white"
                     }`}
                   >
@@ -671,7 +672,7 @@ export default function ChapterEditorPage() {
                     onClick={() => setImportMode("append")}
                     className={`px-3 py-1.5 rounded-lg font-medium transition ${
                       importMode === "append"
-                        ? "bg-[#FFE600] text-black font-bold shadow-sm"
+                        ? "bg-[#8B5CF6] text-white font-bold shadow-sm"
                         : "text-neutral-400 hover:text-white"
                     }`}
                   >
@@ -690,16 +691,16 @@ export default function ChapterEditorPage() {
                       onChange={(e) => setDriveUrl(e.target.value)}
                       placeholder="วางลิงก์ Google Drive (เช่น https://drive.google.com/file/d/... หรือ drive.google.com/open?id=...)"
                       disabled={isImportingDrive || isUploadingZip}
-                      className="w-full px-4 py-2.5 pl-10 rounded-xl bg-black/70 border border-white/[0.12] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] disabled:opacity-50 transition"
+                      className="w-full px-4 py-2.5 pl-10 rounded-xl bg-black/70 border border-white/[0.12] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] disabled:opacity-50 transition"
                     />
-                    <HardDrive className="w-4 h-4 text-[#FFE600] absolute left-3.5 top-3" />
+                    <HardDrive className="w-4 h-4 text-[#A78BFA] absolute left-3.5 top-3" />
                   </div>
 
                   <button
                     type="button"
                     onClick={handleImportGoogleDrive}
                     disabled={isImportingDrive || !driveUrl.trim()}
-                    className="px-5 py-2.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] disabled:opacity-50 text-black font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-[#FFE600]/10 flex-shrink-0"
+                    className="px-5 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-[#8B5CF6]/10 flex-shrink-0"
                   >
                     {isImportingDrive ? (
                       <>
@@ -722,12 +723,12 @@ export default function ChapterEditorPage() {
                   >
                     {isUploadingZip ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-[#FFE600]" />
+                        <Loader2 className="w-4 h-4 animate-spin text-[#A78BFA]" />
                         <span>กำลังแตกไฟล์ ZIP...</span>
                       </>
                     ) : (
                       <>
-                        <FileArchive className="w-4 h-4 text-[#FFE600]" />
+                        <FileArchive className="w-4 h-4 text-[#A78BFA]" />
                         <span>เลือกไฟล์ .ZIP จากเครื่อง</span>
                       </>
                     )}
@@ -742,7 +743,7 @@ export default function ChapterEditorPage() {
                 </div>
 
                 <div className="flex items-center gap-2 text-[11px] text-neutral-400 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.05]">
-                  <AlertCircle className="w-3.5 h-3.5 text-[#FFE600] flex-shrink-0" />
+                  <AlertCircle className="w-3.5 h-3.5 text-[#A78BFA] flex-shrink-0" />
                   <span>
                     <strong>คำแนะนำ:</strong> สำหรับ Google Drive กรุณาตั้งค่าแชร์ไฟล์เป็น <strong>&quot;ทุกคนที่มีลิงก์ (Anyone with the link)&quot;</strong> เพื่อให้ระบบดึงข้อมูลได้ทันที หากเป็นไฟล์ ZIP ระบบจะคลายซิปและเรียงหน้าให้อัตโนมัติ
                   </span>
@@ -753,7 +754,7 @@ export default function ChapterEditorPage() {
             {/* MANUAL UPLOAD SECTION */}
             <div className="p-5 rounded-xl bg-[#121215] border border-white/[0.08] space-y-4">
               <h3 className="text-xs font-bold text-white font-prompt flex items-center gap-2">
-                <Upload className="w-4 h-4 text-[#FFE600]" />
+                <Upload className="w-4 h-4 text-[#A78BFA]" />
                 <span>หรืออัปโหลดรูปภาพทีละหลายไฟล์ (Drag & Drop พร้อมเรียงหน้าอัตโนมัติ)</span>
               </h3>
 
@@ -778,12 +779,12 @@ export default function ChapterEditorPage() {
                     value={newImageUrl}
                     onChange={(e) => setNewImageUrl(e.target.value)}
                     placeholder="ใส่ URL รูปภาพหน้ามังงะ..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#FFE600]"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/[0.08] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6]"
                   />
                   <button
                     type="button"
                     onClick={handleAddImage}
-                    className="px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>เพิ่มหน้านี้</span>
@@ -801,7 +802,7 @@ export default function ChapterEditorPage() {
                   </h4>
                   {images.length > 0 && (
                     <span className="text-[11px] text-neutral-400 flex items-center gap-1">
-                      <GripVertical className="w-3 h-3 text-[#FFE600]" />
+                      <GripVertical className="w-3 h-3 text-[#A78BFA]" />
                       <span>ลากการ์ดสลับลำดับได้ หรือกดปุ่มลูกศร</span>
                     </span>
                   )}
@@ -813,7 +814,7 @@ export default function ChapterEditorPage() {
                       type="button"
                       onClick={handleAutoSortImages}
                       title="จัดเรียงหน้าตามลำดับตัวเลขอัตโนมัติ (เช่น 1, 2, 10)"
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#FFE600] hover:text-black text-[#FFE600] text-xs font-bold transition flex items-center gap-1.5 border border-[#FFE600]/30"
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#8B5CF6] hover:text-white text-[#A78BFA] text-xs font-bold transition flex items-center gap-1.5 border border-[#8B5CF6]/30"
                     >
                       <ArrowDownAZ className="w-3.5 h-3.5" />
                       <span>เรียงหน้าตามตัวเลขอัตโนมัติ</span>
@@ -834,7 +835,7 @@ export default function ChapterEditorPage() {
               {images.length === 0 ? (
                 <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-dashed border-white/[0.08] space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-neutral-400 mx-auto">
-                    <Upload className="w-6 h-6 text-[#FFE600]" />
+                    <Upload className="w-6 h-6 text-[#A78BFA]" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">ยังไม่มีหน้าภาพในตอนนี้</p>
@@ -869,7 +870,7 @@ export default function ChapterEditorPage() {
                       }}
                       className={`group relative rounded-xl bg-[#121215] border overflow-hidden p-2 space-y-1.5 cursor-grab active:cursor-grabbing transition-all ${
                         draggedImageIndex === idx
-                          ? "opacity-30 border-[#FFE600] scale-95"
+                          ? "opacity-30 border-[#8B5CF6] scale-95"
                           : "border-white/[0.08] hover:border-white/20"
                       }`}
                     >
@@ -932,7 +933,7 @@ export default function ChapterEditorPage() {
             {/* Preview Header */}
             <div className="px-5 py-3 border-b border-white/[0.08] flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-mono text-[#FFE600]">PREVIEW MODE</span>
+                <span className="text-[10px] font-mono text-[#A78BFA]">PREVIEW MODE</span>
                 <h3 className="text-sm font-bold text-white font-prompt">{title || "ชื่อตอน"}</h3>
               </div>
               <button
@@ -949,7 +950,7 @@ export default function ChapterEditorPage() {
                 <div
                   className="font-sarabun text-sm text-neutral-200 leading-loose prose prose-invert max-w-none"
                   dangerouslySetInnerHTML={{
-                    __html: textContent || "<p>ยังไม่มีเนื้อหาข้อความในตอนนี้</p>",
+                    __html: sanitizeHtml(textContent || "<p>ยังไม่มีเนื้อหาข้อความในตอนนี้</p>"),
                   }}
                 />
               ) : (

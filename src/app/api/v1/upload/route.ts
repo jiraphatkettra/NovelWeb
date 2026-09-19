@@ -3,6 +3,7 @@ import path from "path";
 import { getCurrentUser } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { uploadFileToStorage } from "@/lib/storage";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -12,6 +13,21 @@ export async function POST(req: NextRequest) {
     const user = await getCurrentUser();
     if (!user) {
       return apiError("AUTH_INVALID_TOKEN", "กรุณาเข้าสู่ระบบก่อนอัปโหลดไฟล์", null, 401);
+    }
+
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`upload:${user.id || ip}`, {
+      windowMs: 5 * 60 * 1000,
+      max: 15,
+    });
+
+    if (!rl.success) {
+      return apiError(
+        "TOO_MANY_REQUESTS",
+        `คุณอัปโหลดไฟล์ถี่เกินไป กรุณารอ ${Math.ceil(rl.reset / 60)} นาที`,
+        null,
+        429
+      );
     }
 
     const formData = await req.formData();

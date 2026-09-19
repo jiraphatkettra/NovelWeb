@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { moderateContent } from "@/lib/profanity-filter";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,6 +51,21 @@ export async function POST(req: NextRequest) {
       return apiError("AUTH_INVALID_TOKEN", "กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น", null, 401);
     }
 
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`comment:${user.id || ip}`, {
+      windowMs: 60 * 1000,
+      max: 10,
+    });
+
+    if (!rl.success) {
+      return apiError(
+        "TOO_MANY_REQUESTS",
+        `คุณส่งความคิดเห็นถี่เกินไป กรุณารอ ${rl.reset} วินาที`,
+        null,
+        429
+      );
+    }
+
     const body = await req.json();
     const { storyId, chapterId, content, parentId } = body;
 
@@ -56,8 +73,9 @@ export async function POST(req: NextRequest) {
       return apiError("VALIDATION_ERROR", "กรุณากรอกเนื้อหาความคิดเห็น");
     }
 
-    // Automated Moderation Check (Profanity & Gambling Spam Filter)
-    const moderation = moderateContent(content);
+    // Automated Moderation Check (Profanity & Gambling Spam Filter) + XSS Plain Text Sanitization
+    const sanitizedInput = sanitizePlainText(content);
+    const moderation = moderateContent(sanitizedInput);
     if (!moderation.isValid) {
       return apiError("CONTENT_POLICY_VIOLATION", moderation.rejectReason || "ความคิดเห็นของคุณไม่ผ่านเกณฑ์การเผยแพร่", null, 400);
     }

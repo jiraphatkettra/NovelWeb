@@ -86,7 +86,7 @@ export function BroadcastTab({ totalUsers = 0 }: { totalUsers?: number }) {
     <div className="max-w-3xl space-y-6">
       <div>
         <h3 className="text-lg font-bold text-white font-prompt flex items-center gap-2">
-          <Bell className="w-5 h-5 text-[#FFE600]" />
+          <Bell className="w-5 h-5 text-[#A78BFA]" />
           ระบบส่งประกาศและแจ้งเตือนทั้งระบบ (Broadcast Announcements)
         </h3>
         <p className="text-xs text-neutral-400 mt-0.5">
@@ -106,7 +106,7 @@ export function BroadcastTab({ totalUsers = 0 }: { totalUsers?: number }) {
         {/* Preset quick buttons */}
         <div className="space-y-1.5">
           <span className="text-[11px] font-semibold text-neutral-400 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-[#FFE600]" />
+            <Sparkles className="w-3.5 h-3.5 text-[#A78BFA]" />
             เทมเพลตสำเร็จรูป:
           </span>
           <div className="flex flex-wrap gap-2">
@@ -144,11 +144,11 @@ export function BroadcastTab({ totalUsers = 0 }: { totalUsers?: number }) {
                 onClick={() => setTargetRole(target.val)}
                 className={`p-3 rounded-2xl border text-left transition flex flex-col gap-0.5 ${
                   targetRole === target.val
-                    ? "bg-[#FFE600]/10 border-[#FFE600]/50 text-white"
+                    ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/50 text-white"
                     : "bg-white/[0.02] border-white/[0.06] text-neutral-400 hover:text-neutral-200"
                 }`}
               >
-                <span className={`text-xs font-bold ${targetRole === target.val ? "text-[#FFE600]" : "text-white"}`}>
+                <span className={`text-xs font-bold ${targetRole === target.val ? "text-[#A78BFA]" : "text-white"}`}>
                   {target.label}
                 </span>
                 <span className="text-[10px] text-neutral-500">{target.sub}</span>
@@ -168,7 +168,7 @@ export function BroadcastTab({ totalUsers = 0 }: { totalUsers?: number }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="เช่น แจ้งปิดปรับปรุงเซิร์ฟเวอร์ / กิจกรรมต้อนรับเทศกาล"
-            className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
+            className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] transition"
           />
         </div>
 
@@ -183,7 +183,7 @@ export function BroadcastTab({ totalUsers = 0 }: { totalUsers?: number }) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="พิมพ์รายละเอียดประกาศที่จะแสดงในแจ้งเตือนของผู้ใช้..."
-            className="w-full p-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition resize-none leading-relaxed"
+            className="w-full p-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] transition resize-none leading-relaxed"
           />
         </div>
 
@@ -199,7 +199,7 @@ export function BroadcastTab({ totalUsers = 0 }: { totalUsers?: number }) {
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="เช่น /coin-shop หรือ /author"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE600] transition"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#8B5CF6] transition"
             />
           </div>
         </div>
@@ -209,10 +209,10 @@ export function BroadcastTab({ totalUsers = 0 }: { totalUsers?: number }) {
           <button
             type="submit"
             disabled={sending}
-            className="px-6 py-3 rounded-xl bg-[#FFE600] hover:bg-[#F2DA00] text-black font-bold text-xs transition shadow-lg shadow-[#FFE600]/20 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition shadow-lg shadow-[#8B5CF6]/20 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
           >
             {sending ? (
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
                 <Send className="w-4 h-4" />

@@ -546,7 +546,7 @@ export default function AdminPage() {
                 activeTab === "broadcast" ? "bg-white text-black font-bold shadow-sm" : "text-neutral-400 hover:text-white"
               }`}
             >
-              <Bell className="w-3.5 h-3.5 text-[#FFE600]" />
+              <Bell className="w-3.5 h-3.5 text-[#A78BFA]" />
               <span>ประกาศระบบ</span>
             </button>
           )}
@@ -879,8 +879,8 @@ export default function AdminPage() {
                               {story.status}
                             </span>
                             {story.isFeatured && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#FFE600]/20 text-[#FFE600] border border-[#FFE600]/40 flex items-center gap-1 shadow-sm">
-                                <Sparkles className="w-2.5 h-2.5 fill-[#FFE600]" />
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#8B5CF6]/20 text-[#A78BFA] border border-[#8B5CF6]/40 flex items-center gap-1 shadow-sm">
+                                <Sparkles className="w-2.5 h-2.5 fill-[#8B5CF6] text-[#8B5CF6]" />
                                 อยู่บน Hero Section
                               </span>
                             )}
@@ -915,19 +915,19 @@ export default function AdminPage() {
                           onClick={() => handleQuickToggleFeatured(story.id, Boolean(story.isFeatured))}
                           className={`px-3 py-1.5 rounded-xl border transition text-xs font-semibold flex items-center gap-1.5 shadow-sm ${
                             story.isFeatured
-                              ? "bg-[#FFE600] text-black font-bold border-[#FFE600] shadow-[#FFE600]/20 hover:bg-[#F5DC00]"
-                              : "bg-white/[0.04] border-white/[0.1] text-neutral-300 hover:text-white hover:bg-white/[0.08] hover:border-[#FFE600]/50"
+                              ? "bg-[#8B5CF6] text-white font-bold border-[#8B5CF6] shadow-[#8B5CF6]/20 hover:bg-[#7C3AED]"
+                              : "bg-white/[0.04] border-white/[0.1] text-neutral-300 hover:text-white hover:bg-white/[0.08] hover:border-[#8B5CF6]/50"
                           }`}
                           title={story.isFeatured ? "คลิกเพื่อนำออกจาก Hero Section หน้าแรก" : "คลิกเพื่อดันเรื่องนี้ขึ้น Hero Section หน้าแรก"}
                         >
-                          <Star className={`w-3.5 h-3.5 ${story.isFeatured ? "fill-black text-black" : "text-[#FFE600]"}`} />
+                          <Star className={`w-3.5 h-3.5 ${story.isFeatured ? "fill-white text-white" : "text-[#A78BFA]"}`} />
                           <span>{story.isFeatured ? "★ แนะนำแล้ว (อยู่บน Hero)" : "☆ ดันแนะนำ"}</span>
                         </button>
 
                         {/* Open Comprehensive Moderation Modal */}
                         <button
                           onClick={() => setSelectedStoryForModeration(story)}
-                          className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+                          className="px-3.5 py-1.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
                           title="ตรวจสอบเชิงลึกและจัดการมาตรการ"
                         >
                           <Sliders className="w-3.5 h-3.5" />

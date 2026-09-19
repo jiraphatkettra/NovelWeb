@@ -58,7 +58,7 @@ function ResetPasswordContent() {
   return (
     <div className="w-full max-w-md bg-[#121215] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
       <div className="text-center space-y-2">
-        <div className="w-11 h-11 rounded-xl bg-[#FFE600]/10 flex items-center justify-center mx-auto text-[#FFE600]">
+        <div className="w-11 h-11 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto text-[#A78BFA]">
           <Lock className="w-5 h-5" />
         </div>
         <h1 className="text-xl font-bold text-white font-prompt">ตั้งรหัสผ่านใหม่</h1>
@@ -76,7 +76,7 @@ function ResetPasswordContent() {
           </p>
           <Link
             href="/auth/login"
-            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
           >
             <span>ไปหน้าเข้าสู่ระบบ</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -93,7 +93,7 @@ function ResetPasswordContent() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+              className="w-full px-3 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
             />
           </div>
 
@@ -106,14 +106,14 @@ function ResetPasswordContent() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#FFE600]"
+              className="w-full px-3 py-2.5 rounded-xl bg-black border border-white/[0.08] text-white focus:outline-none focus:border-[#8B5CF6]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition disabled:opacity-50 active:scale-[0.99]"
+            className="w-full py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition disabled:opacity-50 active:scale-[0.99]"
           >
             {loading ? "กำลังบันทึก..." : "บันทึกรหัสผ่านใหม่"}
           </button>

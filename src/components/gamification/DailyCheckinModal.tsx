@@ -67,8 +67,8 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
 
         {/* Header */}
         <div className="flex flex-col items-center text-center mt-2">
-          <div className="w-14 h-14 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 flex items-center justify-center mb-3">
-            <Flame className="w-7 h-7 text-[#FFE600]" />
+          <div className="w-14 h-14 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 flex items-center justify-center mb-3">
+            <Flame className="w-7 h-7 text-[#A78BFA]" />
           </div>
           <h2 className="text-xl font-bold text-white font-prompt">เช็คอินรายวัน</h2>
           <p className="text-xs text-neutral-400 mt-1 max-w-xs">
@@ -88,7 +88,7 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
                 key={day}
                 className={`flex flex-col items-center p-2 rounded-xl border text-center transition ${
                   isToday
-                    ? "bg-[#FFE600]/10 border-[#FFE600]/40 text-[#FFE600]"
+                    ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/40 text-[#C4B5FD]"
                     : isCompleted
                     ? "bg-white/[0.06] border-white/[0.1] text-white"
                     : "bg-white/[0.02] border-white/[0.05] text-neutral-500"
@@ -96,11 +96,11 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
               >
                 <span className="text-[10px] font-medium mb-1">วัน {day}</span>
                 {isCompleted ? (
-                  <CheckCircle2 className="w-4 h-4 text-[#FFE600] my-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-[#A78BFA] my-0.5" />
                 ) : (
                   <Coins className="w-4 h-4 text-neutral-600 my-0.5" />
                 )}
-                <span className="text-[10px] font-bold text-[#FFE600]">+{10 + (day - 1) * 5}</span>
+                <span className="text-[10px] font-bold text-[#A78BFA]">+{10 + (day - 1) * 5}</span>
               </div>
             );
           })}
@@ -109,7 +109,7 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
         {/* Result Message or Action Button */}
         {result ? (
           <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 text-center">
-            <p className="text-xs font-semibold text-[#FFE600]">{result.message}</p>
+            <p className="text-xs font-semibold text-[#A78BFA]">{result.message}</p>
             {result.coinsReward && (
               <div className="mt-1.5 flex items-center justify-center gap-1.5 text-xs text-neutral-300">
                 <span>เหรียญฟรีที่ได้รับ:</span>
@@ -127,7 +127,7 @@ export function DailyCheckinModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={handleCheckin}
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Flame className="w-4 h-4" />
             <span>{loading ? "กำลังเช็คอิน..." : "กดรับเหรียญฟรีวันนี้"}</span>

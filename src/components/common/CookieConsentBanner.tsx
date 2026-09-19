@@ -30,7 +30,7 @@ export function CookieConsentBanner() {
       <div className="p-4 sm:p-5 rounded-2xl bg-[#121215] border border-white/10 shadow-2xl space-y-3 text-xs text-neutral-300">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 text-white font-bold font-prompt">
-            <Cookie className="w-4 h-4 text-[#FFE600]" />
+            <Cookie className="w-4 h-4 text-[#A78BFA]" />
             <span>นโยบายการใช้งานคุกกี้ (PDPA)</span>
           </div>
           <button
@@ -51,7 +51,7 @@ export function CookieConsentBanner() {
         <div className="flex items-center gap-2 pt-1">
           <button
             onClick={handleAccept}
-            className="flex-1 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition shadow-sm"
+            className="flex-1 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition shadow-sm"
           >
             ยอมรับทั้งหมด
           </button>

@@ -246,7 +246,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
             }}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition ${
               isAutoScrolling
-                ? "bg-[#FFE600] text-black border-[#FFE600]"
+                ? "bg-[#8B5CF6] text-white border-[#8B5CF6]"
                 : "bg-white/5 border-white/10 hover:bg-white/10"
             }`}
             title="เลื่อนหน้าอัตโนมัติ"
@@ -261,7 +261,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] text-white text-xs font-semibold transition"
             title="ตั้งค่าฟอนต์ไทยและธีมอ่าน"
           >
-            <span className="font-chonburi text-sm text-[#FFE600]">กA</span>
+            <span className="font-chonburi text-sm text-[#A78BFA]">กA</span>
             <span className="hidden sm:inline">ฟอนต์ & ขนาด</span>
           </button>
 
@@ -280,7 +280,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
         <main className={`mx-auto py-10 px-4 sm:px-6 ${containerMaxWidth}`}>
         {/* Chapter Title Headline */}
         <div className="mb-8 text-center border-b border-white/10 pb-6">
-          <span className="text-xs uppercase tracking-widest text-[#FFE600] font-semibold mb-2 inline-block">
+          <span className="text-xs uppercase tracking-widest text-[#A78BFA] font-semibold mb-2 inline-block">
             {chapter.story.title}
           </span>
           <h1 className="text-2xl sm:text-3xl font-bold font-prompt leading-tight text-white">
@@ -316,11 +316,11 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
 
             {/* 2. Kakao Webtoon Unlock Card */}
             <div className="relative -mt-16 z-10 max-w-lg mx-auto p-6 sm:p-8 rounded-2xl bg-[#121215] border border-white/10 shadow-2xl text-center text-white">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600]">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center text-[#A78BFA]">
                 <Lock className="w-6 h-6" />
               </div>
 
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFE600]/10 text-[#FFE600] text-[11px] font-bold font-prompt uppercase tracking-wider mb-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#C4B5FD] text-[11px] font-bold font-prompt uppercase tracking-wider mb-2">
                 <Sparkles className="w-3 h-3" />
                 ตอนพรีเมียม
               </span>
@@ -335,7 +335,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
               {/* Price & Balance Pill */}
               <div className="flex flex-wrap items-center justify-center gap-3 my-5 text-xs">
                 <div className="flex items-center gap-2 bg-white/[0.04] px-3.5 py-2 rounded-xl border border-white/[0.08]">
-                  <Coins className="w-4 h-4 text-[#FFE600]" />
+                  <Coins className="w-4 h-4 text-[#A78BFA]" />
                   <span className="text-neutral-400">ราคา:</span>
                   <strong className="text-white font-mono font-bold text-xs">{chapter.coinPrice} เหรียญ</strong>
                 </div>
@@ -351,7 +351,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
               {!user ? (
                 <button
                   onClick={() => openAuthModal("LOGIN")}
-                  className="w-full py-3.5 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition flex items-center justify-center gap-2 active:scale-[0.99]"
+                  className="w-full py-3.5 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition flex items-center justify-center gap-2 active:scale-[0.99]"
                 >
                   <Lock className="w-4 h-4" />
                   <span>เข้าสู่ระบบเพื่อปลดล็อก</span>
@@ -360,7 +360,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
                 <button
                   onClick={handleUnlock}
                   disabled={unlocking}
-                  className="w-full py-3.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
+                  className="w-full py-3.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>{unlocking ? "กำลังปลดล็อก..." : `ใช้ ${chapter.coinPrice} เหรียญ ปลดล็อกทันที`}</span>
@@ -370,7 +370,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
                   <p className="text-[11px] text-rose-400">เหรียญไม่เพียงพอ ขาดอีก {chapter.coinPrice - userTotalCoins} เหรียญ</p>
                   <Link
                     href="/coin-shop"
-                    className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition"
+                    className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition"
                   >
                     <Coins className="w-4 h-4" />
                     <span>ไปเติมเหรียญที่ Coin Shop</span>
@@ -417,7 +417,7 @@ export function NovelReader({ initialChapter }: { initialChapter: ChapterData })
           {chapter.nextChapter ? (
             <Link
               href={`/reader/novel/${chapter.nextChapter.id}`}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition"
             >
               <span>ตอนถัดไป</span>
               <ChevronRight className="w-4 h-4" />

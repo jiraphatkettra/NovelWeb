@@ -51,7 +51,7 @@ export default function CheckinModal({ isOpen, onClose }: { isOpen: boolean; onC
         </button>
 
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 text-[#A78BFA] flex items-center justify-center mx-auto mb-3">
             <Calendar className="w-6 h-6" />
           </div>
           <h3 className="text-xl font-bold mb-1">เช็คอินรับเหรียญฟรีประจำวัน</h3>
@@ -66,7 +66,7 @@ export default function CheckinModal({ isOpen, onClose }: { isOpen: boolean; onC
                 d.status === 'DONE'
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                   : d.status === 'CURRENT'
-                  ? 'bg-amber-400/20 border-amber-400 text-amber-300 ring-2 ring-amber-400/30'
+                  ? 'bg-[#8B5CF6]/20 border-[#8B5CF6] text-[#A78BFA] ring-2 ring-[#8B5CF6]/30'
                   : 'bg-black/40 border-white/[0.06] text-white/40'
               }`}
             >
@@ -87,7 +87,7 @@ export default function CheckinModal({ isOpen, onClose }: { isOpen: boolean; onC
             <button
               onClick={handleClaimReward}
               disabled={claiming}
-              className="w-full py-3.5 rounded-full bg-amber-400 text-black font-semibold text-xs sm:text-sm hover:bg-amber-300 transition-all shadow-[0_0_20px_rgba(251,191,36,0.25)] flex items-center justify-center space-x-2 disabled:opacity-50"
+              className="w-full py-3.5 rounded-full bg-[#8B5CF6] text-white font-bold text-xs sm:text-sm hover:bg-[#7C3AED] transition-all shadow-[0_0_20px_rgba(139,92,246,0.25)] flex items-center justify-center space-x-2 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4" />
               <span>{claiming ? 'กำลังรับรางวัล...' : 'กดรับเหรียญฟรีวันนี้ (+10 Coins)'}</span>

@@ -175,7 +175,7 @@ export default function StoryChapterManagerPage() {
   if (loading || !story) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-[#FFE600] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -210,7 +210,7 @@ export default function StoryChapterManagerPage() {
                 className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
                   story.status === "PUBLISHED"
                     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                    : "bg-[#FFE600]/10 text-[#FFE600] border-[#FFE600]/20"
+                    : "bg-[#8B5CF6]/10 text-[#A78BFA] border-[#8B5CF6]/20"
                 }`}
               >
                 {story.status === "PUBLISHED" ? "เผยแพร่แล้ว" : "ฉบับร่าง"}
@@ -235,7 +235,7 @@ export default function StoryChapterManagerPage() {
 
           <Link
             href={`/author/stories/${story.id}/chapters/new`}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition active:scale-[0.99]"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition active:scale-[0.99]"
           >
             <Plus className="w-4 h-4" />
             <span className="whitespace-nowrap">เพิ่มตอนใหม่</span>
@@ -257,7 +257,7 @@ export default function StoryChapterManagerPage() {
 
           <Link
             href={`/author/stories/${story.id}/chapters/new`}
-            className="inline-flex items-center gap-1.5 text-xs text-[#FFE600] hover:underline font-bold"
+            className="inline-flex items-center gap-1.5 text-xs text-[#A78BFA] hover:underline font-bold"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>เพิ่มตอนใหม่</span>
@@ -273,7 +273,7 @@ export default function StoryChapterManagerPage() {
             </p>
             <Link
               href={`/author/stories/${story.id}/chapters/new`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition"
             >
               <Plus className="w-4 h-4" />
               <span>เริ่มเขียนตอนที่ 1</span>
@@ -326,7 +326,7 @@ export default function StoryChapterManagerPage() {
                       </button>
                     </div>
 
-                    <div className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center font-mono font-bold text-xs text-[#FFE600] flex-shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center font-mono font-bold text-xs text-[#A78BFA] flex-shrink-0">
                       {ch.chapterNumber}
                     </div>
 
@@ -339,7 +339,7 @@ export default function StoryChapterManagerPage() {
                               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                               : ch.status === "SCHEDULED"
                               ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                              : "bg-[#FFE600]/10 text-[#FFE600] border-[#FFE600]/20"
+                              : "bg-[#8B5CF6]/10 text-[#A78BFA] border-[#8B5CF6]/20"
                           }`}
                         >
                           {ch.status === "PUBLISHED" ? "เผยแพร่แล้ว" : ch.status === "SCHEDULED" ? "ตั้งเวลา" : "ฉบับร่าง"}
@@ -350,14 +350,14 @@ export default function StoryChapterManagerPage() {
                           className={`text-[10px] font-mono px-2 py-0.5 rounded border flex items-center gap-1 ${
                             ch.isFree || ch.coinPrice === 0
                               ? "bg-white/[0.04] text-neutral-300 border-white/[0.08]"
-                              : "bg-[#FFE600]/10 text-[#FFE600] border-[#FFE600]/20 font-bold"
+                              : "bg-[#8B5CF6]/10 text-[#A78BFA] border-[#8B5CF6]/20 font-bold"
                           }`}
                         >
                           {ch.isFree || ch.coinPrice === 0 ? (
                             <span>ฟรี</span>
                           ) : (
                             <>
-                              <Coins className="w-3 h-3 text-[#FFE600]" />
+                              <Coins className="w-3 h-3 text-[#A78BFA]" />
                               <span>{ch.coinPrice} เหรียญ</span>
                             </>
                           )}
@@ -382,7 +382,7 @@ export default function StoryChapterManagerPage() {
                   <div className="flex items-center gap-1.5 self-end sm:self-center">
                     <Link
                       href={`/author/stories/${story.id}/chapters/${ch.id}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#FFE600] hover:bg-[#F5DC00] text-black text-xs font-bold transition"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>แก้ไข</span>

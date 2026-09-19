@@ -119,7 +119,7 @@ export default function FeedPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-white group-hover:text-[#FFE600] transition truncate font-prompt">
+                    <h3 className="text-sm font-bold text-white group-hover:text-[#A78BFA] transition truncate font-prompt">
                       ตอนที่ {ch.chapterNumber}: {ch.title}
                     </h3>
 
@@ -139,11 +139,11 @@ export default function FeedPage() {
                       อ่านฟรี
                     </span>
                   ) : (
-                    <span className="px-2.5 py-0.5 rounded bg-[#FFE600]/10 border border-[#FFE600]/30 text-[#FFE600] text-xs font-bold font-mono">
+                    <span className="px-2.5 py-0.5 rounded bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#A78BFA] text-xs font-bold font-mono">
                       {ch.coinPrice} เหรียญ
                     </span>
                   )}
-                  <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-[#FFE600] group-hover:translate-x-0.5 transition" />
+                  <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-[#A78BFA] group-hover:translate-x-0.5 transition" />
                 </div>
               </Link>
             );

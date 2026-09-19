@@ -56,6 +56,8 @@ model UserSession {
   createdAt  DateTime @default(now())
 
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model AuthorProfile {
@@ -104,6 +106,15 @@ model Story {
   ratings       Rating[]
   comments      Comment[]
   userTickets   UserTicket[]
+
+  @@index([status, viewsCount(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([status, ratingAverage(sort: Desc)])
+  @@index([isFeatured, updatedAt(sort: Desc)])
+  @@index([authorId])
+  @@index([category, status])
+  @@index([releaseDay, status])
+  @@index([type, status])
 }
 
 model Chapter {
@@ -126,6 +137,8 @@ model Chapter {
   comments      Comment[]
 
   @@unique([storyId, chapterNumber])
+  @@index([storyId, status])
+  @@index([status, publishedAt(sort: Desc)])
 }
 
 model ChapterContent {
@@ -164,6 +177,8 @@ model CoinTransaction {
   createdAt    DateTime    @default(now())
 
   wallet       CoinWallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt(sort: Desc)])
 }
 
 model CoinPackage {
@@ -196,6 +211,9 @@ model PaymentOrder {
 
   user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   package              CoinPackage  @relation(fields: [packageId], references: [id])
+
+  @@index([userId, status, createdAt(sort: Desc)])
+  @@index([status])
 }
 
 model ChapterPurchase {
@@ -210,6 +228,8 @@ model ChapterPurchase {
   chapter      Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([userId, chapterId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([chapterId])
 }
 
 model Comment {
@@ -229,6 +249,11 @@ model Comment {
   story     Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
+
+  @@index([storyId, createdAt(sort: Desc)])
+  @@index([chapterId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([parentId])
 }
 
 model Rating {
@@ -244,6 +269,7 @@ model Rating {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([storyId, userId])
+  @@index([storyId, score])
 }
 
 model Bookmark {
@@ -259,6 +285,7 @@ model Bookmark {
   story          Story     @relation(fields: [storyId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storyId])
+  @@index([userId, updatedAt(sort: Desc)])
 }
 
 model DailyCheckin {
@@ -314,6 +341,9 @@ model PayoutRequest {
   updatedAt      DateTime      @updatedAt
 
   author         AuthorProfile @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, status])
+  @@index([createdAt(sort: Desc)])
 }
 
 model SupportTicket {
@@ -329,6 +359,9 @@ model SupportTicket {
   updatedAt   DateTime @updatedAt
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([status, createdAt(sort: Desc)])
 }
 
 model AuditLog {
@@ -343,6 +376,10 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([adminId])
+  @@index([targetType, targetId])
 }
 
 model Report {
@@ -358,6 +395,10 @@ model Report {
   updatedAt    DateTime @updatedAt
 
   reporter     User     @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@index([reporterId])
 }
 
 model UserTicket {
@@ -372,6 +413,9 @@ model UserTicket {
 
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   story      Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isUsed, expiresAt])
+  @@index([storyId])
 }
 
 model DailyGiftClaim {
@@ -405,5 +449,7 @@ model Notification {
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
 }
 

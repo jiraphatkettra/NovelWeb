@@ -2,12 +2,28 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api-response";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return apiError("AUTH_INVALID_TOKEN", "กรุณาเข้าสู่ระบบก่อนทำรายการ", null, 401);
+    }
+
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`coin-purchase:${user.id || ip}`, {
+      windowMs: 60 * 1000,
+      max: 10,
+    });
+
+    if (!rl.success) {
+      return apiError(
+        "TOO_MANY_REQUESTS",
+        `คุณทำรายการซื้อเหรียญถี่เกินไป กรุณารอ ${rl.reset} วินาที`,
+        null,
+        429
+      );
     }
 
     const body = await req.json();

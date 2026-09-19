@@ -86,8 +86,8 @@ export function GiftBoxModal({ isOpen, onClose, onClaimed }: GiftBoxModalProps) 
         </button>
 
         {/* Gift Box Icon */}
-        <div className="relative mx-auto my-3 w-16 h-16 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 flex items-center justify-center">
-          <Gift className={`w-8 h-8 text-[#FFE600] transition duration-300 ${claiming ? "animate-bounce" : ""}`} />
+        <div className="relative mx-auto my-3 w-16 h-16 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 flex items-center justify-center">
+          <Gift className={`w-8 h-8 text-[#A78BFA] transition duration-300 ${claiming ? "animate-bounce" : ""}`} />
         </div>
 
         {/* Header */}
@@ -101,7 +101,7 @@ export function GiftBoxModal({ isOpen, onClose, onClaimed }: GiftBoxModalProps) 
         {/* Ticket Stats */}
         <div className="my-5 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#FFE600]/10 border border-[#FFE600]/20 flex items-center justify-center text-[#FFE600]">
+            <div className="w-9 h-9 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center text-[#A78BFA]">
               <Ticket className="w-4 h-4" />
             </div>
             <div className="text-left">
@@ -116,7 +116,7 @@ export function GiftBoxModal({ isOpen, onClose, onClaimed }: GiftBoxModalProps) 
             <div className="text-[11px] text-neutral-400">สถานะวันนี้</div>
             <div className="text-xs font-semibold">
               {canClaim ? (
-                <span className="text-[#FFE600]">พร้อมรับ</span>
+                <span className="text-[#A78BFA]">พร้อมรับ</span>
               ) : (
                 <span className="text-neutral-500">รับแล้ว</span>
               )}
@@ -127,14 +127,14 @@ export function GiftBoxModal({ isOpen, onClose, onClaimed }: GiftBoxModalProps) 
         {/* Action Button */}
         {claimedReward ? (
           <div className="space-y-3">
-            <div className="p-3.5 rounded-xl bg-[#FFE600]/10 border border-[#FFE600]/30 text-[#FFE600] flex items-center gap-2.5 text-left">
+            <div className="p-3.5 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#C4B5FD] flex items-center gap-2.5 text-left">
               <CheckCircle2 className="w-5 h-5 shrink-0" />
               <div className="text-xs font-medium leading-relaxed">{claimedReward}</div>
             </div>
 
             <button
               onClick={onClose}
-              className="w-full py-3 rounded-xl bg-[#FFE600] text-black font-bold text-xs hover:bg-[#F5DC00] transition active:scale-[0.99]"
+              className="w-full py-3 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition active:scale-[0.99]"
             >
               เริ่มอ่านเลย
             </button>
@@ -144,7 +144,7 @@ export function GiftBoxModal({ isOpen, onClose, onClaimed }: GiftBoxModalProps) 
             <Link
               href="/auth/login"
               onClick={onClose}
-              className="w-full py-3 rounded-xl bg-[#FFE600] text-black font-bold text-xs flex items-center justify-center gap-2 transition"
+              className="w-full py-3 rounded-xl bg-[#8B5CF6] text-white font-bold text-xs flex items-center justify-center gap-2 transition hover:bg-[#7C3AED]"
             >
               <span>เข้าสู่ระบบเพื่อรับตั๋ว</span>
               <ArrowRight className="w-4 h-4" />
@@ -154,10 +154,10 @@ export function GiftBoxModal({ isOpen, onClose, onClaimed }: GiftBoxModalProps) 
           <button
             onClick={handleClaim}
             disabled={claiming}
-            className="w-full py-3.5 rounded-xl bg-[#FFE600] hover:bg-[#F5DC00] text-black font-bold text-xs transition duration-200 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold text-xs transition duration-200 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
           >
             {claiming ? (
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
                 <Gift className="w-4 h-4" />

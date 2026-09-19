@@ -83,7 +83,7 @@ export function RichChapterEditor({
   }, [value]);
 
   return (
-    <div className="rounded-3xl bg-zinc-900 border border-zinc-800 overflow-hidden shadow-2xl transition-all focus-within:border-amber-500/60">
+    <div className="rounded-3xl bg-zinc-900 border border-zinc-800 overflow-hidden shadow-2xl transition-all focus-within:border-[#8B5CF6]/60">
       {/* Visual Rich Formatting Toolbar */}
       <div className="px-3 sm:px-4 py-2 bg-zinc-800/90 border-b border-zinc-700/80 flex flex-wrap items-center gap-1 sm:gap-1.5 select-none">
         {/* Headings */}

@@ -284,7 +284,7 @@ export function UserManagementModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-neutral-900 border border-neutral-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Modal Header with Profile Card */}
-        <div className="relative p-6 pb-4 border-b border-neutral-800 bg-gradient-to-r from-neutral-900 via-neutral-900/90 to-amber-950/20">
+        <div className="relative p-6 pb-4 border-b border-neutral-800 bg-gradient-to-r from-neutral-900 via-neutral-900/90 to-purple-950/20">
           <button
             onClick={onClose}
             className="absolute top-5 right-5 p-2 rounded-xl bg-neutral-800/80 text-neutral-400 hover:text-white hover:bg-neutral-700 transition"
@@ -299,10 +299,10 @@ export function UserManagementModal({
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/40 shadow-lg bg-neutral-800"
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-purple-500/40 shadow-lg bg-neutral-800"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/30 to-purple-600/30 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-xl shadow-lg">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/30 to-indigo-600/30 border border-purple-500/30 flex items-center justify-center text-[#A78BFA] font-bold text-xl shadow-lg">
                   {currentUser.name.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -334,7 +334,7 @@ export function UserManagementModal({
                     currentUser.role === "SUPER_ADMIN"
                       ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                       : currentUser.role === "AUTHOR"
-                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                       : currentUser.role === "FINANCE_ADMIN"
                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                       : currentUser.role === "MODERATOR"
@@ -362,7 +362,7 @@ export function UserManagementModal({
                 </span>
                 <button
                   onClick={handleCopyId}
-                  className="flex items-center gap-1 text-neutral-400 hover:text-amber-400 font-mono transition"
+                  className="flex items-center gap-1 text-neutral-400 hover:text-[#A78BFA] font-mono transition"
                   title="คลิกเพื่อคัดลอก User ID"
                 >
                   {copiedId ? (
@@ -386,7 +386,7 @@ export function UserManagementModal({
               onClick={() => setActiveTab("overview")}
               className={`px-3 py-1.5 rounded-xl font-medium transition ${
                 activeTab === "overview"
-                  ? "bg-amber-400 text-black font-bold shadow"
+                  ? "bg-[#8B5CF6] text-white font-bold shadow"
                   : "bg-neutral-800/80 text-neutral-400 hover:text-white"
               }`}
             >
@@ -396,7 +396,7 @@ export function UserManagementModal({
               onClick={() => setActiveTab("coins")}
               className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1 ${
                 activeTab === "coins"
-                  ? "bg-amber-400 text-black font-bold shadow"
+                  ? "bg-[#8B5CF6] text-white font-bold shadow"
                   : "bg-neutral-800/80 text-neutral-400 hover:text-white"
               }`}
             >
@@ -407,7 +407,7 @@ export function UserManagementModal({
               onClick={() => setActiveTab("edit")}
               className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1 ${
                 activeTab === "edit"
-                  ? "bg-amber-400 text-black font-bold shadow"
+                  ? "bg-[#8B5CF6] text-white font-bold shadow"
                   : "bg-neutral-800/80 text-neutral-400 hover:text-white"
               }`}
             >
@@ -419,7 +419,7 @@ export function UserManagementModal({
                 onClick={() => setActiveTab("password")}
                 className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1 ${
                   activeTab === "password"
-                    ? "bg-amber-400 text-black font-bold shadow"
+                    ? "bg-[#8B5CF6] text-white font-bold shadow"
                     : "bg-neutral-800/80 text-neutral-400 hover:text-white"
                 }`}
               >
@@ -431,7 +431,7 @@ export function UserManagementModal({
               onClick={() => setActiveTab("history")}
               className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1 ${
                 activeTab === "history"
-                  ? "bg-amber-400 text-black font-bold shadow"
+                  ? "bg-[#8B5CF6] text-white font-bold shadow"
                   : "bg-neutral-800/80 text-neutral-400 hover:text-white"
               }`}
             >
@@ -837,7 +837,7 @@ export function UserManagementModal({
                 <button
                   type="submit"
                   disabled={savingEdit}
-                  className="w-full py-3 rounded-2xl bg-amber-400 text-black font-bold text-xs hover:bg-amber-300 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3 rounded-2xl bg-[#8B5CF6] text-white font-bold text-xs hover:bg-[#7C3AED] transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {savingEdit && <RefreshCw className="w-4 h-4 animate-spin" />}
                   บันทึกการเปลี่ยนแปลงข้อมูล
